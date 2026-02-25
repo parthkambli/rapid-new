@@ -35,11 +35,11 @@ import { BsFileEarmarkExcel, BsFileEarmarkPdf } from "react-icons/bs";
 const TotalDoctorList = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   // Get initial filters from dashboard URL and normalize
   const dashboardStatus = searchParams.get("status")?.toLowerCase() || "all";
   const dashboardMembership = searchParams.get("membership")?.toLowerCase() || "all";
-  
+
   // State management
   const [searchByName, setSearchByName] = useState("");
   const [sortByStatus, setSortByStatus] = useState(dashboardStatus);
@@ -51,7 +51,7 @@ const TotalDoctorList = () => {
   const [searchBySalesman, setSearchBySalesman] = useState("");
   const [sortByDoctorStatus, setSortByDoctorStatus] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const [fullData, setFullData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,75 +98,75 @@ const TotalDoctorList = () => {
   // Enhanced filter function
   const applyFilters = useCallback(() => {
     let result = [...fullData];
-    
+
     if (searchByName.trim()) {
       result = result.filter(item => 
         item.drName?.toLowerCase().includes(searchByName.toLowerCase()) ||
         item.hospitalName?.toLowerCase().includes(searchByName.toLowerCase())
       );
     }
-    
+
     if (sortByStatus && sortByStatus !== "all") {
       result = result.filter(item => 
         item.internalEnquiryType === sortByStatus
       );
     }
-    
+
     if (sortByMembership && sortByMembership !== "all") {
       result = result.filter(item => 
         item.internalDoctorType === sortByMembership
       );
     }
-    
+
     if (searchByCity.trim()) {
       result = result.filter(item => 
         item.city?.toLowerCase().includes(searchByCity.toLowerCase())
       );
     }
-    
+
     if (searchBySpecialty.trim()) {
       result = result.filter(item => 
         item.specialty?.toLowerCase().includes(searchBySpecialty.toLowerCase())
       );
     }
-    
+
     if (searchBySalesman.trim()) {
       result = result.filter(item => 
         item.salesmanName?.toLowerCase().includes(searchBySalesman.toLowerCase()) ||
         item.createdBy?.toLowerCase().includes(searchBySalesman.toLowerCase())
       );
     }
-    
+
     if (sortByDoctorStatus && sortByDoctorStatus !== "all") {
       result = result.filter(item => item.doctorStatus === sortByDoctorStatus);
     }
-    
+
     if (sortByDateFrom || sortByDateTo) {
       result = result.filter(item => {
         const itemDate = new Date(item.createdAt || item.date);
-        
+
         if (sortByDateFrom && sortByDateTo) {
           const fromDate = new Date(sortByDateFrom);
           const toDate = new Date(sortByDateTo);
           toDate.setHours(23, 59, 59, 999);
           return itemDate >= fromDate && itemDate <= toDate;
         }
-        
+
         if (sortByDateFrom) {
           const fromDate = new Date(sortByDateFrom);
           return itemDate >= fromDate;
         }
-        
+
         if (sortByDateTo) {
           const toDate = new Date(sortByDateTo);
           toDate.setHours(23, 59, 59, 999);
           return itemDate <= toDate;
         }
-        
+
         return true;
       });
     }
-    
+
     setFilteredData(result);
   }, [fullData, searchByName, sortByStatus, sortByMembership, searchByCity, searchBySpecialty, searchBySalesman, sortByDateFrom, sortByDateTo, sortByDoctorStatus]);
 
@@ -188,7 +188,7 @@ const TotalDoctorList = () => {
       'Last Follow-up': item.followUps?.[0]?.date || 'N/A',
       'Created At': item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'
     }));
-    
+
     setExportData(dataToExport);
     return dataToExport;
   };
@@ -205,18 +205,18 @@ const TotalDoctorList = () => {
   const handleExportExcel = () => {
     const data = prepareExportData();
     setIsExporting(true);
-    
+
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Doctors");
-    
+
     const wscols = [
       {wch: 10}, {wch: 12}, {wch: 25}, {wch: 15}, {wch: 25},
       {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15},
       {wch: 20}, {wch: 5}, {wch: 20}, {wch: 20},
     ];
     ws['!cols'] = wscols;
-    
+
     const fileName = `Doctors_List_${sortByStatus || 'all'}_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
     setIsExporting(false);
@@ -225,11 +225,11 @@ const TotalDoctorList = () => {
   const handleExportPDF = () => {
     const data = prepareExportData();
     setIsExporting(true);
-    
+
     const doc = new jsPDF('landscape');
     const tableColumn = Object.keys(data[0] || {});
     const tableRows = data.map(item => Object.values(item));
-    
+
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
@@ -244,7 +244,7 @@ const TotalDoctorList = () => {
         doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 18);
       }
     });
-    
+
     doc.save(`Doctors_List_${new Date().toISOString().split('T')[0]}.pdf`);
     setIsExporting(false);
   };
@@ -390,7 +390,7 @@ const TotalDoctorList = () => {
 
       const params = {
         page: 1,
-        limit: 1000, // Increased limit to get all doctors
+        limit: 100000, // Increased limit to get all doctors
          sort: '-createdAt', // '-' sign means descending (newest first)
       };
 
@@ -398,11 +398,11 @@ const TotalDoctorList = () => {
       if (sortByStatus && sortByStatus !== "all") {
         params.typeOfEnquiry = sortByStatus;
       }
-      
+
       if (sortByMembership && sortByMembership !== "all") {
         params.doctorType = sortByMembership;
       }
-      
+
       if (searchByName) {
         params.search = searchByName;
       }
@@ -489,10 +489,10 @@ const TotalDoctorList = () => {
           'Cancel': 'bg-gray-100 text-gray-800 border border-gray-200',
           'Cold': 'bg-blue-100 text-blue-800 border border-blue-200'
         };
-        
+
         const status = row.typeOfEnquires || "";
         const colorClass = statusColor[status] || "bg-gray-100 text-gray-800 border border-gray-200";
-        
+
         return (
           <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${colorClass}`}>
             {status}
@@ -609,7 +609,7 @@ const TotalDoctorList = () => {
       <div className="animate-pulse space-y-4">
         {/* Header Skeleton */}
         <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-        
+
         {/* Stats Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           {[1, 2, 3, 4].map(i => (
@@ -666,7 +666,7 @@ const TotalDoctorList = () => {
 
   return (
     <div className="p-6 bg-gray-50 w-[87vw] min-h-screen">
-   
+
 
       {/* Header */}
       <div className="mb-6">
@@ -703,7 +703,7 @@ const TotalDoctorList = () => {
                 <FiDownload className="mr-2" />
                 {isExporting ? "Exporting..." : "Export"}
               </button>
-              
+
               {filteredData.length > 0 && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 hidden group-hover:block">
                   <div className="py-1">
@@ -741,7 +741,7 @@ const TotalDoctorList = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
@@ -753,7 +753,7 @@ const TotalDoctorList = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
@@ -765,7 +765,7 @@ const TotalDoctorList = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
@@ -1050,7 +1050,7 @@ const TotalDoctorList = () => {
             <Table 
               data={filteredData} 
               actions={[]}
-              excludeColumns={[ "membership", "doctorStatus", "doctorStatusDisplay", "statusColor", "createdAt", "typeOfEnquires", "createdAtTimestamp", "salesmanName", "internalEnquiryType", "internalDoctorType",'createdAt','internalDoctorType','internalEnquiryType','createdAtTimestamp','salesmanName','typeOfEnquires','createdAt','doctorStatusDisplay','statusColor','membership','doctorStatus']}
+              excludeColumns={[ "membership", "doctorStatus", "doctorStatusDisplay", "statusColor", "createdAt", "typeOfEnquires", "createdAtTimestamp", "salesmanName", "internalEnquiryType", "internalDoctorType"]}
               extraColumns={extraColumns}
               pagination={true}
               defaultPageSize={10}
@@ -1260,3 +1260,9 @@ const TotalDoctorList = () => {
 };
 
 export default TotalDoctorList;
+
+
+
+
+
+
