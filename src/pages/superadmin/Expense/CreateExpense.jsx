@@ -1851,10 +1851,19 @@
 
 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Select from 'react-select';
 import apiClient, { apiEndpoints } from "../../../services/apiClient";
+
+// Simple debounce utility
+const debounce = (func, delay) => {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => func(...args), delay);
+  };
+};
 
 const ExpenseForm = () => {
   const navigate = useNavigate();
@@ -1888,19 +1897,36 @@ const ExpenseForm = () => {
     { doctor: "", caseStage: "", amount: "" }
   ]);
   const [total, setTotal] = useState(0);
-  const [advocates, setAdvocates] = useState([]);
-  const [experts, setExperts] = useState([]);
   const [advocateCases, setAdvocateCases] = useState([]);
   const [expertCases, setExpertCases] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
-  const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
+  const [doctorsForAdvocate, setDoctorsForAdvocate] = useState([]);
+  const [doctorsForExpert, setDoctorsForExpert] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingCases, setLoadingCases] = useState(false);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [bankDetails, setBankDetails] = useState([]);
   const [loadingBankDetails, setLoadingBankDetails] = useState(false);
+
+  // Search and Page states for dropdowns
+  const [advocateOptions, setAdvocateOptions] = useState([]);
+  const [loadingAdvocates, setLoadingAdvocates] = useState(false);
+  const [selectedAdvocate, setSelectedAdvocate] = useState(null);
+
+  const [expertOptions, setExpertOptions] = useState([]);
+  const [loadingExperts, setLoadingExperts] = useState(false);
+  const [selectedExpert, setSelectedExpert] = useState(null);
+
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  // loadingEmployees already exists
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+
+  const advocateSearchRef = useRef(null);
+  const expertSearchRef = useRef(null);
+  const employeeSearchRef = useRef(null);
+  const doctorSearchRef = useRef(null);
 
   // Utility function to convert file path to accessible URL
   const convertFilePathToUrl = (filePath) => {
@@ -1957,148 +1983,171 @@ const ExpenseForm = () => {
     chequeDate: "", // Added for cheque payments
   });
 
-  // Fetch advocates and experts when component mounts and when category changes
-  useEffect(() => {
-    const fetchDropdownData = async () => {
-      // Don't show loading spinner when loading for edit mode to avoid UI flickering
-      if (!(isEditMode && expenseId)) {
-        setLoading(true);
-      }
-
+  // Debounced search for Advocates
+  const fetchAdvocates = useCallback(
+    debounce(async (searchQuery) => {
+      setLoadingAdvocates(true);
       try {
-        if (category === "advocate") {
-          const response = await apiClient.get(apiEndpoints.expenses.dropdown.advocates);
-          setAdvocates(response.data.data || []);
-          setExperts([]); // Clear experts when advocate category is selected
-
-          // Clear the related doctors lists when changing category
-          setDoctorsForAdvocate([]);
-          setDoctorsForExpert([]);
-        } else if (category === "expert") {
-          const response = await apiClient.get(apiEndpoints.expenses.dropdown.experts);
-          setExperts(response.data.data || []);
-          setAdvocates([]); // Clear advocates when expert category is selected
-
-          // Clear the related doctors lists when changing category
-          setDoctorsForAdvocate([]);
-          setDoctorsForExpert([]);
-        } else {
-          // Clear both when other categories are selected
-          setAdvocates([]);
-          setExperts([]);
-          // Also clear the related doctors lists
-          setDoctorsForAdvocate([]);
-          setDoctorsForExpert([]);
+        const response = await apiClient.get(apiEndpoints.advocates.dropdown, {
+          params: { search: searchQuery }
+        });
+        if (response.data.success) {
+          const options = response.data.data.map((advocate) => ({
+            value: advocate.fullName,
+            label: `${advocate.fullName} (${advocate.barCouncilNumber || "—"}) - ${advocate.specialization?.join(", ") || "N/A"}`,
+            _id: advocate._id,
+          }));
+          setAdvocateOptions(options);
         }
       } catch (error) {
-        console.error("Error fetching dropdown data:", error);
-        setAdvocates([]);
-        setExperts([]);
+        console.error("Error fetching advocates:", error);
       } finally {
-        // Don't hide loading spinner when loading for edit mode to avoid UI flickering
-        if (!(isEditMode && expenseId)) {
-          setLoading(false);
-        }
+        setLoadingAdvocates(false);
       }
-    };
+    }, 500),
+    []
+  );
 
-    if (category === "advocate" || category === "expert") {
-      fetchDropdownData();
+  // Debounced search for Experts
+  const fetchExperts = useCallback(
+    debounce(async (searchQuery) => {
+      setLoadingExperts(true);
+      try {
+        const response = await apiClient.get(apiEndpoints.experts.dropdown, {
+          params: { search: searchQuery }
+        });
+        if (response.data.success) {
+          const options = response.data.data.map((expert) => ({
+            value: expert.fullName,
+            label: `${expert.fullName} - ${expert.expertise?.join(", ") || "N/A"}`,
+            _id: expert._id,
+          }));
+          setExpertOptions(options);
+        }
+      } catch (error) {
+        console.error("Error fetching experts:", error);
+      } finally {
+        setLoadingExperts(false);
+      }
+    }, 500),
+    []
+  );
+
+  // Debounced search for Employees
+  const fetchEmployees = useCallback(
+    debounce(async (searchQuery) => {
+      setLoadingEmployees(true);
+      try {
+        const response = await apiClient.get(apiEndpoints.employees.search, {
+          params: { q: searchQuery }
+        });
+        if (response.data.success) {
+          const options = response.data.data.map((employee) => ({
+            value: employee.fullName,
+            label: `${employee.fullName} (${employee.employeeId})`,
+            _id: employee._id,
+          }));
+          setEmployeeOptions(options);
+        }
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    }, 500),
+    []
+  );
+
+  // Debounced search for Doctors
+  const fetchDoctors = useCallback(
+    debounce(async (searchQuery) => {
+      setLoadingDoctors(true);
+      try {
+        // Here we can use the general doctor search
+        const response = await apiClient.get(apiEndpoints.doctors.dropdown, {
+          params: { search: searchQuery }
+        });
+        if (response.data.success) {
+          const options = response.data.data.map((doctor) => ({
+            value: doctor.fullName,
+            label: doctor.fullName,
+            _id: doctor._id,
+          }));
+          setDoctorOptions(options);
+        }
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+      } finally {
+        setLoadingDoctors(false);
+      }
+    }, 500),
+    []
+  );
+
+  // Trigger initial search for advocates/experts when category changes
+  useEffect(() => {
+    if (category === "advocate") {
+      fetchAdvocates("");
+    } else if (category === "expert") {
+      fetchExperts("");
     } else {
-      // Clear dropdowns when not in advocate or expert category
-      setAdvocates([]);
-      setExperts([]);
-      // Also clear the related doctors lists
-      setDoctorsForAdvocate([]);
-      setDoctorsForExpert([]);
+      setAdvocateOptions([]);
+      setExpertOptions([]);
     }
-  }, [category]);
+  }, [category, fetchAdvocates, fetchExperts]);
 
-  // Fetch doctors for the selected advocate when advocate is chosen
-  useEffect(() => {
-    const fetchDoctorsForSelectedAdvocate = async () => {
-      if (category === "advocate" && formData.advocateName && advocates.length > 0) {
-        setLoadingDoctors(true);
-        try {
-          // Find the selected advocate by name to get their ID
-          const selectedAdvocate = advocates.find(advocate => advocate.fullName === formData.advocateName);
-          if (selectedAdvocate) {
-            // Fetch cases for this advocate to get related doctors
-            const response = await apiClient.get(`${apiEndpoints.expenses.cases.advocate}/${selectedAdvocate._id}`);
-
-            if (response.data.success && response.data.data) {
-              // Extract unique doctor names from the cases
-              const uniqueDoctorNames = [...new Set(response.data.data.map(item => item.doctorName))];
-
-              // Create doctor objects with the required format
-              const doctorObjects = uniqueDoctorNames
-                .filter(name => name) // Filter out any null/undefined names
-                .map((doctorName, index) => ({
-                  _id: `doc_${index}`, // Create a temporary ID
-                  fullName: doctorName
-                }));
-
-              setDoctorsForAdvocate(doctorObjects);
-            } else {
-              setDoctorsForAdvocate([]);
-            }
+  // Fetch doctors for the selected advocate or expert
+  const fetchDoctorsForAdvocate = useCallback(async (advocateId) => {
+    setLoadingDoctors(true);
+    try {
+      const response = await apiClient.get(apiEndpoints.expenses.cases.advocate(advocateId));
+      if (response.data.success) {
+        setAdvocateCases(response.data.data || []);
+        const uniqueDoctorsMap = new Map();
+        response.data.data.forEach(caseItem => {
+          const doctorKey = caseItem.doctorId || caseItem.doctorName || caseItem.patientName;
+          if (doctorKey && !uniqueDoctorsMap.has(doctorKey)) {
+            uniqueDoctorsMap.set(doctorKey, {
+              _id: caseItem.doctorId || `temp_${doctorKey}`,
+              fullName: caseItem.doctorName || caseItem.patientName || doctorKey
+            });
           }
-        } catch (error) {
-          console.error("Error fetching doctors for advocate:", error);
-          setDoctorsForAdvocate([]);
-        } finally {
-          setLoadingDoctors(false);
-        }
+        });
+        setDoctorsForAdvocate(Array.from(uniqueDoctorsMap.values()));
       }
-    };
+    } catch (error) {
+      console.error("Error fetching doctors for advocate:", error);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  }, []);
 
-    fetchDoctorsForSelectedAdvocate();
-  }, [category, formData.advocateName, advocates]);
-
-  // Fetch doctors for the selected expert when expert is chosen
-  useEffect(() => {
-    const fetchDoctorsForSelectedExpert = async () => {
-      if (category === "expert" && formData.expertName && experts.length > 0) {
-        setLoadingDoctors(true);
-        try {
-          // Find the selected expert by name to get their ID
-          const selectedExpert = experts.find(expert => expert.fullName === formData.expertName);
-          if (selectedExpert) {
-            // Fetch cases for this expert to get related doctors
-            const response = await apiClient.get(`${apiEndpoints.expenses.cases.expert}/${selectedExpert._id}`);
-
-            if (response.data.success && response.data.data) {
-              // Extract unique doctor names from the cases
-              const uniqueDoctorNames = [...new Set(response.data.data.map(item => item.doctorName))];
-
-              // Create doctor objects with the required format
-              const doctorObjects = uniqueDoctorNames
-                .filter(name => name) // Filter out any null/undefined names
-                .map((doctorName, index) => ({
-                  _id: `doc_${index}`, // Create a temporary ID
-                  fullName: doctorName
-                }));
-
-              setDoctorsForExpert(doctorObjects);
-            } else {
-              setDoctorsForExpert([]);
-            }
+  const fetchDoctorsForExpert = useCallback(async (expertId) => {
+    setLoadingDoctors(true);
+    try {
+      const response = await apiClient.get(apiEndpoints.expenses.cases.expert(expertId));
+      if (response.data.success) {
+        setExpertCases(response.data.data || []);
+        const uniqueDoctorsMap = new Map();
+        response.data.data.forEach(caseItem => {
+          const doctorKey = caseItem.doctorId || caseItem.doctorName || caseItem.patientName;
+          if (doctorKey && !uniqueDoctorsMap.has(doctorKey)) {
+            uniqueDoctorsMap.set(doctorKey, {
+              _id: caseItem.doctorId || `temp_${doctorKey}`,
+              fullName: caseItem.doctorName || caseItem.patientName || doctorKey
+            });
           }
-        } catch (error) {
-          console.error("Error fetching doctors for expert:", error);
-          setDoctorsForExpert([]);
-        } finally {
-          setLoadingDoctors(false);
-        }
+        });
+        setDoctorsForExpert(Array.from(uniqueDoctorsMap.values()));
       }
-    };
+    } catch (error) {
+      console.error("Error fetching doctors for expert:", error);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  }, []);
 
-    fetchDoctorsForSelectedExpert();
-  }, [category, formData.expertName, experts]);
-
-  // State to track if advocates/experts are loaded for edit mode
-  const [advocatesLoadedForEdit, setAdvocatesLoadedForEdit] = useState(false);
-  const [expertsLoadedForEdit, setExpertsLoadedForEdit] = useState(false);
+  // Placeholder to remove duplicate logic.
 
   // Load existing expense data for edit mode
   useEffect(() => {
@@ -2106,45 +2155,33 @@ const ExpenseForm = () => {
       if (isEditMode && expenseId) {
         try {
           setLoading(true);
-          console.log("Loading expense data for ID:", expenseId);
           const response = await apiClient.get(apiEndpoints.expenses.get(expenseId));
           const expense = response.data.data;
-          console.log("Loaded expense data:", expense);
 
-          // Set form data from the expense
           const formattedDate = expense.expenseDate ? formatDateToDDMMYY(expense.expenseDate) : "";
           const officeExpenseType = expense.subCategory || "Stationery";
-          // Determine the value for paidBy field based on available data
           let paidByValue = expense.vendor?.name || expense.paidBy || "";
-          // If paidBy is empty but bankName exists (especially for bank charges), use bankName
           if (!paidByValue && expense.bankName) {
             paidByValue = expense.bankName;
           }
 
-          // Set the initial category based on the expense
           let initialCategory = "";
           if (expense.category === 'professional_fees') {
-            // Check the relatedPerson type to determine if it's an expert or advocate
             if (expense.relatedPerson?.type === 'expert') {
               initialCategory = 'expert';
             } else if (expense.relatedPerson?.type === 'advocate') {
               initialCategory = 'advocate';
             } else {
-              // Fallback to subCategory if relatedPerson type is not available
               initialCategory = expense.subCategory === 'expert' ? 'expert' : 'advocate';
             }
-          } else if (expense.category === 'office_supplies') {
+          } else if (expense.category === 'office_supplies' || expense.category === 'office') {
             initialCategory = 'office';
-          } else if (expense.category === 'utilities' || expense.category === 'bank_transfer') {
+          } else if (expense.category === 'utilities' || expense.category === 'bank_transfer' || expense.category === 'bank') {
             initialCategory = 'bank';
           }
-          console.log("Determined initial category:", initialCategory);
 
-          // Set the category state first to trigger loading of advocates/experts
-          console.log("Setting category to:", initialCategory);
           setCategory(initialCategory);
 
-          // Set form data with the loaded values (excluding advocateName and expertName for now)
           const newFormData = {
             paymentDate: expense.expenseDate ? new Date(expense.expenseDate).toISOString().split('T')[0] : "",
             paymentDateFormatted: formattedDate,
@@ -2158,123 +2195,102 @@ const ExpenseForm = () => {
             bankTxnRef: expense.voucherNo || "",
             bankAmount: expense.amount?.toString() || "",
             bankRemarks: expense.remarks || "",
-            // Don't set advocateName or expertName yet - wait for data to load
-            advocateName: "",
-            expertName: "",
+            advocateName: initialCategory === 'advocate' ? (expense.vendor?.name || "") : "",
+            expertName: initialCategory === 'expert' ? (expense.vendor?.name || "") : "",
             notes: expense.note || expense.remarks || "",
             attachment: expense.attachment ? {
               name: expense.attachment.split('/').pop(),
               url: convertFilePathToUrl(expense.attachment),
-              exists: true // Flag to indicate this is an existing file
+              exists: true
             } : null,
             taxApplicable: expense.taxApplicable !== undefined ? expense.taxApplicable : true,
             taxRate: expense.taxRate !== undefined ? expense.taxRate : 18,
-            personType: expense.relatedPerson?.type || "", // Load person type from expense
-            personId: expense.relatedPerson?.refId || "", // Load person ID from expense
-            chequeNumber: expense.chequeNumber || "", // Load cheque number if available
-            chequeDate: expense.chequeDate ? formatDateToDDMMYY(new Date(expense.chequeDate)) : "", // Load cheque date if available
-            chequeDateISO: expense.chequeDate ? new Date(expense.chequeDate).toISOString().split('T')[0] : "", // Load cheque date in ISO for date picker
+            personType: expense.relatedPerson?.type || "",
+            personId: expense.relatedPerson?.refId || "",
+            chequeNumber: expense.chequeNumber || "",
+            chequeDate: expense.chequeDate ? formatDateToDDMMYY(new Date(expense.chequeDate)) : "",
+            chequeDateISO: expense.chequeDate ? new Date(expense.chequeDate).toISOString().split('T')[0] : "",
           };
-          console.log("Setting initial form data:", newFormData);
 
-          // Set form data after category is set but without advocate/expert names initially
           setFormData(newFormData);
 
-          // If the category is advocate or expert, we need to wait for the advocates/experts to load
-          // before setting the form data to ensure the dropdown options are available
-          if (initialCategory === 'advocate' || initialCategory === 'expert') {
-            // Wait for advocates or experts to load by checking the state variables
-            await new Promise((resolve, reject) => {
-              const startTime = Date.now();
-              const timeoutDuration = 10000; // 10 seconds timeout (increased to allow for API calls)
+          // Initialize selected objects for dropdowns with fallback to vendor name
+          const vendorName = expense.vendor?.name || "";
 
-              const checkDataLoaded = () => {
-                if ((initialCategory === 'advocate' && advocates.length > 0) ||
-                  (initialCategory === 'expert' && experts.length > 0)) {
-                  console.log(`${initialCategory} loaded successfully with ${initialCategory === 'advocate' ? advocates.length : experts.length} items`);
-                  resolve();
-                } else if (Date.now() - startTime > timeoutDuration) {
-                  // Timeout reached
-                  console.warn(`Timeout waiting for ${initialCategory} to load after ${timeoutDuration}ms`);
-                  resolve(); // Resolve anyway to prevent hanging
-                } else {
-                  // Retry after a short delay
-                  setTimeout(checkDataLoaded, 200); // Increased delay to give API call time to respond
-                }
+          if (initialCategory === 'advocate') {
+            const advocateObj = {
+              value: vendorName,
+              label: vendorName,
+              _id: expense.relatedPerson?.refId || ""
+            };
+            setSelectedAdvocate(advocateObj);
+            setAdvocateOptions([advocateObj]);
+            if (expense.relatedPerson?.refId) {
+              await fetchDoctorsForAdvocate(expense.relatedPerson.refId);
+            }
+          } else if (initialCategory === 'expert') {
+            const expertObj = {
+              value: vendorName,
+              label: vendorName,
+              _id: expense.relatedPerson?.refId || ""
+            };
+            setSelectedExpert(expertObj);
+            setExpertOptions([expertObj]);
+            if (expense.relatedPerson?.refId) {
+              await fetchDoctorsForExpert(expense.relatedPerson.refId);
+            }
+          } else if (initialCategory === 'office') {
+            const isEmployeeType = [
+              "Employee Salary",
+              "Travelling Allowance",
+              "Advance",
+              "Incentive",
+              "Other"
+            ].includes(officeExpenseType);
+
+            if (isEmployeeType && vendorName) {
+              const employeeObj = {
+                value: vendorName,
+                label: vendorName,
+                _id: expense.relatedPerson?.refId || ""
               };
+              setSelectedEmployee(employeeObj);
+              setEmployeeOptions([employeeObj]);
 
-              // Start checking immediately
-              checkDataLoaded();
-            });
-
-            // Now that data is loaded, set the advocate or expert name to trigger selection
-            if (initialCategory === 'advocate') {
-              setFormData(prev => ({
-                ...prev,
-                advocateName: expense.vendor?.name || "",
-              }));
-            } else if (initialCategory === 'expert') {
-              setFormData(prev => ({
-                ...prev,
-                expertName: expense.vendor?.name || "",
-              }));
-            }
-          }
-
-          // If editing an employee-related expense, we need to load the employees
-          if (initialCategory === 'office' && (
-            officeExpenseType === 'Employee Salary' ||
-            officeExpenseType === 'Travelling Allowance' ||
-            officeExpenseType === 'Advance' ||
-            officeExpenseType === 'Incentive' ||
-            officeExpenseType === 'Other')) {
-            // Fetch all employees to populate the dropdown
-            setLoadingEmployees(true);
-            try {
-              const allEmployees = [];
-              let page = 1;
-              let hasMore = true;
-
-              // Fetch all employees using pagination
-              while (hasMore) {
-                const response = await apiClient.get(apiEndpoints.employees.list, {
-                  params: {
-                    page: page,
-                    limit: 100 // Use a higher limit to reduce API calls
+              if (expense.relatedPerson?.refId && expense.relatedPerson?.type === 'employee') {
+                // Fetch employee data to populate more details
+                try {
+                  const employeeResponse = await apiClient.get(apiEndpoints.employees.get(expense.relatedPerson.refId));
+                  if (employeeResponse.data && employeeResponse.data.success) {
+                    const employee = employeeResponse.data.data;
+                    const fullEmployeeObj = {
+                      value: employee.fullName,
+                      label: `${employee.fullName} (${employee.employeeId})`,
+                      _id: employee._id
+                    };
+                    setEmployeeOptions([fullEmployeeObj]);
+                    setSelectedEmployee(fullEmployeeObj);
                   }
-                });
-
-                if (response.data.data && response.data.data.length > 0) {
-                  allEmployees.push(...response.data.data);
-                  // Check if this is the last page
-                  const totalPages = response.data.pagination?.pages || 1;
-                  hasMore = page < totalPages;
-                } else {
-                  hasMore = false;
+                } catch (error) {
+                  console.error("Error fetching full employee for edit mode:", error);
                 }
-
-                page++;
               }
-
-              setEmployees(allEmployees);
-              setFilteredEmployees(allEmployees); // Initialize filtered list with all employees
-
-              // If there's a specific employee selected in the expense, set the search term to that employee
-              if (expense.vendor?.name) {
-                setEmployeeSearchTerm(expense.vendor?.name);
-              }
-            } catch (error) {
-              console.error("Error fetching employees for edit mode:", error);
-              setEmployees([]);
-            } finally {
-              setLoadingEmployees(false);
             }
-          } else {
-            // If not editing an employee-related expense, clear the employee search term
-            setEmployeeSearchTerm('');
           }
 
-          // Set payment mode
+          if ((initialCategory === 'advocate' || initialCategory === 'expert') && expense.caseRows) {
+            setCaseRows(expense.caseRows.map(row => ({
+              doctor: row.doctor || "",
+              doctorId: row.doctorId || "",
+              caseStage: row.caseStage || "",
+              amount: row.amount?.toString() || "",
+              fromAddButton: false,
+              caseId: row.caseId || undefined
+            })));
+          } else if ((initialCategory === 'advocate' || initialCategory === 'expert')) {
+            setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
+          }
+
           if (expense.paymentMethod) {
             const paymentModeMap = {
               'cash': 'Cash',
@@ -2283,55 +2299,19 @@ const ExpenseForm = () => {
               'upi': 'UPI',
               'bank_transfer': 'Bank Transfer',
             };
-            const mappedPaymentMode = paymentModeMap[expense.paymentMethod] || expense.paymentMethod;
-            setPaymentMode(mappedPaymentMode);
-
-            // If the payment mode is Cash, ensure paidBy is cleared
-            if (mappedPaymentMode === 'Cash') {
-              setFormData(prev => ({
-                ...prev,
-                paidBy: ""
-              }));
-            }
+            setPaymentMode(paymentModeMap[expense.paymentMethod] || expense.paymentMethod);
           }
-
-          // For advocate/expert cases, set case rows if needed
-          if ((initialCategory === 'advocate' || initialCategory === 'expert') && expense.caseRows) {
-            // Load case rows from the existing expense
-            const loadedCaseRows = expense.caseRows.map(row => ({
-              doctor: row.doctor || "",
-              doctorId: row.doctorId || "",
-              caseStage: row.caseStage || "",
-              amount: row.amount?.toString() || "",
-              fromAddButton: false, // Don't automatically mark as fromAddButton, only show dropdown when doctorId exists
-              caseId: row.caseId || undefined
-            }));
-            setCaseRows(loadedCaseRows);
-
-            // If any of the loaded case rows have doctorId, set flag to fetch doctors after advocates/experts are loaded
-            const hasDoctorIds = expense.caseRows.some(row => row.doctorId);
-            if (hasDoctorIds) {
-              // Set a flag to trigger the doctor fetching after advocates/experts are loaded
-              setShouldFetchDoctorsAfterLoad(true);
-            }
-          } else if ((initialCategory === 'advocate' || initialCategory === 'expert') && (!expense.caseRows || expense.caseRows.length === 0)) {
-            // If there are no case rows in the expense data, initialize with an empty row
-            setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
-          }
-
         } catch (error) {
           console.error("Error loading expense data:", error);
-          alert("Error loading expense data: " + error.message);
         } finally {
           setLoading(false);
         }
       }
     };
-
     loadExpenseData();
-  }, [isEditMode, expenseId, advocates, experts]); // Add advocates and experts to the dependency array
+  }, [isEditMode, expenseId, fetchDoctorsForAdvocate, fetchDoctorsForExpert]);
 
-  // Calculate total based on category
+  // Calculate total
   useEffect(() => {
     let newTotal = 0;
     if (category === "office") {
@@ -2342,152 +2322,9 @@ const ExpenseForm = () => {
       newTotal = caseRows.reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0);
     }
     setTotal(newTotal);
-  }, [category, formData, caseRows]);
+  }, [category, formData.officeAmount, formData.bankAmount, caseRows]);
 
-  // Fetch employees when category is office and expense type requires employee selection
-  useEffect(() => {
-    const fetchAllEmployees = async () => {
-      if (category === "office" && (
-        formData.officeExpenseType === "Employee Salary" ||
-        formData.officeExpenseType === "Travelling Allowance" ||
-        formData.officeExpenseType === "Advance" ||
-        formData.officeExpenseType === "Incentive" ||
-        formData.officeExpenseType === "Other")) {
-        setLoadingEmployees(true);
-        try {
-          const allEmployees = [];
-          let page = 1;
-          let hasMore = true;
-
-          // Fetch all employees using pagination
-          while (hasMore) {
-            const response = await apiClient.get(apiEndpoints.employees.list, {
-              params: {
-                page: page,
-                limit: 100 // Use a higher limit to reduce API calls
-              }
-            });
-
-            if (response.data.data && response.data.data.length > 0) {
-              allEmployees.push(...response.data.data);
-              // Check if this is the last page
-              const totalPages = response.data.pagination?.pages || 1;
-              hasMore = page < totalPages;
-            } else {
-              hasMore = false;
-            }
-
-            page++;
-          }
-
-          setEmployees(allEmployees);
-          setFilteredEmployees(allEmployees); // Initialize filtered list with all employees
-        } catch (error) {
-          console.error("Error fetching employees:", error);
-          setEmployees([]);
-        } finally {
-          setLoadingEmployees(false);
-        }
-      } else {
-        // Clear employees list when not needed
-        setEmployees([]);
-        // Reset officeRecipient if user switches away from employee-related expense types
-        if (!(formData.officeExpenseType === "Employee Salary" ||
-          formData.officeExpenseType === "Travelling Allowance" ||
-          formData.officeExpenseType === "Advance" ||
-          formData.officeExpenseType === "Incentive" ||
-          formData.officeExpenseType === "Other")) {
-          setFormData(prev => ({
-            ...prev,
-            officeRecipient: "",
-            personType: "",
-            personId: ""
-          }));
-        }
-      }
-    };
-
-    fetchAllEmployees();
-  }, [category, formData.officeExpenseType]);
-
-  // Filter employees based on search term
-  useEffect(() => {
-    if (employeeSearchTerm.trim() === '') {
-      setFilteredEmployees(employees);
-    } else {
-      const term = employeeSearchTerm.toLowerCase();
-      const filtered = employees.filter(employee =>
-        employee.fullName.toLowerCase().includes(term) ||
-        employee.employeeId.toLowerCase().includes(term)
-      );
-      setFilteredEmployees(filtered);
-    }
-  }, [employeeSearchTerm, employees]);
-
-  // Handle office expense type change to ensure employee salary is handled properly
-  useEffect(() => {
-    if (category === 'office' && formData.officeExpenseType === 'Employee Salary') {
-      // Ensure employees are loaded when employee salary is selected
-      if (employees.length === 0 && !loadingEmployees) {
-        const fetchAllEmployees = async () => {
-          setLoadingEmployees(true);
-          try {
-            const allEmployees = [];
-            let page = 1;
-            let hasMore = true;
-
-            // Fetch all employees using pagination
-            while (hasMore) {
-              const response = await apiClient.get(apiEndpoints.employees.listdropdown, {
-                // params: {
-                //   page: page,
-                //   limit: 100 // Use a higher limit to reduce API calls
-                // }
-              });
-
-              if (response.data.data && response.data.data.length > 0) {
-                allEmployees.push(...response.data.data);
-                // Check if this is the last page
-                const totalPages = response.data.pagination?.pages || 1;
-                hasMore = page < totalPages;
-              } else {
-                hasMore = false;
-              }
-
-              page++;
-            }
-
-            setEmployees(allEmployees);
-            setFilteredEmployees(allEmployees); // Initialize filtered list with all employees
-          } catch (error) {
-            console.error("Error fetching employees for employee salary:", error);
-            setEmployees([]);
-          } finally {
-            setLoadingEmployees(false);
-          }
-        };
-
-        fetchAllEmployees();
-      }
-    }
-  }, [category, formData.officeExpenseType, employees.length, loadingEmployees]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const employeeDropdownElement = document.getElementById('employee-search-dropdown');
-      if (employeeDropdownElement && !employeeDropdownElement.contains(event.target)) {
-        setShowEmployeeDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Fetch bank details when component mounts
+  // Fetch bank details
   useEffect(() => {
     const fetchBankDetails = async () => {
       try {
@@ -2495,160 +2332,68 @@ const ExpenseForm = () => {
         const response = await apiClient.get(apiEndpoints.recBankDetails.list);
         if (response.data.success) {
           setBankDetails(response.data.data || []);
-        } else {
-          console.error('Failed to fetch bank details:', response.data.message);
-          setBankDetails([]);
         }
       } catch (error) {
         console.error('Error fetching bank details:', error);
-        setBankDetails([]);
       } finally {
         setLoadingBankDetails(false);
       }
     };
-
     fetchBankDetails();
   }, []);
-
-  // Update paidBy selection when bank details are loaded in edit mode
-  useEffect(() => {
-    if (isEditMode && expenseId && bankDetails.length > 0 && formData.paidBy) {
-      // Check if the current paidBy value exists in bank details
-      const bankExists = bankDetails.some(bank => bank.bankName === formData.paidBy);
-
-      // If it doesn't exist in the bank details, it might be a vendor name for non-bank expenses
-      // In this case, we keep it as is, but we could add logic to distinguish these cases
-    }
-  }, [bankDetails, isEditMode, expenseId, formData.paidBy]);
 
   const handleInputChange = async (e) => {
     const { name, value, files, type, checked } = e.target;
 
-    // Handle both advocateName and expertName in the same field depending on category
-    if ((name === "advocateName" || name === "expertName") && category === "advocate") {
-      setFormData(prev => ({
-        ...prev,
-        advocateName: value,
-        expertName: "", // Reset expert name when advocate category is selected
-        personType: "", // Reset person type
-        personId: ""    // Reset person ID
-      }));
-
-      // Fetch related doctors if a valid advocate is selected, but don't auto-populate cases
-      if (value && advocates.length > 0) {
-        const selectedAdvocate = advocates.find(a => a.fullName === value);
-        if (selectedAdvocate) {
-          setLoadingCases(true);
-          try {
-            // Only fetch the doctors associated with this advocate for the dropdown
-            await fetchDoctorsForAdvocate(selectedAdvocate._id);
-
-            // Clear any existing case rows and initialize with an empty row
-            setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
-
-            // Update form data to include advocate ID and type
-            setFormData(prev => ({
-              ...prev,
-              personType: 'advocate',
-              personId: selectedAdvocate._id
-            }));
-          } catch (error) {
-            console.error("Error fetching advocate doctors:", error);
-            setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
-          } finally {
-            setLoadingCases(false);
-          }
-        }
-      }
-    } else if ((name === "advocateName" || name === "expertName") && category === "expert") {
-      setFormData(prev => ({
-        ...prev,
-        expertName: value,
-        advocateName: "", // Reset advocate name when expert category is selected
-        personType: "", // Reset person type
-        personId: ""    // Reset person ID
-      }));
-
-      // Fetch related doctors if a valid expert is selected, but don't auto-populate cases
-      if (value && experts.length > 0) {
-        const selectedExpert = experts.find(e => e.fullName === value);
-        if (selectedExpert) {
-          setLoadingCases(true);
-          try {
-            // Only fetch the doctors associated with this expert for the dropdown
-            await fetchDoctorsForExpert(selectedExpert._id);
-
-            // Clear any existing case rows and initialize with an empty row
-            setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
-
-            // Update form data to include expert ID and type
-            setFormData(prev => ({
-              ...prev,
-              personType: 'expert',
-              personId: selectedExpert._id
-            }));
-          } catch (error) {
-            console.error("Error fetching expert doctors:", error);
-            setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
-          } finally {
-            setLoadingCases(false);
-          }
-        }
-      }
-    } else if (name === "taxApplicable") {
-      // Handle checkbox input for taxApplicable
-      setFormData(prev => ({
-        ...prev,
-        taxApplicable: type === 'checkbox' ? checked : value
-      }));
-    } else if (name === "paymentDateFormatted") {
-      // Handle date input in DD-MM-YY format
-      setFormData(prev => ({
-        ...prev,
-        paymentDateFormatted: value,
-        paymentDate: value ? formatDateToISO(value) : "" // Convert to ISO for backend
-      }));
-    } else if (name === "chequeDate") {
-      // Handle date input in ISO format for cheques (from date picker)
-      setFormData(prev => ({
-        ...prev,
-        chequeDate: value ? formatDateToDDMMYY(new Date(value)) : "", // Format for display
-        chequeDateISO: value // Store ISO format for backend
-      }));
-    } else if (name === "employeeSearch") {
-      // Handle employee search input
-      setEmployeeSearchTerm(value);
-    } else if (name === "officeExpenseType") {
-      // When changing office expense type to employee-related types, ensure employees are available
+    if ((name === "advocateName" || name === "expertName") && (category === "advocate" || category === "expert")) {
+      const selectedOption = e.target.selectedOption;
       setFormData(prev => ({
         ...prev,
         [name]: value,
-        // Reset person info when changing expense type
-        personType: "",
-        personId: ""
+        [category === "advocate" ? "expertName" : "advocateName"]: "",
+        personType: category,
+        personId: selectedOption ? selectedOption._id : ""
       }));
-    } else if (name === "paidBy") {
-      // When paidBy changes, we'll set it but handle bankName logic separately
-      setFormData(prev => ({
-        ...prev,
-        [name]: files ? files[0] : value
-      }));
-    } else if (name === "paymentMode") {
-      // When payment mode changes to Cash, clear the paidBy field
-      setPaymentMode(value);
-      if (value === "Cash") {
-        setFormData(prev => ({
-          ...prev,
-          paidBy: ""
-        }));
+
+      if (selectedOption && selectedOption._id) {
+        setLoadingCases(true);
+        try {
+          if (category === "advocate") {
+            await fetchDoctorsForAdvocate(selectedOption._id);
+          } else {
+            await fetchDoctorsForExpert(selectedOption._id);
+          }
+          setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
+        } catch (error) {
+          console.error("Error fetching doctors:", error);
+        } finally {
+          setLoadingCases(false);
+        }
+      } else {
+        if (category === "advocate") setDoctorsForAdvocate([]);
+        else setDoctorsForExpert([]);
+        setCaseRows([{ doctor: "", caseStage: "", amount: "", fromAddButton: false }]);
       }
-    } else {
+    } else if (name === "taxApplicable") {
+      setFormData(prev => ({ ...prev, taxApplicable: type === 'checkbox' ? checked : value }));
+    } else if (name === "paymentDateFormatted") {
+      setFormData(prev => ({ ...prev, paymentDateFormatted: value, paymentDate: value ? formatDateToISO(value) : "" }));
+    } else if (name === "chequeDate") {
       setFormData(prev => ({
         ...prev,
-        [name]: files ? files[0] : value
+        chequeDate: value ? formatDateToDDMMYY(new Date(value)) : "",
+        chequeDateISO: value
       }));
+    } else if (name === "officeExpenseType") {
+      setFormData(prev => ({ ...prev, [name]: value, personType: "", personId: "" }));
+    } else if (name === "paymentMode") {
+      setPaymentMode(value);
+      if (value === "Cash") setFormData(prev => ({ ...prev, paidBy: "" }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: files ? files[0] : value }));
     }
   };
+
 
   const handleCaseRowChange = (index, field, value) => {
     const updated = [...caseRows];
@@ -2656,150 +2401,8 @@ const ExpenseForm = () => {
     setCaseRows(updated);
   };
 
-  const [doctorsForAdvocate, setDoctorsForAdvocate] = useState([]);
-  const [doctorsForExpert, setDoctorsForExpert] = useState([]);
-  const [loadingDoctors, setLoadingDoctors] = useState(false);
-  const [casesForAddedDoctor, setCasesForAddedDoctor] = useState({});
-  const [fetchDoctorsForEdit, setFetchDoctorsForEdit] = useState(false);
-  const [shouldFetchDoctorsAfterLoad, setShouldFetchDoctorsAfterLoad] = useState(false);
+  // Placeholder to remove duplicate logic. The actual logic was moved above handleInputChange.
 
-  const fetchDoctorsForAdvocate = async (advocateId) => {
-    setLoadingDoctors(true);
-    try {
-      const response = await apiClient.get(apiEndpoints.expenses.cases.advocate(advocateId));
-      if (response.data.success) {
-        // Store the cases data to be able to retrieve case types later
-        setAdvocateCases(response.data.data || []);
-
-        // Extract unique doctor names and IDs from cases
-        const uniqueDoctorsMap = new Map();
-        response.data.data.forEach(caseItem => {
-          // Use doctorId if available, otherwise use a combination of name and a generated ID
-          const doctorKey = caseItem.doctorId || caseItem.doctorName || caseItem.patientName;
-          if (doctorKey && !uniqueDoctorsMap.has(doctorKey)) {
-            uniqueDoctorsMap.set(doctorKey, {
-              _id: caseItem.doctorId || `temp_${doctorKey}`, // Use actual doctorId if available
-              fullName: caseItem.doctorName || caseItem.patientName || doctorKey
-            });
-          }
-        });
-
-        const doctorObjects = Array.from(uniqueDoctorsMap.values());
-        setDoctorsForAdvocate(doctorObjects);
-      } else {
-        setDoctorsForAdvocate([]);
-        setAdvocateCases([]);
-      }
-    } catch (error) {
-      console.error("Error fetching doctors for advocate:", error);
-      setDoctorsForAdvocate([]);
-      setAdvocateCases([]);
-    } finally {
-      setLoadingDoctors(false);
-    }
-  };
-
-  const fetchDoctorsForExpert = async (expertId) => {
-    setLoadingDoctors(true);
-    try {
-      const response = await apiClient.get(apiEndpoints.expenses.cases.expert(expertId));
-      if (response.data.success) {
-        // Store the cases data to be able to retrieve case types later
-        setExpertCases(response.data.data || []);
-
-        // Extract unique doctor names and IDs from cases
-        const uniqueDoctorsMap = new Map();
-        response.data.data.forEach(caseItem => {
-          // Use doctorId if available, otherwise use a combination of name and a generated ID
-          const doctorKey = caseItem.doctorId || caseItem.doctorName || caseItem.patientName;
-          if (doctorKey && !uniqueDoctorsMap.has(doctorKey)) {
-            uniqueDoctorsMap.set(doctorKey, {
-              _id: caseItem.doctorId || `temp_${doctorKey}`, // Use actual doctorId if available
-              fullName: caseItem.doctorName || caseItem.patientName || doctorKey
-            });
-          }
-        });
-
-        const doctorObjects = Array.from(uniqueDoctorsMap.values());
-        setDoctorsForExpert(doctorObjects);
-      } else {
-        setDoctorsForExpert([]);
-        setExpertCases([]);
-      }
-    } catch (error) {
-      console.error("Error fetching doctors for expert:", error);
-      setDoctorsForExpert([]);
-      setExpertCases([]);
-    } finally {
-      setLoadingDoctors(false);
-    }
-  };
-
-  // Effect to fetch doctors after advocates/experts are loaded in edit mode
-  useEffect(() => {
-    if (isEditMode && expenseId && shouldFetchDoctorsAfterLoad &&
-      ((category === 'advocate' && advocates.length > 0) ||
-        (category === 'expert' && experts.length > 0))) {
-
-      if (category === 'advocate' && formData.advocateName) {
-        const selectedAdvocate = advocates.find(a => a.fullName === formData.advocateName);
-        if (selectedAdvocate) {
-          fetchDoctorsForAdvocate(selectedAdvocate._id);
-        }
-      } else if (category === 'expert' && formData.expertName) {
-        const selectedExpert = experts.find(e => e.fullName === formData.expertName);
-        if (selectedExpert) {
-          fetchDoctorsForExpert(selectedExpert._id);
-        }
-      }
-
-      // Reset the flag
-      setShouldFetchDoctorsAfterLoad(false);
-    }
-  }, [isEditMode, expenseId, shouldFetchDoctorsAfterLoad, category, advocates, experts, formData.advocateName, formData.expertName]);
-
-  // Effect to ensure proper doctor selection in case rows after doctors are loaded in edit mode
-  useEffect(() => {
-    // Only run this effect when in edit mode and doctors have been loaded
-    if (isEditMode && expenseId &&
-      ((category === 'advocate' && doctorsForAdvocate.length > 0) ||
-        (category === 'expert' && doctorsForExpert.length > 0)) &&
-      caseRows.length > 0) {
-
-      // Check if any case row has a doctorId that should be matched to the loaded doctors
-      const updatedCaseRows = caseRows.map(row => {
-        if (row.doctorId) {
-          // Find if this doctorId exists in the loaded doctors list
-          let doctorExists = false;
-          let matchedDoctor = null;
-
-          if (category === 'advocate') {
-            matchedDoctor = doctorsForAdvocate.find(d => d._id === row.doctorId);
-            doctorExists = !!matchedDoctor;
-          } else if (category === 'expert') {
-            matchedDoctor = doctorsForExpert.find(d => d._id === row.doctorId);
-            doctorExists = !!matchedDoctor;
-          }
-
-          // If doctor exists in the list but the name doesn't match, update it
-          if (doctorExists && matchedDoctor.fullName !== row.doctor) {
-            return {
-              ...row,
-              doctor: matchedDoctor.fullName
-            };
-          }
-        }
-
-        // Return the row as is if no changes needed
-        return row;
-      });
-
-      // Update case rows if any changes were made
-      if (JSON.stringify(caseRows) !== JSON.stringify(updatedCaseRows)) {
-        setCaseRows(updatedCaseRows);
-      }
-    }
-  }, [isEditMode, expenseId, category, doctorsForAdvocate, doctorsForExpert, caseRows]);
 
   const addCaseRow = async () => {
     if (category === "advocate" || category === "expert") {
@@ -2930,31 +2533,13 @@ const ExpenseForm = () => {
 
       // Add related person reference for tracking expenses per individual
       if (category === 'advocate' && formData.advocateName) {
-        // Find the selected advocate by name to get their ID
-        const selectedAdvocate = advocates.find(a => a.fullName === formData.advocateName);
-        if (selectedAdvocate) {
-          expenseData.append('personType', 'advocate');
-          expenseData.append('personId', selectedAdvocate._id);
-          expenseData.append('personName', selectedAdvocate.fullName);
-        } else if (formData.personId && formData.personType === 'advocate') {
-          // Use stored person details if advocate not found in list
-          expenseData.append('personType', 'advocate');
-          expenseData.append('personId', formData.personId);
-          expenseData.append('personName', formData.advocateName);
-        }
+        expenseData.append('personType', 'advocate');
+        expenseData.append('personId', formData.personId || '');
+        expenseData.append('personName', formData.advocateName);
       } else if (category === 'expert' && formData.expertName) {
-        // Find the selected expert by name to get their ID
-        const selectedExpert = experts.find(e => e.fullName === formData.expertName);
-        if (selectedExpert) {
-          expenseData.append('personType', 'expert');
-          expenseData.append('personId', selectedExpert._id);
-          expenseData.append('personName', selectedExpert.fullName);
-        } else if (formData.personId && formData.personType === 'expert') {
-          // Use stored person details if expert not found in list
-          expenseData.append('personType', 'expert');
-          expenseData.append('personId', formData.personId);
-          expenseData.append('personName', formData.expertName);
-        }
+        expenseData.append('personType', 'expert');
+        expenseData.append('personId', formData.personId || '');
+        expenseData.append('personName', formData.expertName);
       } else if (category === 'office' && (
         formData.officeExpenseType === 'Employee Salary' ||
         formData.officeExpenseType === 'Travelling Allowance' ||
@@ -2962,23 +2547,9 @@ const ExpenseForm = () => {
         formData.officeExpenseType === 'Incentive' ||
         formData.officeExpenseType === 'Other'
       ) && (formData.officeRecipient || formData.personId)) {
-        // Try to find the employee by name or use stored personId
-        let selectedEmployee = employees.find(e => e.fullName === formData.officeRecipient);
-        if (!selectedEmployee && formData.personId) {
-          // If employee wasn't found by name but personId exists, fetch that employee
-          try {
-            // We might not have all employees loaded, so use the stored ID if available
-            selectedEmployee = { _id: formData.personId, fullName: formData.officeRecipient || formData.paidBy };
-          } catch (e) {
-            console.log("Could not find employee, using stored values");
-          }
-        }
-
-        if (selectedEmployee) {
-          expenseData.append('personType', 'employee');
-          expenseData.append('personId', selectedEmployee._id);
-          expenseData.append('personName', selectedEmployee.fullName);
-        }
+        expenseData.append('personType', 'employee');
+        expenseData.append('personId', formData.personId || '');
+        expenseData.append('personName', formData.officeRecipient);
       } else if (formData.personType && formData.personId) {
         // Use stored personType and personId if available (for office expenses where employee was selected)
         expenseData.append('personType', formData.personType);
@@ -3023,7 +2594,7 @@ const ExpenseForm = () => {
 
       if (response.data.success) {
         alert(isEditMode ? "Expense updated successfully!" : "Expense created successfully!");
-        navigate("/superadmin/expense-list");
+        navigate("/admin/expense-list");
       } else {
         alert(response.data.message || "Failed to save expense");
       }
@@ -3035,7 +2606,7 @@ const ExpenseForm = () => {
 
   const handleCancel = () => {
     if (window.confirm("Are you sure? Unsaved changes will be lost.")) {
-      navigate("/superadmin/expense-list");
+      navigate("/admin/expense-list");
     }
   };
 
@@ -3214,87 +2785,52 @@ const ExpenseForm = () => {
                     formData.officeExpenseType === "Advance" ||
                     formData.officeExpenseType === "Incentive" ||
                     formData.officeExpenseType === "Other") ? (
-                    loadingEmployees ? (
-                      <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100">
-                        Loading employees...
-                      </div>
-                    ) : (
-                      <div className="relative" id="employee-search-dropdown">
-                        <input
-                          type="text"
-                          name="employeeSearch"
-                          value={employeeSearchTerm}
-                          onChange={handleInputChange}
-                          onFocus={() => setShowEmployeeDropdown(true)}
-                          placeholder="Search employee or enter name..."
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {showEmployeeDropdown && (
-                          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            {filteredEmployees.length > 0 ? (
-                              <>
-                                <div className="px-4 py-2 text-sm font-semibold text-gray-500 bg-gray-50">
-                                  Select Employee
-                                </div>
-                                {filteredEmployees.map((employee) => (
-                                  <div
-                                    key={employee._id}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                    onClick={() => {
-                                      setFormData(prev => ({
-                                        ...prev,
-                                        officeRecipient: employee.fullName,
-                                        personType: 'employee',
-                                        personId: employee._id
-                                      }));
-                                      setEmployeeSearchTerm(employee.fullName);
-                                      setShowEmployeeDropdown(false);
-                                    }}
-                                  >
-                                    {employee.fullName} ({employee.employeeId})
-                                  </div>
-                                ))}
-                                <div className="px-4 py-2 text-sm font-semibold text-gray-500 bg-gray-50 border-t border-gray-200">
-                                  Or Enter Custom Name
-                                </div>
-                                <div
-                                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium"
-                                  onClick={() => {
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      officeRecipient: employeeSearchTerm,
-                                      personType: '',
-                                      personId: ''
-                                    }));
-                                    setShowEmployeeDropdown(false);
-                                  }}
-                                >
-                                  Use "{employeeSearchTerm}" as custom name
-                                </div>
-                              </>
-                            ) : (
-                              <div className="px-4 py-2 text-gray-500">
-                                No employees found
-                                <div
-                                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium mt-2"
-                                  onClick={() => {
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      officeRecipient: employeeSearchTerm,
-                                      personType: '',
-                                      personId: ''
-                                    }));
-                                    setShowEmployeeDropdown(false);
-                                  }}
-                                >
-                                  Use "{employeeSearchTerm}" as custom name
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )
+                    <Select
+                      name="officeRecipient"
+                      value={selectedEmployee}
+                      onInputChange={(inputValue) => {
+                        fetchEmployees(inputValue);
+                      }}
+                      onChange={(selectedOption) => {
+                        setSelectedEmployee(selectedOption);
+                        setFormData(prev => ({
+                          ...prev,
+                          officeRecipient: selectedOption ? selectedOption.value : "",
+                          personType: selectedOption ? 'employee' : '',
+                          personId: selectedOption ? selectedOption._id : ''
+                        }));
+                      }}
+                      options={employeeOptions}
+                      isLoading={loadingEmployees}
+                      placeholder="Search employee..."
+                      isSearchable={true}
+                      isClearable={true}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderColor: '#d1d5db',
+                          borderRadius: '0.5rem',
+                          padding: '0.125rem 0.25rem',
+                          boxShadow: 'none',
+                          '&:hover': { borderColor: '#9ca3af' },
+                        }),
+                        valueContainer: (base) => ({
+                          ...base,
+                          padding: '0.375rem 0.75rem',
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          padding: 0,
+                          margin: 0,
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: '#9ca3af',
+                        }),
+                      }}
+                    />
                   ) : (
                     <input
                       type="text"
@@ -3398,82 +2934,83 @@ const ExpenseForm = () => {
               {category === "advocate" ? "Advocate" : "Expert"} Payment
             </h3>
             <div className="space-y-6">
-<div>
-  <label className="block text-sm font-normal text-gray-700 mb-2">
-    {category === "advocate" ? "Advocate" : "Expert"} Name
-  </label>
+              <div>
+                <label className="block text-sm font-normal text-gray-700 mb-2">
+                  {category === "advocate" ? "Advocate" : "Expert"} Name
+                </label>
 
-  {loading && (category === "advocate" || category === "expert") ? (
-    <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 text-gray-500">
-      Loading...
-    </div>
-  ) : (
-    <Select
-      name={category === "advocate" ? "advocateName" : "expertName"}
-      value={
-        // Find the selected option object (React-Select works with objects)
-        (category === "advocate" ? advocates : experts)
-          .map(item => ({
-            value: item.fullName,
-            label:
-              category === "advocate"
-                ? `${item.fullName} (${item.barCouncilNumber || '—'}) - ${item.specialization?.join(', ') || 'N/A'}`
-                : `${item.fullName} - ${item.expertise?.join(', ') || 'N/A'}`,
-            // You can add more data if needed
-            _id: item._id,
-          }))
-          .find(opt => opt.value === formData[category === "advocate" ? "advocateName" : "expertName"])
-      }
-      onChange={(selectedOption) => {
-        // selectedOption can be null when cleared
-        handleInputChange({
-          target: {
-            name: category === "advocate" ? "advocateName" : "expertName",
-            value: selectedOption ? selectedOption.value : "",
-          },
-        });
-      }}
-      options={
-        (category === "advocate" ? advocates : experts).map(item => ({
-          value: item.fullName,
-          label:
-            category === "advocate"
-              ? `${item.fullName} (${item.barCouncilNumber || '—'}) - ${item.specialization?.join(', ') || 'N/A'}`
-              : `${item.fullName} - ${item.expertise?.join(', ') || 'N/A'}`,
-          _id: item._id, // optional — useful for other logic
-        }))
-      }
-      placeholder={`Select ${category === "advocate" ? "Advocate" : "Expert"}`}
-      isSearchable={true}
-      isClearable={true}
-      className="react-select-container"
-      classNamePrefix="react-select"
-      styles={{
-        control: (base) => ({
-          ...base,
-          borderColor: '#d1d5db', // gray-300
-          borderRadius: '0.5rem', // rounded-lg
-          padding: '0.125rem 0.25rem',
-          boxShadow: 'none',
-          '&:hover': { borderColor: '#9ca3af' },
-        }),
-        valueContainer: (base) => ({
-          ...base,
-          padding: '0.375rem 0.75rem', // py-3 px-4
-        }),
-        input: (base) => ({
-          ...base,
-          padding: 0,
-          margin: 0,
-        }),
-        placeholder: (base) => ({
-          ...base,
-          color: '#9ca3af',
-        }),
-      }}
-    />
-  )}
-</div>
+                {loading && (category === "advocate" || category === "expert") ? (
+                  <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 text-gray-500">
+                    Loading...
+                  </div>
+                ) : (
+                  <Select
+                    name={category === "advocate" ? "advocateName" : "expertName"}
+                    value={
+                      category === "advocate" ? selectedAdvocate : selectedExpert
+                    }
+                    onInputChange={(inputValue) => {
+                      if (category === "advocate") {
+                        fetchAdvocates(inputValue);
+                      } else {
+                        fetchExperts(inputValue);
+                      }
+                    }}
+                    onChange={async (selectedOption) => {
+                      const name = category === "advocate" ? "advocateName" : "expertName";
+                      const value = selectedOption ? selectedOption.value : "";
+
+                      // Update selection state
+                      if (category === "advocate") {
+                        setSelectedAdvocate(selectedOption);
+                      } else {
+                        setSelectedExpert(selectedOption);
+                      }
+
+                      // Trigger handleInputChange logic
+                      handleInputChange({
+                        target: {
+                          name: name,
+                          value: value,
+                          selectedOption: selectedOption // Pass selectedOption to handle extra logic
+                        },
+                      });
+                    }}
+                    options={
+                      category === "advocate" ? advocateOptions : expertOptions
+                    }
+                    isLoading={category === "advocate" ? loadingAdvocates : loadingExperts}
+                    placeholder={`Select ${category === "advocate" ? "Advocate" : "Expert"}`}
+                    isSearchable={true}
+                    isClearable={true}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderColor: '#d1d5db', // gray-300
+                        borderRadius: '0.5rem', // rounded-lg
+                        padding: '0.125rem 0.25rem',
+                        boxShadow: 'none',
+                        '&:hover': { borderColor: '#9ca3af' },
+                      }),
+                      valueContainer: (base) => ({
+                        ...base,
+                        padding: '0.375rem 0.75rem', // py-3 px-4
+                      }),
+                      input: (base) => ({
+                        ...base,
+                        padding: 0,
+                        margin: 0,
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: '#9ca3af',
+                      }),
+                    }}
+                  />
+                )}
+              </div>
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -3482,80 +3019,89 @@ const ExpenseForm = () => {
 
                 {caseRows.map((row, index) => (
                   <div key={index} className="grid grid-cols-3 gap-4">
-                    {loadingDoctors ? (
-                      <select
-                        disabled
-                        className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 text-gray-500"
-                      >
-                        <option>Loading doctors...</option>
-                      </select>
-                    ) : (
-                      <select
-                        value={row.doctorId || row.doctor} // Use doctorId if available, otherwise use doctor name for backward compatibility
-                        onChange={(e) => {
-                          // Find the selected doctor to get their details
-                          let selectedDoctor;
-                          if (category === 'advocate') {
-                            selectedDoctor = doctorsForAdvocate.find(doc => doc._id === e.target.value);
-                          } else if (category === 'expert') {
-                            selectedDoctor = doctorsForExpert.find(doc => doc._id === e.target.value);
-                          }
+                    <Select
+                      value={
+                        row.doctorId
+                          ? { value: row.doctor, label: row.doctor, _id: row.doctorId }
+                          : null
+                      }
+                      onInputChange={(inputValue) => {
+                        if (inputValue) {
+                          fetchDoctors(inputValue);
+                        }
+                      }}
+                      onChange={(selectedOption) => {
+                        // ... same logic
+                        handleCaseRowChange(index, "doctor", selectedOption ? selectedOption.value : "");
+                        handleCaseRowChange(index, "doctorId", selectedOption ? selectedOption._id : "");
 
-                          // Set both doctor name and ID
-                          handleCaseRowChange(index, "doctor", selectedDoctor ? selectedDoctor.fullName : "");
-                          handleCaseRowChange(index, "doctorId", selectedDoctor ? selectedDoctor._id : "");
+                        if (selectedOption) {
+                          try {
+                            let doctorCase;
+                            if (category === 'advocate') {
+                              doctorCase = advocateCases.find(
+                                item => (item.doctorId === selectedOption._id) ||
+                                  (item.doctorName === selectedOption.value)
+                              );
+                            } else if (category === 'expert') {
+                              doctorCase = expertCases.find(
+                                item => (item.doctorId === selectedOption._id) ||
+                                  (item.doctorName === selectedOption.value)
+                              );
+                            }
 
-                          // Auto-fill case stage based on selected doctor
-                          if (selectedDoctor) {
-                            try {
-                              // Find the case for the selected doctor from the stored cases
-                              let doctorCase;
-                              if (category === 'advocate') {
-                                doctorCase = advocateCases.find(
-                                  item => (item.doctorId === selectedDoctor._id) ||
-                                    (item.doctorName === selectedDoctor.fullName) ||
-                                    (item.patientName === selectedDoctor.fullName)
-                                );
-                              } else if (category === 'expert') {
-                                doctorCase = expertCases.find(
-                                  item => (item.doctorId === selectedDoctor._id) ||
-                                    (item.doctorName === selectedDoctor.fullName) ||
-                                    (item.patientName === selectedDoctor.fullName)
-                                );
-                              }
-
-                              if (doctorCase) {
-                                // Auto-fill the case stage with the caseType or caseStage from the response
-                                handleCaseRowChange(index, "caseStage", doctorCase.caseType || doctorCase.caseStage || "");
-                              } else {
-                                // If no specific case found for this doctor, clear the case stage
-                                handleCaseRowChange(index, "caseStage", "");
-                              }
-                            } catch (error) {
-                              console.error("Error finding case details for doctor:", error);
-                              // On error, clear the case stage
+                            if (doctorCase) {
+                              handleCaseRowChange(index, "caseStage", doctorCase.caseType || doctorCase.caseStage || "");
+                            } else {
                               handleCaseRowChange(index, "caseStage", "");
                             }
-                          } else {
-                            // If no doctor is selected, clear the case stage
+                          } catch (error) {
+                            console.error("Error finding case details for doctor:", error);
                             handleCaseRowChange(index, "caseStage", "");
                           }
-                        }}
-                        className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      >
-                        <option value="">Select Doctor</option>
-                        {category === 'advocate' && doctorsForAdvocate.map((doctor) => (
-                          <option key={doctor._id} value={doctor._id}>
-                            {doctor.fullName}
-                          </option>
-                        ))}
-                        {category === 'expert' && doctorsForExpert.map((doctor) => (
-                          <option key={doctor._id} value={doctor._id}>
-                            {doctor.fullName}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                        } else {
+                          handleCaseRowChange(index, "caseStage", "");
+                        }
+                      }}
+                      options={
+                        doctorOptions.length > 0
+                          ? doctorOptions
+                          : (category === 'advocate' ? doctorsForAdvocate : doctorsForExpert).map(d => ({
+                            value: d.fullName,
+                            label: d.fullName,
+                            _id: d._id
+                          }))
+                      }
+                      isLoading={loadingDoctors}
+                      placeholder="Select Doctor"
+                      isSearchable={true}
+                      isClearable={true}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderColor: '#d1d5db',
+                          borderRadius: '0.5rem',
+                          padding: '0.125rem 0.25rem',
+                          boxShadow: 'none',
+                          '&:hover': { borderColor: '#9ca3af' },
+                        }),
+                        valueContainer: (base) => ({
+                          ...base,
+                          padding: '0.375rem 0.75rem',
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          padding: 0,
+                          margin: 0,
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: '#9ca3af',
+                        }),
+                      }}
+                    />
                     <input
                       type="text"
                       placeholder="Case Stage"
