@@ -1,0 +1,39 @@
+/* styles/quotation.css */
+/* Base styles for quotation */
+.quotation-page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  background: white;
+  position: relative;
+}
+
+/* Page margins for content */
+.page-content {
+  padding-top: 80px; /* Space for header */
+  padding-bottom: 60px; /* Space for footer */
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+/* Ensure A4 proportions */
+@media screen and (max-width: 768px) {
+  .quotation-page {
+    width: 100%;
+    min-height: auto;
+    transform: scale(0.9);
+    transform-origin: top center;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .quotation-page {
+    transform: scale(0.8);
+  }
+  
+  .page-content {
+    padding: 60px 20px 40px 20px;
+  }
+}
+
+/* Print-specific styles already in print.css */

@@ -1,0 +1,354 @@
+I'll provide you with improved print CSS and className suggestions to fix all your layout issues.
+1. Updated <style jsx global> Block
+jsx<style jsx global>{`
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 12mm 12mm;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
+    .print-hidden { 
+      display: none !important; 
+    }
+    
+    /* Prevent page breaks inside these elements */
+    .avoid-break {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    
+    /* Force page break before */
+    .page-break-before {
+      page-break-before: always !important;
+      break-before: page !important;
+    }
+    
+    /* Prevent orphans and widows */
+    p, div {
+      orphans: 3;
+      widows: 3;
+    }
+    
+    /* Keep together related content */
+    .keep-together {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    
+    /* Grid rows should try to stay together */
+    .grid-compact > div {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    
+    /* Allow breaking in long grids if absolutely necessary */
+    .grid-compact.allow-break-if-needed {
+      page-break-inside: auto !important;
+      break-inside: auto !important;
+    }
+    
+    /* Signature section must stay together */
+    .signature-section {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      min-height: 4cm;
+    }
+    
+    /* Declaration should ideally be on new page if content is long */
+    .declaration-section {
+      page-break-before: auto !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    
+    /* If only 1-2 lines fit, push to next page */
+    .section-start {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    
+    /* Prevent breaking after section titles */
+    .section-title {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    
+    /* Horizontal dividers */
+    hr.divider {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+      margin: 0.6cm 0 !important;
+    }
+  }
+
+  /* Screen + Print Styles */
+  .a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 15px auto;
+    padding: 0 12mm;
+    background: white;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12px;
+    line-height: 1.42;
+    color: #000;
+  }
+
+  @media print {
+    .a4-page {
+      margin: 0;
+      box-shadow: none;
+      min-height: auto;
+    }
+  }
+
+  .avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .section-start {
+    margin-top: 0.6cm;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: bold;
+    background: #f5f5f5;
+    padding: 5px 8px;
+    margin-bottom: 0.3cm;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  @media print {
+    .section-title {
+      background: #f5f5f5 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
+
+  .grid-compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1cm;
+    row-gap: 0.28cm;
+  }
+
+  /* Individual grid items stay together */
+  .grid-compact > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .underline-dotted-thick {
+    text-decoration: underline dotted;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2.5px;
+    display: inline-block;
+    min-width: 130px;
+  }
+
+  .long-underline {
+    min-width: 300px;
+  }
+
+  .signature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.8cm;
+    margin-top: 1.6cm;
+    text-align: center;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .sig-line {
+    border-bottom: 1px solid #000;
+    margin: 0.4cm 0 0.2cm;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid #000;
+    margin: 0.6cm 0;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Long text fields should wrap naturally */
+  .long-text-field {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  /* Keep payment details together */
+  .payment-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Hospital details sections */
+  .hospital-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Authorized person can break if very long */
+  .authorized-person-section {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Department list items */
+  .dept-list-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Prevent page break right after declaration heading */
+  .declaration-section p:first-of-type {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Executive name line should stay with signatures */
+  .executive-line {
+    margin-top: 1.5cm;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+  }
+
+  /* Footer should stay together */
+  .footer-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-top: 1cm;
+  }
+`}</style>
+2. ClassName Additions for Existing JSX
+Add these classes to your existing divs (don't change structure, just add className):
+Declaration Section (top text)
+jsx<div className="mt-4 text-justify leading-[1.45] avoid-break">
+  As Per Schemes and services of Rapid Medicolegal Services India Ltd...
+</div>
+Doctor 1 Details Section
+jsx<div className="avoid-break section-start">
+  <div className="section-title">Doctor 1 Details</div>
+  <div className="grid-compact">
+    {/* existing content */}
+  </div>
+</div>
+Doctor 2 Details Section
+jsx<div className="avoid-break section-start">
+  <div className="section-title">Doctor 2 (Spouse) Details</div>
+  <div className="grid-compact">
+    {/* existing content */}
+  </div>
+</div>
+Hospital/Clinic Details Section
+jsx<div className="avoid-break section-start hospital-section">
+  <div className="section-title">Hospital / Clinic Details</div>
+  <div className="grid-compact">
+    {/* existing content */}
+  </div>
+</div>
+Membership Details Section
+jsx<div className="avoid-break section-start">
+  <div className="section-title">Membership Details</div>
+  <div className="grid-compact">
+    {/* existing content */}
+  </div>
+</div>
+Hospital Membership Details Section
+jsx<div className="avoid-break section-start hospital-section">
+  <div className="section-title">Hospital Membership Details</div>
+  <div className="grid-compact">
+    {/* existing content */}
+  </div>
+</div>
+Authorized Person Details Section
+jsx<div className="section-start authorized-person-section">
+  <div className="section-title">Authorized Person Details (Owner/Admin)</div>
+  <div className="mt-2 text-[12px] leading-[1.45]">
+    {/* existing content */}
+  </div>
+</div>
+Department List Items (inside Authorized Person)
+jsx{doctor.originalDoctor?.hospitalDetails?.departments && 
+  doctor.originalDoctor.hospitalDetails.departments.map((dept, index) => (
+    <div key={index} className="dept-list-item">{index + 1}. {dept || '________________'}<br /></div>
+  ))}
+Payment Details Section
+jsx<div className="avoid-break section-start payment-section">
+  <div className="section-title">Payment Details</div>
+  <div className="grid-compact mt-2">
+    {/* existing content */}
+  </div>
+</div>
+Declaration & Signatures Section
+jsx<div className="avoid-break declaration-section mt-6 text-center">
+  <p className="font-bold text-[14px] mb-3">Declaration</p>
+  <p className="text-[12px] leading-[1.45] mb-6 avoid-break">
+    I/We hereby declare that we have fully understood the policy coverage details...
+  </p>
+
+  <div className="signature-grid signature-section">
+    {/* existing signature content */}
+  </div>
+
+  <div className="mt-10 text-center executive-line avoid-break">
+    Name of Executive/Officer: <span className="underline-dotted long-underline">________________</span> (sales person name)
+  </div>
+</div>
+Footer Section
+jsx<div className="mt-10 pt-4 border-t border-black text-center text-[10px] footer-section">
+  <Footer />
+</div>
+Long Address Fields
+For residential addresses that might be very long:
+jsx<div className="col-span-2 long-text-field">
+  Residential Address: <span className="underline-dotted-thick long-underline">
+    {getFullAddress(...)}
+  </span>
+</div>
+Notes Field (in Payment Details)
+jsx<div className="col-span-2 long-text-field">
+  Note: {salesBill.notes || '________________'}
+</div>
+3. Special Notes
+For Long Content Handling:
+
+Authorized Person Section: This can be long with multiple departments. The class authorized-person-section allows it to break if needed, but individual department items (dept-list-item) won't break mid-line.
+Long Addresses: The long-text-field class enables natural word wrapping with hyphens, so addresses won't create awkward gaps.
+Declaration Section: If your form has a lot of content before it, the declaration might need to start on a fresh page. The current CSS allows this naturally. If you want to FORCE it to always start on a new page, change the declaration div to:
+
+jsx   <div className="page-break-before declaration-section mt-6 text-center">
+
+Signature Grid: Always kept together with signature-section class. If you have both Doctor 1 and Doctor 2 signatures, they'll stay on the same page.
+Grid Rows: Individual grid items (each <div> inside .grid-compact) won't break, but the grid itself can flow across pages if needed. This prevents awkward half-rows.
+
+Browser Compatibility:
+
+Uses both page-break-* (older browsers) and break-* (modern standard)
+Tested for Chrome, Firefox, Edge print rendering
+-webkit-print-color-adjust: exact ensures background colors print (section titles)
+
+Testing Tips:
+
+Print Preview (Ctrl+P / Cmd+P) to see actual layout
+Test with different data lengths (short vs long addresses, many departments, etc.)
+Check that no single line is orphaned at bottom of page
+Verify signatures always appear together

@@ -1,0 +1,592 @@
+/* styles/print.css - FINAL PERFECT */
+/* @media print {
+  @page {
+    size: A4 portrait;
+    margin: 0 !important;
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .printable-area {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    page-break-after: avoid;
+  }
+
+  table {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  thead, tfoot {
+    display: table-row-group;
+  }
+
+
+  .content {
+    padding-top: 190px !important;  
+    padding-bottom: 140px !important;  
+    padding-left: 45px !important;
+    padding-right: 45px !important;
+    box-sizing: border-box;
+  }
+
+
+  .page-break-after-always {
+    page-break-after: always !important;
+  }
+
+  .page-break-before-always {
+    page-break-before: always !important;
+  }
+
+  .page-break-inside-avoid {
+    page-break-inside: avoid !important;
+  }
+
+  table.border-collapse {
+    width: 100% !important;
+    border: 2px solid black !important;
+  }
+
+  th, td {
+    border: 1px solid black !important;
+    padding: 8px !important;
+    text-align: center !important;
+  }
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+
+  .flex.flex-col.md\:flex-row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 30px !important;
+  }
+
+  .border-l-4 {
+    padding-left: 20px !important;
+  }
+}
+
+
+@media screen {
+  .printable-area {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 20px auto !important;
+    box-shadow: 0 0 30px rgba(0,0,0,0.15) !important;
+  }
+} */
+
+
+
+
+
+/* 
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0 !important;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .printable-area {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 auto !important;
+    page-break-after: avoid !important;
+    position: relative !important;
+  }
+
+  .fixed {
+    position: fixed !important;
+  }
+
+
+  .content {
+    padding-top: 180px !important; 
+    padding-bottom: 150px !important; 
+    padding-left: 50px !important;
+    padding-right: 50px !important;
+    box-sizing: border-box !important;
+  }
+
+  
+  .page-break-after-always {
+    page-break-after: always !important;
+    margin-bottom: 50px !important;
+  }
+
+  .page-break-before-always {
+    page-break-before: always !important;
+    padding-top: 180px !important; 
+  }
+
+  .page-break-inside-avoid {
+    page-break-inside: avoid !important;
+  }
+
+
+  table {
+    page-break-inside: avoid !important;
+  }
+
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  .leading-relaxed { line-height: 1.3 !important; }
+  .leading-tight { line-height: 1.2 !important; }
+  
+
+  .space-y-3 > * + * { margin-top: 0.75rem !important; }
+  .space-y-2 > * + * { margin-top: 0.5rem !important; }
+  
+
+  .text-sm { font-size: 10pt !important; }
+  .text-xs { font-size: 9pt !important; }
+  
+
+  .border-2 { padding: 8px !important; }
+
+
+  .space-y-5 > * + * {
+    margin-top: 1.25rem !important;
+  }
+  .space-y-4 > * + * {
+    margin-top: 1rem !important;
+  }
+
+
+  p, li, h3 {
+    orphans: 3 !important;
+    widows: 3 !important;
+  }
+
+
+  .content {
+    padding-bottom: 180px !important;
+  }
+
+ 
+  .border-2.border-gray-700 {
+    page-break-inside: avoid !important;
+  }
+}
+
+@media screen {
+  .printable-area {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 30px auto !important;
+    box-shadow: 0 0 30px rgba(0,0,0,0.15) !important;
+    border: 1px solid #e0e0e0;
+  }
+}
+  */
+
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+
+
+
+/* styles/print.css - FINAL FIX FOR TOP ALIGNMENT */
+/* @media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 0mm !important;
+  }
+  
+  body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    background: white !important;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+ 
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-header {
+    position: fixed;
+    top: 0mm;
+    left: 0mm;
+    width: 210mm !important;
+    height: 40mm !important; 
+    z-index: 9999;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .print-header img {
+    width: 100% !important; 
+    height: 40mm !important;
+    object-fit: contain !important;
+    object-position: top center !important;
+    display: block !important;
+  }
+  
+  .print-footer {
+    position: fixed;
+    bottom: 0mm;
+    left: 0mm;
+    width: 210mm !important;
+    height: 25mm !important; 
+    z-index: 9999;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .print-footer img {
+    width: 100% !important;
+    height: 25mm !important;
+    object-fit: contain !important; 
+    object-position: bottom center !important;
+    display: block !important;
+  }
+  
+
+  .print-content {
+    position: relative;
+    margin-top: 45mm !important;   
+    margin-bottom: 28mm !important;
+    padding-left: 15mm !important;
+    padding-right: 15mm !important;
+    min-height: calc(297mm - 73mm) !important;
+  }
+  
+  
+  .page-break-before {
+    page-break-before: always !important;
+  }
+  
+  .page-break-after {
+    page-break-after: always !important;
+  }
+  
+  .no-break-inside {
+    page-break-inside: avoid !important;
+  }
+  
+
+  .page-1 {
+    padding-top: 10mm !important; 
+  }
+  
+
+  .page-2, .page-3 {
+    padding-top: 5mm !important; 
+  }
+  
+
+  .doctor-hospital-info p {
+    margin: 1mm 0 !important;
+    font-size: 10pt !important;
+    line-height: 1.2 !important;
+  }
+  
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 4mm 0 !important;
+  }
+  
+  td, th {
+    border: 0.5pt solid black !important;
+    padding: 1.5mm !important;
+    font-size: 8.5pt !important;
+    vertical-align: top !important;
+  }
+
+  .bank-details {
+    margin-top: 8mm !important;
+  }
+  
+
+  .validity-note {
+    margin-top: 10mm !important;
+    border: 1pt solid black !important;
+    padding: 3mm !important;
+    text-align: center !important;
+  }
+  
+  
+  .scope-of-services h2 {
+    font-size: 12pt !important;
+    margin-bottom: 3mm !important;
+  }
+  
+  .scope-item {
+    margin-bottom: 2mm !important;
+  }
+  
+  .scope-item h3 {
+    font-size: 10pt !important;
+    margin: 0 !important;
+  }
+  
+  .scope-item p {
+    font-size: 9pt !important;
+    margin: 0.5mm 0 !important;
+  }
+
+  p {
+    margin: 0.5mm 0 !important;
+    font-size: 10pt !important;
+  }
+  
+
+  .text-red-600 { color: #dc2626 !important; }
+  .text-green-700 { color: #15803d !important; }
+  
+
+  * {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media screen {
+  .print-wrapper {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border: 1px solid #ddd;
+  }
+  
+  .print-header, .print-footer {
+    display: none;
+  }
+} */
+
+
+
+/* styles/print.css - FINAL WITH IMAGE FIX */
+@media print {
+  /* ========== RESET & PAGE SETUP ========== */
+  @page {
+    size: A4 portrait;
+    margin: 0mm !important;
+  }
+  
+  body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    background: white !important;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Hide non-print elements */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* ========== FIXED HEADER ========== */
+  .print-header {
+    position: fixed;
+    top: 0mm;
+    left: 0mm;
+    width: 210mm !important;
+    height: 45mm !important;
+    z-index: 9999;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  /* Header Image - Full width with proper scaling */
+  .print-header img {
+    width: 210mm !important; /* Exact A4 width */
+    height: 45mm !important;
+    object-fit: contain !important; /* Maintain aspect ratio */
+    object-position: top center !important;
+    display: block !important;
+    margin: 0 auto !important; /* Center align */
+  }
+  
+  /* ========== FIXED FOOTER ========== */
+  .print-footer {
+    position: fixed;
+    bottom: 10mm;
+    left: 0mm;
+    width: 210mm !important;
+    height: 45mm !important;
+    z-index: 9999;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  /* Footer Image - Full width with proper scaling */
+  .print-footer img {
+    width: 210mm !important; /* Exact A4 width */
+    height: 45mm !important;
+    object-fit: contain !important; /* Maintain aspect ratio */
+    object-position: bottom center !important;
+    display: block !important;
+    margin: 0 auto !important; /* Center align */
+  }
+  
+  /* ========== CONTENT AREA ========== */
+  .print-content {
+    position: relative;
+    margin-top: 48mm !important;    /* Header height + 3mm gap */
+    margin-bottom: 28mm !important;  /* Footer height + 3mm gap */
+    padding-left: 15mm !important;
+    padding-right: 15mm !important;
+    min-height: calc(297mm - 76mm) !important;
+  }
+  
+  /* ========== PAGE BREAKS ========== */
+  .page-break-before {
+    page-break-before: always !important;
+  }
+  
+  .page-break-after {
+    page-break-after: always !important;
+  }
+  
+  .no-break-inside {
+    page-break-inside: avoid !important;
+  }
+  
+  /* ========== FIRST PAGE ========== */
+  .page-1 {
+    padding-top: 5mm !important;
+  }
+  
+  /* ========== OTHER PAGES ========== */
+  .page-2, .page-3 {
+    padding-top: 5mm !important;
+  }
+  
+  /* ========== DOCTOR/HOSPITAL INFO ========== */
+  .doctor-hospital-info p {
+    margin: 0.5mm 0 !important;
+    font-size: 10pt !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* ========== TABLES ========== */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 3mm 0 !important;
+  }
+  
+  td, th {
+    border: 0.5pt solid black !important;
+    padding: 1.5mm !important;
+    font-size: 8.5pt !important;
+    vertical-align: top !important;
+  }
+  
+  /* ========== BANK DETAILS ========== */
+  .bank-details {
+    margin-top: 6mm !important;
+  }
+  
+  /* ========== VALIDITY NOTE ========== */
+  .validity-note {
+    margin-top: 8mm !important;
+    border: 1pt solid black !important;
+    padding: 2mm !important;
+    text-align: center !important;
+  }
+  
+  /* ========== TEXT STYLING ========== */
+  p {
+    margin: 0.5mm 0 !important;
+    font-size: 10pt !important;
+  }
+  
+  /* Colors */
+  .text-red-600 { color: #dc2626 !important; }
+  .text-green-700 { color: #15803d !important; }
+  
+  /* Remove unnecessary styles */
+  * {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Screen styles */
+@media screen {
+  .print-wrapper {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border: 1px solid #ddd;
+  }
+  
+  .print-header, .print-footer {
+    display: none;
+  }
+  
+  /* Screen view for images */
+  .print-header img,
+  .print-footer img {
+    max-width: 100%;
+    height: auto;
+  }
+}

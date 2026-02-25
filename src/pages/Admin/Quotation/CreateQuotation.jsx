@@ -1,0 +1,3347 @@
+
+
+
+// import React, { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import apiClient, { apiEndpoints } from '../../../services/apiClient';
+// import { toast } from 'react-toastify';
+
+// const CreateQuotation = () => {
+//   const [isPreview, setIsPreview] = useState(false);
+//   const [doctors, setDoctors] = useState([]);
+//   const [packages, setPackages] = useState([]);
+//   const [loadingDoctors, setLoadingDoctors] = useState(true);
+//   const [membershipTypeLocked, setMembershipTypeLocked] = useState(false);
+//   const [selectedYears, setSelectedYears] = useState([]);
+//   const [priceMatrix, setPriceMatrix] = useState([]); // Final data for save
+
+//   const [formData, setFormData] = useState({
+//     trno: '',
+//     quotationDate: new Date().toISOString().split('T')[0],
+//     doctorId: '',
+//     doctorName: '',
+//     membershipType: 'INDIVIDUAL MEMBERSHIP',
+//     specialization: '',
+//     area: 'All India',
+//     narration: '',
+//     monthly: false,
+//     indemnityCover: false,
+//   });
+
+//   const navigate = useNavigate();
+
+//   // Fetch Doctors for Dropdown (with combined names for linked doctors)
+//   useEffect(() => {
+//     const fetchDoctors = async () => {
+//       try {
+//         setLoadingDoctors(true);
+//         // Use the new dropdown endpoint that returns combined names for linked doctors
+//         const response = await apiClient.get(apiEndpoints.doctors.dropdown, { params: { limit: 1000 } });
+//         setDoctors(response.data.data || []);
+//       } catch (error) {
+//         console.error('Error fetching doctors from dropdown endpoint:', error);
+//         toast.error('Failed to load doctors list');
+//         // Fallback to original endpoint if new one fails
+//         try {
+//           const response = await apiClient.get('/doctors', { params: { limit: 1000 } });
+//           setDoctors(response.data.data || []);
+//         } catch (fallbackError) {
+//           console.error('Fallback also failed:', fallbackError);
+//         }
+//       } finally {
+//         setLoadingDoctors(false);
+//       }
+//     };
+//     fetchDoctors();
+//   }, []);
+
+//   // Fetch Packages
+//   useEffect(() => {
+//     const fetchPackages = async () => {
+//       try {
+//         const response = await apiClient.get('/service-packages/list');
+//         setPackages(response.data.data || []);
+//       } catch (error) {
+//         toast.error('Failed to load packages');
+//       }
+//     };
+//     fetchPackages();
+//   }, []);
+
+//   const handleChange = (e) => {
+//     const { name, value, type, checked } = e.target;
+
+//     if (name === 'doctorName') {
+//       const selectedDoctor = doctors.find(d =>
+//         d.doctorId === value || `${d.fullName} (${d.doctorId})` === value
+//       );
+
+//       if (selectedDoctor) {
+//         let mType = 'INDIVIDUAL MEMBERSHIP';
+//         if (selectedDoctor.doctorType === 'hospital') mType = 'HOSPITAL MEMBERSHIP';
+//         else if (selectedDoctor.doctorType === 'hospital_individual') mType = 'HOSPITAL + INDIVIDUAL MEMBERSHIP';
+
+//         setFormData({
+//           ...formData,
+//           doctorId: selectedDoctor._id,
+//           doctorName: value,
+//           membershipType: mType,
+//           specialization: selectedDoctor.specialization?.join(', ') || 'N/A',
+//         });
+//         setMembershipTypeLocked(true);
+//       } else {
+//         setFormData({ ...formData, doctorId: '', doctorName: value, membershipType: 'INDIVIDUAL MEMBERSHIP', specialization: '' });
+//         setMembershipTypeLocked(false);
+//       }
+//     }
+//     else if (name.startsWith('year_')) {
+//       const year = name.split('_')[1];
+//       setSelectedYears(prev =>
+//         prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year].sort((a, b) => a - b)
+//       );
+//     }
+//     else {
+//       if (name === 'membershipType' && membershipTypeLocked) {
+//         toast.info('Membership type is auto-selected');
+//         return;
+//       }
+//       setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+//     }
+//   };
+
+//   const handlePreview = () => {
+//     if (!formData.doctorName) {
+//       toast.error('Please select a doctor');
+//       return;
+//     }
+//     if (selectedYears.length === 0) {
+//       toast.error('Select at least one year');
+//       return;
+//     }
+//     setIsPreview(true);
+//   };
+
+//   const handleEdit = () => setIsPreview(false);
+
+//   // const handleGeneratePDF = () => {
+//   //   if (!formData.doctorId) {
+//   //     toast.error('Please select a doctor before generating PDF');
+//   //     return;
+//   //   }
+
+//   //   if (!priceMatrix || priceMatrix.length === 0 || priceMatrix[0].indemnity === 'No packages found') {
+//   //     toast.error('No pricing data available for PDF generation');
+//   //     return;
+//   //   }
+
+//   //   // Prepare data to pass to the invoice preview page
+//   //   const invoiceData = {
+//   //     membershipType: formData.membershipType,
+//   //     doctorData: {
+//   //       name: formData.doctorName.split(' (')[0],
+//   //     },
+//   //     hospitalData: {
+//   //       name: formData.doctorName.split(' (')[0],
+//   //       address: formData.area,
+//   //     },
+//   //     membershipData: {
+//   //       specialization: formData.specialization,
+//   //       indemnityCover: priceMatrix[0]?.indemnity || 'N/A',
+//   //       monthly: priceMatrix[0]?.monthly || 'N/A',
+//   //       yearly: selectedYears.length > 0 ? priceMatrix[0]?.[`y${selectedYears[0]}`] || 'N/A' : 'N/A',
+//   //       fiveYear: selectedYears.length > 4 ? priceMatrix[0]?.[`y5`] || 'N/A' : 'N/A',
+//   //       numberOfBeds: 'N/A',
+//   //     }
+//   //   };
+
+//   //   // Navigate to the invoice preview page with membership type as URL parameter
+//   //   const url = `/admin/invoice-preview?type=${encodeURIComponent(formData.membershipType)}`;
+//   //   window.open(url, '_blank');
+//   // };
+
+
+
+
+
+
+
+
+
+
+
+
+// // const handleGeneratePDF = () => {
+// //   if (!formData.doctorId) {
+// //     toast.error('Doctor select karo pehle');
+// //     return;
+// //   }
+// //   if (!priceMatrix || priceMatrix.length === 0) {
+// //     toast.error('Pricing data nahi hai');
+// //     return;
+// //   }
+
+// //   const dataToPass = {
+// //     membershipType: formData.membershipType,
+// //     doctorData: {
+// //       name: formData.doctorName.split(' (')[0].trim(),
+// //     },
+// //     hospitalData: {
+// //       name: formData.doctorName.split(' (')[0].trim(),
+// //       address: formData.area || 'All India',
+// //     },
+// //     membershipData: {
+// //       specialization: formData.specialization || 'N/A',
+// //       numberOfBeds: 'N/A',
+// //       indemnityCover: priceMatrix.map(r => r.indemnity).join(' | '),
+// //       monthly: formData.monthly && priceMatrix[0]?.monthly ? `₹${priceMatrix[0].monthly.toLocaleString('en-IN')}` : 'N/A',
+// //       yearly: priceMatrix[0]?.y1 ? `₹${priceMatrix[0].y1.toLocaleString('en-IN')}` : 'N/A',
+// //       fiveYear: priceMatrix[0]?.y5 ? `₹${priceMatrix[0].y5.toLocaleString('en-IN')}` : 'N/A',
+// //       priceMatrix: priceMatrix.filter(r => !r.disabled), // Yeh sab rows
+// //     }
+// //   };
+
+// //   // Bas itna likh do → sab ho jayega
+// //   navigate('/admin/invoice-preview', { state: dataToPass });
+// // };
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const handleGeneratePDF = () => {
+//   if (!formData.doctorId || priceMatrix.length === 0) {
+//     toast.error('Complete form first');
+//     return;
+//   }
+
+//   const dataToPass = {
+//     membershipType: formData.membershipType,
+//     doctorData: {
+//       name: formData.doctorName.split(' (')[0].trim(),
+//     },
+//     hospitalData: {
+//       name: formData.doctorName.split(' (')[0].trim(),
+//       address: formData.area || 'All India',
+//     },
+//     membershipData: {
+//       membershipType: formData.membershipType,
+//       specialization: formData.specialization || 'All Specializations',
+//       numberOfBeds: 'N/A',
+//       // Yeh sab rows with exact values bhej raha hai
+//       priceMatrix: priceMatrix
+//         .filter(r => !r.disabled)
+//         .map(row => ({
+//           indemnity: row.indemnity || 'Custom Limit',
+//           monthly: row.monthly,
+//           y1: row.y1,
+//           y5: row.y5,
+//         }))
+//     }
+//   };
+
+//   navigate('/admin/invoice-preview', { state: dataToPass });
+// };
+
+
+
+
+//   const handleSave = async () => {
+//     if (!formData.doctorId) {
+//       toast.error('Select a doctor');
+//       return;
+//     }
+
+//     if (!priceMatrix || priceMatrix.length === 0 || priceMatrix[0]?.disabled) {
+//       toast.error('No pricing data to save');
+//       return;
+//     }
+
+//     const requesterType = formData.membershipType.includes('HOSPITAL') ? 'hospital' : 'doctor';
+
+//     const requestDetails = {
+//       policyTerms: selectedYears.map(Number),
+//       paymentFrequency: formData.monthly ? 'monthly' : 'yearly',
+//       additionalRequirements: formData.narration,
+//       specialConditions: formData.indemnityCover ? 'Indemnity Cover Required' : '',
+//       items: priceMatrix.map(row => {
+//         const item = { indemnity: row.indemnity || 'Custom' };
+//         selectedYears.forEach(y => {
+//           const val = row[`y${y}`];
+//           if (val != null && val !== '') item[`year_${y}`] = Number(val);
+//         });
+//         if (formData.monthly && row.monthly != null && row.monthly !== '') {
+//           item.monthly = Number(row.monthly);
+//         }
+//         return item;
+//       }).filter(item => Object.keys(item).length > 1) // Remove empty items
+//     };
+
+//     const quotationData = {
+//       requester: {
+//         type: requesterType,
+//         name: formData.doctorName.split(' (')[0],
+//         entityId: formData.doctorId,
+//         contactPerson: formData.doctorName.split(' (')[0]
+//       },
+//       requestDetails,
+//       status: 'responses_pending',
+//       priority: 'medium',
+//       ...(formData.trno && { trno: formData.trno })
+//     };
+
+//     try {
+//       const response = await apiClient.post(apiEndpoints.quotations.create, quotationData);
+//       if (response.data.success) {
+//         toast.success('Quotation created successfully!');
+//         navigate('/admin/quotation-list');
+//       }
+//     } catch (error) {
+//       toast.error(error.response?.data?.message || 'Failed to save quotation');
+//     }
+//   };
+
+//   return (
+//     <div className="mx-auto m-4 sm:mt-14 p-2 max-w-7xl">
+//       <div className="bg-white p-6 rounded-lg shadow-lg">
+//         <h1 className="mb-6 text-2xl font-bold text-gray-800">Create Quotation</h1>
+
+//         <form onSubmit={e => e.preventDefault()} className="space-y-6">
+
+//           {/* Top Row */}
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">
+//                 TRNO <span className="text-xs text-gray-500">(Optional)</span>
+//               </label>
+//               <input type="text" name="trno" value={formData.trno} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Auto-generated" />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Doctor Name</label>
+//               <select name="doctorName" value={formData.doctorName} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" disabled={loadingDoctors}>
+//                 <option value="">{loadingDoctors ? 'Loading...' : 'Select Doctor'}</option>
+//                 {doctors.map(d => (
+//                   <option key={d._id} value={`${d.fullName} (${d.doctorId})`}>
+//                     {d.fullName} ({d.doctorId}) - {d.specialization?.join(', ') || 'N/A'}
+//                   </option>
+//                 ))}
+//               </select>
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Area</label>
+//               <input type="text" name="area" value={formData.area} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+//             </div>
+//           </div>
+
+//           {/* Middle Row */}
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Quotation Date</label>
+//               <input type="date" name="quotationDate" value={formData.quotationDate} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">
+//                 Membership Type {membershipTypeLocked && <span className="ml-2 text-xs text-green-600">(Auto)</span>}
+//               </label>
+//               <select name="membershipType" value={formData.membershipType} onChange={handleChange}
+//                 className={`mt-1 block w-full border rounded-md p-2 ${membershipTypeLocked ? 'bg-green-50 border-green-300 cursor-not-allowed' : 'border-gray-300'}`}
+//                 disabled={membershipTypeLocked}>
+//                 <option value="">Select</option>
+//                 <option value="INDIVIDUAL MEMBERSHIP">INDIVIDUAL MEMBERSHIP</option>
+//                 <option value="HOSPITAL MEMBERSHIP">HOSPITAL MEMBERSHIP</option>
+//                 <option value="HOSPITAL + INDIVIDUAL MEMBERSHIP">HOSPITAL + INDIVIDUAL</option>
+//               </select>
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Specialization</label>
+//               <input type="text" value={formData.specialization} disabled
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-50" />
+//             </div>
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700">Narration</label>
+//             <input type="text" name="narration" value={formData.narration} onChange={handleChange}
+//               className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-2">Membership Year</label>
+//             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+//               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(year => (
+//                 <label key={year} className="flex items-center cursor-pointer">
+//                   <input type="checkbox" name={`year_${year}`} checked={selectedYears.includes(year.toString())}
+//                     onChange={handleChange} className="mr-2 w-5 h-5 accent-[#15BBB3] rounded" />
+//                   <span className="text-sm">{year} Year</span>
+//                 </label>
+//               ))}
+//             </div>
+//           </div>
+
+//           <div className="flex gap-6">
+//             <label className="flex items-center">
+//               <input type="checkbox" name="monthly" checked={formData.monthly} onChange={handleChange}
+//                 className="mr-2 w-5 h-5 accent-[#15BBB3]" />
+//               <span className="text-sm">Monthly Payment</span>
+//             </label>
+//             <label className="flex items-center">
+//               <input type="checkbox" name="indemnityCover" checked={formData.indemnityCover} onChange={handleChange}
+//                 className="mr-2 w-5 h-5 accent-[#15BBB3]" />
+//               <span className="text-sm">Indemnity Cover</span>
+//             </label>
+//           </div>
+
+//           <div className="flex flex-wrap gap-3">
+//             <button type="button" onClick={handlePreview}
+//               className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]">
+//               Preview
+//             </button>
+//             <button
+//               type="button"
+//               onClick={handleGeneratePDF}
+//               className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]"
+//             >
+//               Generate PDF
+//             </button>
+//           </div>
+//         </form>
+
+//         {/* PREVIEW TABLE */}
+//         {isPreview && (
+//           <div className="mt-10 border-t pt-8">
+//             <h2 className="text-lg font-semibold text-gray-800 mb-4">Preview Quotation</h2>
+//             <PricePreviewTable
+//               membershipType={formData.membershipType}
+//               selectedYears={selectedYears}
+//               showMonthly={formData.monthly}
+//               packages={packages}
+//               specialization={formData.specialization}
+//               setPriceMatrix={setPriceMatrix}
+//               onEdit={handleEdit}
+//               onSave={handleSave}
+//             />
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// // ==================== FINAL PRICE PREVIEW TABLE (100% WORKING) ====================
+// const PricePreviewTable = ({
+//   membershipType,
+//   selectedYears,
+//   showMonthly,
+//   packages,
+//   specialization,
+//   setPriceMatrix,
+//   onEdit,
+//   onSave
+// }) => {
+//   const [rows, setRows] = useState([]);
+
+//   const formatNumber = (num) => (num == null || num === '') ? '' : Number(num).toLocaleString('en-IN');
+//   const parseNumber = (str) => str === '' ? null : Number(str.replace(/,/g, ''));
+
+//   useEffect(() => {
+//     if (!packages.length || selectedYears.length === 0) {
+//       setRows([]);
+//       setPriceMatrix([]);
+//       return;
+//     }
+
+//     const normalizeYear = (yearStr) => {
+//       if (!yearStr) return null;
+//       if (yearStr.toLowerCase().includes('month')) return 'monthly';
+//       const match = yearStr.match(/(\d+)/);
+//       return match ? match[1] : null;
+//     };
+
+//     const getChargeForYear = (yearlyCharges, targetYear) => {
+//       if (!yearlyCharges || !Array.isArray(yearlyCharges)) return null;
+//       const chargeObj = yearlyCharges.find(c => c.year === targetYear);
+//       return chargeObj ? chargeObj.charge : null;
+//     };
+
+//     const newRows = [];
+
+//     packages.forEach(pkg => {
+//       const normYear = normalizeYear(pkg.year);
+//       if (!normYear) return;
+
+//       const typeMatch = pkg.detail?.toLowerCase() === 'doctors' ||
+//                         membershipType.toLowerCase().includes(pkg.detail?.toLowerCase()) ||
+//                         pkg.detail?.toLowerCase().includes('all');
+
+//       if (!typeMatch) return;
+
+//       const row = {
+//         id: pkg._id + '_' + Date.now(),
+//         indemnity: pkg.indemnity,
+//         packageId: pkg._id,
+//       };
+
+//       if (normYear === 'monthly' && showMonthly) {
+//         const amount = pkg.amount.replace('₹', '').replace(/,/g, '').trim();
+//         row.monthly = Number(amount);
+//       }
+
+//       const packageYear = parseInt(normYear);
+//       if (!isNaN(packageYear)) {
+//         selectedYears.forEach(y => {
+//           const yearNum = parseInt(y);
+//           if (yearNum <= packageYear) {
+//             const charge = getChargeForYear(pkg.yearlyCharges, yearNum);
+//             if (charge !== null) row[`y${y}`] = charge;
+//           }
+//         });
+//       }
+
+//       const hasValue = showMonthly ? row.monthly : false || selectedYears.some(y => row[`y${y}`] != null);
+//       if (hasValue) newRows.push(row);
+//     });
+
+//     if (newRows.length === 0) {
+//       newRows.push({ id: 'no-data', indemnity: 'No packages found for selected criteria', disabled: true });
+//     }
+
+//     setRows(newRows);
+//     setPriceMatrix(newRows.filter(r => !r.disabled));
+//   }, [packages, membershipType, selectedYears, showMonthly, setPriceMatrix]);
+
+//   const updateRow = (id, field, value) => {
+//     const updated = rows.map(row => row.id === id ? { ...row, [field]: parseNumber(value) || '' } : row);
+//     setRows(updated);
+//     setPriceMatrix(updated.filter(r => !r.disabled));
+//   };
+
+//   const deleteRow = (id) => {
+//     const updated = rows.filter(row => row.id !== id);
+//     setRows(updated);
+//     setPriceMatrix(updated.filter(r => !r.disabled));
+//   };
+
+//   const addCustomRow = () => {
+//     const newRow = {
+//       id: 'custom_' + Date.now(),
+//       indemnity: 'Custom Limit',
+//       isCustom: true,
+//       monthly: null,
+//       ...selectedYears.reduce((acc, y) => ({ ...acc, [`y${y}`]: null }), {})
+//     };
+//     setRows([...rows.filter(r => !r.disabled), newRow]);
+//     setPriceMatrix(prev => [...prev, newRow]);
+//   };
+
+//   return (
+//     <>
+//       <div className="overflow-x-auto border border-gray-300 rounded-lg">
+//         <table className="min-w-full bg-white">
+//           <thead className="bg-gray-100">
+//             <tr>
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Type</th>
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Specialization</th>
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Indemnity Limit</th>
+//               {showMonthly && <th className="px-4 py-3 text-left text-sm font-semibold border-r">Monthly</th>}
+//               {selectedYears.map(y => (
+//                 <th key={y} className="px-4 py-3 text-left text-sm font-semibold border-r">{y} Year</th>
+//               ))}
+//               <th className="px-4 py-3 text-left text-sm font-semibold w-12">Action</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {rows.map((row, i) => (
+//               <tr key={row.id} className={`${i % 2 === 1 ? 'bg-gray-50' : ''} ${row.disabled ? 'opacity-60' : ''}`}>
+//                 {i === 0 && (
+//                   <>
+//                     <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                       {membershipType}
+//                     </td>
+//                     <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                       {specialization || 'All'}
+//                     </td>
+//                   </>
+//                 )}
+//                 <td className="px-4 py-3 border-r">
+//                   {row.disabled ? (
+//                     <span className="text-red-600">{row.indemnity}</span>
+//                   ) : (
+//                     <input
+//                       type="text"
+//                       value={row.indemnity || ''}
+//                       onChange={(e) => updateRow(row.id, 'indemnity', e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                       placeholder="e.g. 10 Cr"
+//                     />
+//                   )}
+//                 </td>
+
+//                 {showMonthly && (
+//                   <td className="px-4 py-3 border-r">
+//                     <input
+//                       type="text"
+//                       disabled={row.disabled}
+//                       value={formatNumber(row.monthly)}
+//                       onChange={(e) => updateRow(row.id, 'monthly', e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                     />
+//                   </td>
+//                 )}
+
+//                 {selectedYears.map(y => (
+//                   <td key={`y${y}`} className="px-4 py-3 border-r">
+//                     <input
+//                       type="text"
+//                       disabled={row.disabled}
+//                       value={formatNumber(row[`y${y}`])}
+//                       onChange={(e) => updateRow(row.id, `y${y}`, e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                     />
+//                   </td>
+//                 ))}
+
+//                 <td className="px-4 py-3 text-center">
+//                   {!row.disabled && (
+//                     <button onClick={() => deleteRow(row.id)} className="text-red-600 hover:text-red-800 font-bold text-xl">
+//                       ×
+//                     </button>
+//                   )}
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       <div className="mt-6 flex justify-between items-center">
+//         <button onClick={addCustomRow} className="text-[#15BBB3] font-medium hover:underline flex items-center gap-2">
+//           <span className="text-xl">+</span> Add Custom Indemnity Limit
+//         </button>
+
+//         <div className="flex gap-3">
+//           <button onClick={onEdit} className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">
+//             Edit Form
+//           </button>
+//           <button
+//             onClick={onSave}
+//             disabled={rows.length === 0 || rows.every(r => r.disabled)}
+//             className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+//           >
+//             Save Quotation
+//           </button>
+//         </div>
+//       </div>
+//     </>
+//   );
+// };
+
+// export default CreateQuotation;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// qwen
+
+// import React, { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import apiClient, { apiEndpoints } from '../../../services/apiClient';
+// import { toast } from 'react-toastify';
+
+// const CreateQuotation = () => {
+//   const [isPreview, setIsPreview] = useState(false);
+//   const [doctors, setDoctors] = useState([]);
+//   const [packages, setPackages] = useState([]);
+//   const [loadingDoctors, setLoadingDoctors] = useState(true);
+//   const [membershipTypeLocked, setMembershipTypeLocked] = useState(false);
+//   const [selectedYears, setSelectedYears] = useState([]);
+//   const [priceMatrix, setPriceMatrix] = useState([]);
+
+//   const [formData, setFormData] = useState({
+//     trno: '',
+//     quotationDate: new Date().toISOString().split('T')[0],
+//     doctorId: '',
+//     doctorName: '',
+//     membershipType: 'INDIVIDUAL MEMBERSHIP',
+//     specialization: '',
+//     area: 'All India',
+//     narration: '',
+//     monthly: false,
+//     indemnityCover: false,
+//     beds: 'N/A',
+//   });
+
+//   const navigate = useNavigate();
+
+//   // Fetch Doctors Dropdown
+//   useEffect(() => {
+//     const fetchDoctors = async () => {
+//       try {
+//         setLoadingDoctors(true);
+//         const response = await apiClient.get(apiEndpoints.doctors.dropdown, { params: { limit: 1000 } });
+//         setDoctors(response.data.data || []);
+//       } catch (error) {
+//         console.error('Error fetching doctors:', error);
+//         toast.error('Failed to load doctors list');
+//         try {
+//           const response = await apiClient.get('/doctors', { params: { limit: 1000 } });
+//           setDoctors(response.data.data || []);
+//         } catch (fallbackError) {
+//           console.error('Fallback failed:', fallbackError);
+//         }
+//       } finally {
+//         setLoadingDoctors(false);
+//       }
+//     };
+//     fetchDoctors();
+//   }, []);
+
+//   // Fetch Packages
+//   useEffect(() => {
+//     const fetchPackages = async () => {
+//       try {
+//         const response = await apiClient.get('/service-packages/list');
+//         setPackages(response.data.data || []);
+//       } catch (error) {
+//         toast.error('Failed to load packages');
+//       }
+//     };
+//     fetchPackages();
+//   }, []);
+
+//   const handleChange = (e) => {
+//     const { name, value, type, checked } = e.target;
+
+//     if (name === 'doctorName') {
+//       const selectedValue = value;
+//       const selectedDoctorBasic = doctors.find(d =>
+//         `${d.fullName} (${d.doctorId})` === selectedValue
+//       );
+
+//       if (!selectedDoctorBasic) {
+//         setFormData(prev => ({
+//           ...prev,
+//           doctorId: '',
+//           doctorName: '',
+//           membershipType: 'INDIVIDUAL MEMBERSHIP',
+//           specialization: '',
+//           beds: 'N/A'
+//         }));
+//         setMembershipTypeLocked(false);
+//         return;
+//       }
+
+//       // Determine membership type
+//       const isHospitalType = ['hospital', 'hospital_individual'].includes(selectedDoctorBasic.doctorType);
+//       const membershipType = selectedDoctorBasic.doctorType === 'hospital'
+//         ? 'HOSPITAL MEMBERSHIP'
+//         : selectedDoctorBasic.doctorType === 'hospital_individual'
+//           ? 'HOSPITAL + INDIVIDUAL MEMBERSHIP'
+//           : 'INDIVIDUAL MEMBERSHIP';
+
+//       // Set basic info immediately
+//       setFormData(prev => ({
+//         ...prev,
+//         doctorId: selectedDoctorBasic._id,
+//         doctorName: selectedValue,
+//         membershipType,
+//         specialization: isHospitalType ? 'Loading...' : (selectedDoctorBasic.specialization?.join(', ') || 'General Practitioner'),
+//         beds: isHospitalType ? 'Loading...' : 'N/A'
+//       }));
+//       setMembershipTypeLocked(true);
+
+//       // Fetch full doctor details for hospitalType & beds
+//       if (isHospitalType) {
+//         apiClient.get(`/doctors/${selectedDoctorBasic._id}`)
+//           .then(response => {
+//             const doctor = response.data.data;
+
+//             const hospitalType = doctor.hospitalDetails?.hospitalType || 'Not Specified';
+//             const bedsCount = doctor.hospitalDetails?.beds || 'Not Specified';
+
+//             setFormData(prev => ({
+//               ...prev,
+//               specialization: hospitalType,
+//               beds: bedsCount
+//             }));
+//           })
+//           .catch(err => {
+//             console.error("Failed to load hospital details:", err);
+//             toast.warn("Hospital details not available");
+//             setFormData(prev => ({
+//               ...prev,
+//               specialization: 'Hospital (Details Unavailable)',
+//               beds: 'Not Specified'
+//             }));
+//           });
+//       }
+//     }
+//     else if (name.startsWith('year_')) {
+//       const year = name.split('_')[1];
+//       setSelectedYears(prev =>
+//         prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year].sort((a, b) => a - b)
+//       );
+//     }
+//     else {
+//       if (name === 'membershipType' && membershipTypeLocked) {
+//         toast.info('Membership type is auto-selected');
+//         return;
+//       }
+//       setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+//     }
+//   };
+
+//   const handlePreview = () => {
+//     if (!formData.doctorName) {
+//       toast.error('Please select a doctor');
+//       return;
+//     }
+//     if (selectedYears.length === 0) {
+//       toast.error('Select at least one year');
+//       return;
+//     }
+//     setIsPreview(true);
+//   };
+
+//   const handleEdit = () => setIsPreview(false);
+
+//   const handleGeneratePDF = () => {
+//     if (!formData.doctorId || priceMatrix.length === 0) {
+//       toast.error('Complete form first');
+//       return;
+//     }
+
+//     const dataToPass = {
+//       membershipType: formData.membershipType,
+//       doctorData: { name: formData.doctorName.split(' (')[0].trim() },
+//       hospitalData: { name: formData.doctorName.split(' (')[0].trim(), address: formData.area || 'All India' },
+//       membershipData: {
+//         membershipType: formData.membershipType,
+//         specialization: formData.specialization || 'All Specializations',
+//         numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' ? formData.beds : 'Not Specified',
+//         priceMatrix: priceMatrix.filter(r => !r.disabled).map(row => ({
+//           indemnity: row.indemnity || 'Custom Limit',
+//           monthly: row.monthly,
+//           y1: row.y1,
+//           y5: row.y5,
+//         }))
+//       }
+//     };
+
+//     navigate(`/admin/quotation/${id}/`, { state: dataToPass });
+
+//   };
+
+//   // const handleSave = async () => {
+//   //   if (!formData.doctorId) {
+//   //     toast.error('Select a doctor');
+//   //     return;
+//   //   }
+//   //   if (!priceMatrix || priceMatrix.length === 0 || priceMatrix[0]?.disabled) {
+//   //     toast.error('No pricing data to save');
+//   //     return;
+//   //   }
+
+//   //   const requesterType = formData.membershipType.includes('HOSPITAL') ? 'hospital' : 'doctor';
+
+//   //   const requestDetails = {
+//   //     policyTerms: selectedYears.map(Number),
+//   //     paymentFrequency: formData.monthly ? 'monthly' : 'yearly',
+//   //     additionalRequirements: formData.narration,
+//   //     specialConditions: formData.indemnityCover ? 'Indemnity Cover Required' : '',
+//   //     numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' ? Number(formData.beds) : undefined,
+//   //     items: priceMatrix.map(row => {
+//   //       const item = { indemnity: row.indemnity || 'Custom' };
+//   //       selectedYears.forEach(y => {
+//   //         const val = row[`y${y}`];
+//   //         if (val != null && val !== '') item[`year_${y}`] = Number(val);
+//   //       });
+//   //       if (formData.monthly && row.monthly != null && row.monthly !== '') {
+//   //         item.monthly = Number(row.monthly);
+//   //       }
+//   //       return item;
+//   //     }).filter(item => Object.keys(item).length > 1)
+//   //   };
+
+//   //   const quotationData = {
+//   //     requester: {
+//   //       type: requesterType,
+//   //       name: formData.doctorName.split(' (')[0],
+//   //       entityId: formData.doctorId,
+//   //       contactPerson: formData.doctorName.split(' (')[0]
+//   //     },
+//   //     requestDetails,
+//   //     status: 'responses_pending',
+//   //     priority: 'medium',
+//   //     ...(formData.trno && { trno: formData.trno })
+//   //   };
+
+//   //   try {
+//   //     const response = await apiClient.post(apiEndpoints.quotations.create, quotationData);
+//   //     if (response.data.success) {
+//   //       toast.success('Quotation created successfully!');
+//   //       navigate('/admin/quotation-list');
+//   //     }
+//   //   } catch (error) {
+//   //     toast.error(error.response?.data?.message || 'Failed to save quotation');
+//   //   }
+//   // };
+
+
+
+// // const handleSave = async () => {
+// //   // ✅ VALIDATION - Add extra check for doctor selection
+// //   if (!formData.doctorId || !formData.doctorName) {
+// //     toast.error('Please select a doctor before saving');
+// //     return;
+// //   }
+
+// //   console.log("🔍 BEFORE SAVE CHECK:", {
+// //     doctorId: formData.doctorId,
+// //     doctorName: formData.doctorName,
+// //     membershipType: formData.membershipType,
+// //     doctorIdLength: formData.doctorId?.length,
+// //     doctorIdType: typeof formData.doctorId
+// //   });
+
+// //   if (!priceMatrix || priceMatrix.length === 0 || priceMatrix[0]?.disabled) {
+// //     toast.error('No pricing data to save');
+// //     return;
+// //   }
+
+// //   // ✅ FIXED: Determine requester type for ALL cases
+// //   let requesterType = 'hospital'; // default
+
+// //   if (formData.membershipType === "INDIVIDUAL MEMBERSHIP") {
+// //     requesterType = 'doctor';
+// //   }
+// //   else if (formData.membershipType === "HOSPITAL MEMBERSHIP") {
+// //     requesterType = 'hospital';
+// //   }
+// //   else if (formData.membershipType === "HOSPITAL + INDIVIDUAL MEMBERSHIP") {
+// //     requesterType = 'combined'; // ✅ THIS IS THE FIX!
+// //   }
+
+// //   console.log("🎯 REQUESTER TYPE SET TO:", requesterType);
+
+// //   const requestDetails = {
+// //     policyTerms: selectedYears.map(Number),
+// //     paymentFrequency: formData.monthly ? 'monthly' : 'yearly',
+// //     additionalRequirements: formData.narration,
+// //     specialConditions: formData.indemnityCover ? 'Indemnity Cover Required' : '',
+// //     numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' ? Number(formData.beds) : undefined,
+// //     items: priceMatrix.map(row => {
+// //       const item = { indemnity: row.indemnity?.trim() || 'Custom' };
+// //       selectedYears.forEach(y => {
+// //         const val = row[`y${y}`];
+// //         if (val != null && val !== '') item[`year_${y}`] = Number(val);
+// //       });
+// //       if (formData.monthly && row.monthly != null && row.monthly !== '') {
+// //         item.monthly = Number(row.monthly);
+// //       }
+// //       return item;
+// //     }).filter(item => Object.keys(item).length > 1)
+// //   };
+
+// //   // ✅ FIXED: Extract doctor name properly
+// //   let doctorDisplayName = formData.doctorName;
+
+// //   // Remove the ID part if present "Name (ID)"
+// //   if (doctorDisplayName.includes(' (')) {
+// //     doctorDisplayName = doctorDisplayName.split(' (')[0].trim();
+// //   }
+
+// //   const quotationData = {
+// //     requester: {
+// //       type: requesterType, // ✅ Now will be 'combined' for Hospital+Individual
+// //       name: doctorDisplayName,
+// //       entityId: formData.doctorId, // ✅ Ensure this is a valid string
+// //       contactPerson: doctorDisplayName
+// //     },
+// //     requestDetails,
+// //     status: 'responses_pending',
+// //     priority: 'medium',
+// //     ...(formData.trno && { trno: formData.trno })
+// //   };
+
+// //   // ✅ DEBUG: Log the payload being sent
+// //   console.log("📤 QUOTATION PAYLOAD BEING SENT:", JSON.stringify({
+// //     requester: quotationData.requester,
+// //     hasEntityId: !!quotationData.requester.entityId,
+// //     entityIdType: typeof quotationData.requester.entityId,
+// //     entityIdLength: quotationData.requester.entityId?.length
+// //   }, null, 2));
+
+// //   try {
+// //     const response = await apiClient.post(apiEndpoints.quotations.create, quotationData);
+
+// //     if (response.data.success) {
+// //       console.log("✅ QUOTATION CREATED SUCCESSFULLY:", response.data.data);
+// //       toast.success('Quotation created successfully!');
+// //       navigate('/admin/quotation-list');
+// //     }
+// //   } catch (error) {
+// //     console.error("❌ QUOTATION CREATE ERROR:", error.response?.data || error.message);
+// //     toast.error(error.response?.data?.message || 'Failed to save quotation');
+// //   }
+// // };
+
+
+// const handleSave = async () => {
+//   // ✅ VALIDATION
+//   if (!formData.doctorId || !formData.doctorName) {
+//     toast.error('Please select a doctor before saving');
+//     return;
+//   }
+
+//   console.log("🔍 BEFORE SAVE CHECK:", {
+//     doctorId: formData.doctorId,
+//     doctorName: formData.doctorName,
+//     membershipType: formData.membershipType
+//   });
+
+//   if (!priceMatrix || priceMatrix.length === 0 || priceMatrix[0]?.disabled) {
+//     toast.error('No pricing data to save');
+//     return;
+//   }
+
+//   // ✅ FIXED: Backend-compatible requester types
+//   // Backend sirf "doctor" ya "hospital" accept karta hai
+//   let requesterType = 'hospital'; // default
+
+//   if (formData.membershipType === "INDIVIDUAL MEMBERSHIP") {
+//     requesterType = 'doctor';
+//   }
+//   else if (formData.membershipType === "HOSPITAL MEMBERSHIP") {
+//     requesterType = 'hospital';
+//   }
+//   else if (formData.membershipType === "HOSPITAL + INDIVIDUAL MEMBERSHIP") {
+//     // ✅ BACKEND FIX: Use "hospital" for combined (since backend doesn't accept "combined")
+//     requesterType = 'hospital';
+
+//     // ✅ ADD A NOTE IN NARRATION
+//     formData.narration = (formData.narration || '') ;
+
+//     console.log("🏥 Hospital+Individual detected, using 'hospital' as requester type");
+//   }
+
+//   console.log("🎯 FINAL REQUESTER TYPE:", requesterType);
+
+//   const requestDetails = {
+//     policyTerms: selectedYears.map(Number),
+//     paymentFrequency: formData.monthly ? 'monthly' : 'yearly',
+//     additionalRequirements: formData.narration,
+//     specialConditions: formData.indemnityCover ? 'Indemnity Cover Required' : '',
+//     numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' ? Number(formData.beds) : undefined,
+//     items: priceMatrix.map(row => {
+//       const item = { indemnity: row.indemnity?.trim() || 'Custom' };
+//       selectedYears.forEach(y => {
+//         const val = row[`y${y}`];
+//         if (val != null && val !== '') item[`year_${y}`] = Number(val);
+//       });
+//       if (formData.monthly && row.monthly != null && row.monthly !== '') {
+//         item.monthly = Number(row.monthly);
+//       }
+//       return item;
+//     }).filter(item => Object.keys(item).length > 1)
+//   };
+
+//   // ✅ Extract doctor name
+//   let doctorDisplayName = formData.doctorName;
+//   if (doctorDisplayName.includes(' (')) {
+//     doctorDisplayName = doctorDisplayName.split(' (')[0].trim();
+//   }
+
+//   const quotationData = {
+//     requester: {
+//       type: requesterType, // ✅ Now only "doctor" or "hospital"
+//       name: doctorDisplayName,
+//       entityId: formData.doctorId,
+//       contactPerson: doctorDisplayName
+//     },
+//     requestDetails,
+//     status: 'responses_pending',
+//     priority: 'medium',
+//     ...(formData.trno && { trno: formData.trno }),
+
+//     // ✅ ADD CUSTOM FIELD FOR FRONTEND TO IDENTIFY COMBINED
+//     metadata: {
+//       isCombinedMembership: formData.membershipType === "HOSPITAL + INDIVIDUAL MEMBERSHIP",
+//       originalMembershipType: formData.membershipType
+//     }
+//   };
+
+//   console.log("📤 QUOTATION PAYLOAD:", {
+//     type: quotationData.requester.type,
+//     entityId: quotationData.requester.entityId,
+//     isCombined: quotationData.metadata?.isCombinedMembership
+//   });
+
+//   try {
+//     const response = await apiClient.post(apiEndpoints.quotations.create, quotationData);
+
+//     if (response.data.success) {
+//       console.log("✅ QUOTATION CREATED:", response.data.data);
+//       toast.success('Quotation created successfully!');
+//       navigate('/admin/quotation-list');
+//     }
+//   } catch (error) {
+//     console.error("❌ ERROR:", error.response?.data);
+//     toast.error(error.response?.data?.message || 'Failed to save quotation');
+//   }
+// };
+
+
+
+//   return (
+//     <div className="mx-auto m-4 sm:mt-14 p-2 max-w-7xl">
+//       <div className="bg-white p-6 rounded-lg shadow-lg">
+//         <h1 className="mb-6 text-2xl font-bold text-gray-800">Create Quotation</h1>
+
+//         <form onSubmit={e => e.preventDefault()} className="space-y-6">
+
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">
+//                 TRNO <span className="text-xs text-gray-500">(Optional)</span>
+//               </label>
+//               <input type="text" name="trno" value={formData.trno} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Auto-generated" />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Doctor / Hospital Name</label>
+//               <select name="doctorName" value={formData.doctorName} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" disabled={loadingDoctors}>
+//                 <option value="">{loadingDoctors ? 'Loading...' : 'Select Doctor / Hospital'}</option>
+//                 {doctors.map(d => (
+//                   <option key={d._id} value={`${d.fullName} (${d.doctorId})`}>
+//                     {d.fullName} ({d.doctorId}) - {d.doctorType === 'hospital' ? 'Hospital' : d.specialization?.join(', ') || 'N/A'}
+//                   </option>
+//                 ))}
+//               </select>
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Area</label>
+//               <input type="text" name="area" value={formData.area} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+//             </div>
+//           </div>
+
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Quotation Date</label>
+//               <input type="date" name="quotationDate" value={formData.quotationDate} onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">
+//                 Membership Type {membershipTypeLocked && <span className="ml-2 text-xs text-green-600">(Auto)</span>}
+//               </label>
+//               <select name="membershipType" value={formData.membershipType} onChange={handleChange}
+//                 className={`mt-1 block w-full border rounded-md p-2 ${membershipTypeLocked ? 'bg-green-50 border-green-300 cursor-not-allowed' : 'border-gray-300'}`}
+//                 disabled={membershipTypeLocked}>
+//                 <option value="">Select</option>
+//                 <option value="INDIVIDUAL MEMBERSHIP">INDIVIDUAL MEMBERSHIP</option>
+//                 <option value="HOSPITAL MEMBERSHIP">HOSPITAL MEMBERSHIP</option>
+//                 <option value="HOSPITAL + INDIVIDUAL MEMBERSHIP">HOSPITAL + INDIVIDUAL</option>
+//               </select>
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Specialization / Hospital Type</label>
+//               <input type="text" value={formData.specialization} disabled
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-50" />
+//             </div>
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700">Narration</label>
+//             <input type="text" name="narration" value={formData.narration} onChange={handleChange}
+//               className="mt-1 block w-full border border-gray-300 rounded-md p-2" />
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-2">Membership Year</label>
+//             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+//               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(year => (
+//                 <label key={year} className="flex items-center cursor-pointer">
+//                   <input type="checkbox" name={`year_${year}`} checked={selectedYears.includes(year.toString())}
+//                     onChange={handleChange} className="mr-2 w-5 h-5 accent-[#15BBB3] rounded" />
+//                   <span className="text-sm">{year} Year</span>
+//                 </label>
+//               ))}
+//             </div>
+//           </div>
+
+//           <div className="flex gap-6">
+//             <label className="flex items-center">
+//               <input type="checkbox" name="monthly" checked={formData.monthly} onChange={handleChange}
+//                 className="mr-2 w-5 h-5 accent-[#15BBB3]" />
+//               <span className="text-sm">Monthly Payment</span>
+//             </label>
+//             <label className="flex items-center">
+//               <input type="checkbox" name="indemnityCover" checked={formData.indemnityCover} onChange={handleChange}
+//                 className="mr-2 w-5 h-5 accent-[#15BBB3]" />
+//               <span className="text-sm">Indemnity Cover</span>
+//             </label>
+//           </div>
+
+//           <div className="flex flex-wrap gap-3">
+//             <button type="button" onClick={handlePreview}
+//               className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]">
+//               Preview
+//             </button>
+//             <button type="button" onClick={handleGeneratePDF}
+//               className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]">
+//               Generate PDF
+//             </button>
+//           </div>
+//         </form>
+
+//         {isPreview && (
+//           <div className="mt-10 border-t pt-8">
+//             <h2 className="text-lg font-semibold text-gray-800 mb-4">Preview Quotation</h2>
+//             <PricePreviewTable
+//               membershipType={formData.membershipType}
+//               selectedYears={selectedYears}
+//               showMonthly={formData.monthly}
+//               packages={packages}
+//               specialization={formData.specialization}
+//               beds={formData.beds}
+//               setPriceMatrix={setPriceMatrix}
+//               onEdit={handleEdit}
+//               onSave={handleSave}
+//               indemnityCover={formData.indemnityCover}  // ← यह नई prop add करो
+//             />
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// const PricePreviewTable = ({
+//   membershipType, selectedYears, showMonthly, packages, specialization, beds, setPriceMatrix, onEdit, onSave,indemnityCover
+// }) => {
+//   const [rows, setRows] = useState([]);
+//   const isHospital = membershipType.includes('HOSPITAL');
+
+//   const formatNumber = (num) => (num == null || num === '') ? '' : Number(num).toLocaleString('en-IN');
+//   const parseNumber = (str) => str === '' ? null : Number(str.replace(/,/g, ''));
+
+//   // useEffect(() => {
+//   //   if (!packages.length || selectedYears.length === 0) {
+//   //     setRows([]);
+//   //     setPriceMatrix([]);
+//   //     return;
+//   //   }
+
+//   //   const normalizeYear = (yearStr) => {
+//   //     if (!yearStr) return null;
+//   //     if (yearStr.toLowerCase().includes('month')) return 'monthly';
+//   //     const match = yearStr.match(/(\d+)/);
+//   //     return match ? match[1] : null;
+//   //   };
+
+//   //   const getChargeForYear = (yearlyCharges, targetYear) => {
+//   //     if (!yearlyCharges || !Array.isArray(yearlyCharges)) return null;
+//   //     const chargeObj = yearlyCharges.find(c => c.year === targetYear);
+//   //     return chargeObj ? chargeObj.charge : null;
+//   //   };
+
+//   //   const newRows = [];
+
+//   //   packages.forEach(pkg => {
+//   //     // Check if package matches the target audience (e.g., doctors, hospitals, etc.)
+//   //     const typeMatch = pkg.detail?.toLowerCase() === 'doctors' ||
+//   //                       membershipType.toLowerCase().includes(pkg.detail?.toLowerCase()) ||
+//   //                       pkg.detail?.toLowerCase().includes('all');
+
+//   //     if (!typeMatch) return;
+
+//   //     // Create a row for this package
+//   //     const row = {
+//   //       id: pkg._id + '_' + Date.now(),
+//   //       indemnity: pkg.indemnity,
+//   //       packageId: pkg._id
+//   //     };
+
+//   //     // Handle monthly packages - if package has monthlyAmount
+//   //     if (pkg.monthlyAmount && showMonthly) {
+//   //       row.monthly = parseFloat(pkg.monthlyAmount);
+//   //     }
+
+//   //     // Handle all packages regardless of unit - we need to show all packages with same indemnity
+//   //     if (pkg.validityPeriod) {
+//   //       const packageYearValue = pkg.validityPeriod.value;
+//   //       const packageUnit = pkg.validityPeriod.unit;
+
+//   //       // Process each selected year
+//   //       selectedYears.forEach(y => {
+//   //         const yearNum = parseInt(y);
+
+//   //         // For packages with yearly validity, show their charges if the selected year is within range
+//   //         if (packageUnit === 'years' && yearNum <= packageYearValue) {
+//   //           // If pkg has yearlyCharges, use the specific charge for that year
+//   //           if (pkg.yearlyCharges && Array.isArray(pkg.yearlyCharges) && pkg.yearlyCharges.length > 0) {
+//   //             // Look for the charge for the specific selected year
+//   //             const yearCharge = pkg.yearlyCharges.find(yc => yc.year === yearNum);
+//   //             if (yearCharge) {
+//   //               row[`y${y}`] = yearCharge.charge;
+//   //             } else {
+//   //               // Calculate average charge if the specific year charge doesn't exist
+//   //               const totalCharge = pkg.yearlyCharges.reduce((sum, yc) => sum + (yc.charge || 0), 0);
+//   //               if (totalCharge > 0 && pkg.yearlyCharges.length > 0) {
+//   //                 const avgYearlyCharge = totalCharge / pkg.yearlyCharges.length;
+//   //                 row[`y${y}`] = avgYearlyCharge;
+//   //               } else {
+//   //                 row[`y${y}`] = pkg.finalPrice || pkg.basePrice || 0;
+//   //               }
+//   //             }
+//   //           } else {
+//   //             // If no yearly charges but the year is covered, use the base amount
+//   //             row[`y${y}`] = pkg.finalPrice || pkg.basePrice || (pkg.amount ? parseFloat(pkg.amount.replace(/[^\d.]/g, '')) : 0);
+//   //           }
+//   //         }
+//   //         // For packages with monthly validity, we can still show them if they have the same indemnity
+//   //         else if (pkg.validityPeriod.unit === 'months' && pkg.monthlyAmount) {
+//   //           // Monthly packages are handled above in the monthly section
+//   //         }
+//   //       });
+//   //     } else {
+//   //       // Handle packages without validityPeriod but with yearly charges
+//   //       if (pkg.yearlyCharges && Array.isArray(pkg.yearlyCharges) && pkg.yearlyCharges.length > 0) {
+//   //         // Find the maximum year in yearly charges to determine package validity
+//   //         const maxYear = Math.max(...pkg.yearlyCharges.map(yc => yc.year));
+
+//   //         selectedYears.forEach(y => {
+//   //           const yearNum = parseInt(y);
+//   //           if (yearNum <= maxYear) {
+//   //             const yearCharge = pkg.yearlyCharges.find(yc => yc.year === yearNum);
+//   //             if (yearCharge) {
+//   //               row[`y${y}`] = yearCharge.charge;
+//   //             } else {
+//   //               // If specific year charge doesn't exist, calculate average
+//   //               const totalCharge = pkg.yearlyCharges.reduce((sum, yc) => sum + (yc.charge || 0), 0);
+//   //               if (totalCharge > 0 && pkg.yearlyCharges.length > 0) {
+//   //                 const avgYearlyCharge = totalCharge / pkg.yearlyCharges.length;
+//   //                 row[`y${y}`] = avgYearlyCharge;
+//   //               }
+//   //             }
+//   //           }
+//   //         });
+//   //       }
+//   //     }
+
+//   //     // Also process packages that might have monthly amounts regardless of their validity period
+//   //     if (showMonthly && pkg.monthlyAmount) {
+//   //       const monthlyAmount = parseFloat(pkg.monthlyAmount) || 0;
+//   //       if (monthlyAmount > 0) {
+//   //         row.monthly = monthlyAmount;
+//   //       }
+//   //     }
+
+//   //     // Check if the row has any values to display
+//   //     const hasValue = (showMonthly && row.monthly !== null && row.monthly !== undefined) ||
+//   //                     selectedYears.some(y => row[`y${y}`] != null && row[`y${y}`] !== undefined);
+
+//   //     if (hasValue) newRows.push(row);
+//   //   });
+
+//   //   if (newRows.length === 0) {
+//   //     newRows.push({ id: 'no-data', indemnity: 'No packages found for selected criteria', disabled: true });
+//   //   }
+
+//   //   setRows(newRows);
+//   //   setPriceMatrix(newRows.filter(r => !r.disabled));
+//   // }, [packages, membershipType, selectedYears, showMonthly, setPriceMatrix]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // useEffect(() => {
+// //   if (!packages.length || selectedYears.length === 0) {
+// //     setRows([]);
+// //     setPriceMatrix([]);
+// //     return;
+// //   }
+
+// //   const newRows = [];
+
+// //   packages.forEach(pkg => {
+// //     // 1. Type matching (doctors, hospital etc.)
+// //     const typeMatch = pkg.detail?.toLowerCase() === 'doctors' ||
+// //                       membershipType.toLowerCase().includes(pkg.detail?.toLowerCase()) ||
+// //                       pkg.detail?.toLowerCase().includes('all');
+
+// //     if (!typeMatch) return;
+
+// //     // 2. KEY FILTER: Monthly mode में सिर्फ valid monthly amount वाले packages
+// //     if (showMonthly) {
+// //       const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount || pkg.monthlyamount;
+// //       const hasValidMonthly = monthlyValue != null &&
+// //                               monthlyValue !== '' &&
+// //                               monthlyValue !== 'N/A' &&
+// //                               !isNaN(parseFloat(monthlyValue));
+
+// //       if (!hasValidMonthly) {
+// //         return; // ← यहाँ row ही नहीं बनेगी → पूरी तरह hide
+// //       }
+// //     }
+
+// //     // Row बनाओ
+// //     const row = {
+// //       id: pkg._id + '_' + Date.now(),
+// //       indemnity: pkg.indemnity || 'Not Specified',
+// //       packageId: pkg._id
+// //     };
+
+// //     // Monthly amount डालो (monthly mode में तो है ही, yearly mode में भी अगर हो तो डाल सकते हो)
+// //     const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount;
+// //     if (monthlyValue && monthlyValue !== 'N/A' && !isNaN(parseFloat(monthlyValue))) {
+// //       row.monthly = parseFloat(monthlyValue);
+// //     }
+
+// //     // Yearly charges डालो – ये हमेशा दिखने चाहिए (monthly mode में भी)
+// //     if (pkg.yearlyCharges && Array.isArray(pkg.yearlyCharges)) {
+// //       selectedYears.forEach(y => {
+// //         const yearNum = parseInt(y);
+// //         const chargeObj = pkg.yearlyCharges.find(yc => yc.year === yearNum);
+// //         if (chargeObj && chargeObj.charge != null) {
+// //           row[`y${y}`] = chargeObj.charge;
+// //         }
+// //       });
+// //     }
+
+// //     // कम से कम एक value हो (monthly या कोई year)
+// //     const hasValue = (showMonthly && row.monthly != null) ||
+// //                      selectedYears.some(y => row[`y${y}`] != null);
+
+// //     if (hasValue) {
+// //       newRows.push(row);
+// //     }
+// //   });
+
+// //   // कोई package नहीं मिला तो message
+// //   if (newRows.length === 0) {
+// //     newRows.push({
+// //       id: 'no-data',
+// //       indemnity: showMonthly
+// //         ? 'No package with a monthly payment option was found.'
+// //         : 'No package found for the selected criteria.',
+// //       disabled: true
+// //     });
+// //   }
+
+// //   setRows(newRows);
+// //   setPriceMatrix(newRows.filter(r => !r.disabled));
+// // }, [packages, membershipType, selectedYears, showMonthly, setPriceMatrix]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// useEffect(() => {
+//   if (!packages.length || selectedYears.length === 0) {
+//     setRows([]);
+//     setPriceMatrix([]);
+//     return;
+//   }
+
+//   const newRows = [];
+
+//   packages.forEach(pkg => {
+//     const typeMatch = pkg.detail?.toLowerCase() === 'doctors' ||
+//                       membershipType.toLowerCase().includes(pkg.detail?.toLowerCase()) ||
+//                       pkg.detail?.toLowerCase().includes('all');
+
+//     if (!typeMatch) return;
+
+//     // Monthly filter सिर्फ़ तब लगाओ जब Monthly ON है और Indemnity Cover OFF है
+//     if (showMonthly && !indemnityCover) {   // ← यहाँ indemnityCover prop use करो
+//       const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount;
+//       const hasValidMonthly = monthlyValue != null &&
+//                               monthlyValue !== '' &&
+//                               monthlyValue !== 'N/A' &&
+//                               !isNaN(parseFloat(monthlyValue));
+
+//       if (!hasValidMonthly) {
+//         return; // row skip
+//       }
+//     }
+
+//     // बाकी कोड same रहेगा...
+//     const row = {
+//       id: pkg._id + '_' + Date.now(),
+//       indemnity: pkg.indemnity || 'Not Specified',
+//       packageId: pkg._id
+//     };
+
+//     const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount;
+//     if (monthlyValue && monthlyValue !== 'N/A' && !isNaN(parseFloat(monthlyValue))) {
+//       row.monthly = parseFloat(monthlyValue);
+//     }
+
+//     if (pkg.yearlyCharges && Array.isArray(pkg.yearlyCharges)) {
+//       selectedYears.forEach(y => {
+//         const yearNum = parseInt(y);
+//         const chargeObj = pkg.yearlyCharges.find(yc => yc.year === yearNum);
+//         if (chargeObj?.charge != null) {
+//           row[`y${y}`] = chargeObj.charge;
+//         }
+//       });
+//     }
+
+//     const hasValue = selectedYears.some(y => row[`y${y}`] != null) ||
+//                      (showMonthly && row.monthly != null);
+
+//     if (hasValue) {
+//       newRows.push(row);
+//     }
+//   });
+
+//   if (newRows.length === 0) {
+//     const message = showMonthly && !indemnityCover
+//       ? 'No package with a monthly payment option was found.'
+//       : 'No package found for the selected criteria.';
+
+//     newRows.push({
+//       id: 'no-data',
+//       indemnity: message,
+//       disabled: true
+//     });
+//   }
+
+//   setRows(newRows);
+//   setPriceMatrix(newRows.filter(r => !r.disabled));
+// }, [packages, membershipType, selectedYears, showMonthly, indemnityCover, setPriceMatrix]); // ← dependency में indemnityCover
+
+
+
+
+
+
+//   const updateRow = (id, field, value) => {
+//     const updated = rows.map(row => row.id === id ? { ...row, [field]: parseNumber(value) || '' } : row);
+//     setRows(updated);
+//     setPriceMatrix(updated.filter(r => !r.disabled));
+//   };
+
+//   const deleteRow = (id) => {
+//     const updated = rows.filter(row => row.id !== id);
+//     setRows(updated);
+//     setPriceMatrix(updated.filter(r => !r.disabled));
+//   };
+
+//   const addCustomRow = () => {
+//     const newRow = {
+//       id: 'custom_' + Date.now(),
+//       indemnity: 'Custom Limit',
+//       isCustom: true,
+//       monthly: null,
+//       ...selectedYears.reduce((acc, y) => ({ ...acc, [`y${y}`]: null }), {})
+//     };
+//     setRows([...rows.filter(r => !r.disabled), newRow]);
+//     setPriceMatrix(prev => [...prev, newRow]);
+//   };
+
+//   return (
+//     <>
+//       <div className="overflow-x-auto border border-gray-300 rounded-lg">
+//         <table className="min-w-full bg-white">
+//           <thead className="bg-gray-100">
+//             <tr>
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Type</th>
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Specialization / Hospital Type</th>
+//               {isHospital && <th className="px-4 py-3 text-left text-sm font-semibold border-r">No. of Beds</th>}
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Indemnity Limit</th>
+//               {showMonthly && <th className="px-4 py-3 text-left text-sm font-semibold border-r">Monthly</th>}
+//               {selectedYears.map(y => (
+//                 <th key={y} className="px-4 py-3 text-left text-sm font-semibold border-r">{y} Year</th>
+//               ))}
+//               <th className="px-4 py-3 text-left text-sm font-semibold w-12">Action</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {rows.map((row, i) => (
+//               <tr key={row.id} className={`${i % 2 === 1 ? 'bg-gray-50' : ''} ${row.disabled ? 'opacity-60' : ''}`}>
+//                 {i === 0 && (
+//                   <>
+//                     <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                       {membershipType}
+//                     </td>
+//                     <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                       {specialization || 'All'}
+//                     </td>
+//                     {isHospital && (
+//                       <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                         {beds === 'Loading...' ? 'Loading...' : beds && beds !== 'N/A' ? `${beds} Beds` : 'Not Specified'}
+//                       </td>
+//                     )}
+//                   </>
+//                 )}
+//                 <td className="px-4 py-3 border-r">
+//                   {row.disabled ? (
+//                     <span className="text-red-600">{row.indemnity}</span>
+//                   ) : (
+//                     <input
+//                       type="text"
+//                       value={row.indemnity || ''}
+//                       onChange={(e) => updateRow(row.id, 'indemnity', e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                       placeholder="e.g. 10 Cr"
+//                     />
+//                   )}
+//                 </td>
+
+//                 {showMonthly && (
+//                   <td className="px-4 py-3 border-r">
+//                     <input
+//                       type="text"
+//                       disabled={row.disabled}
+//                       value={formatNumber(row.monthly)}
+//                       onChange={(e) => updateRow(row.id, 'monthly', e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                     />
+//                   </td>
+//                 )}
+
+//                 {selectedYears.map(y => (
+//                   <td key={`y${y}`} className="px-4 py-3 border-r">
+//                     <input
+//                       type="text"
+//                       disabled={row.disabled}
+//                       value={formatNumber(row[`y${y}`])}
+//                       onChange={(e) => updateRow(row.id, `y${y}`, e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                     />
+//                   </td>
+//                 ))}
+
+//                 <td className="px-4 py-3 text-center">
+//                   {!row.disabled && (
+//                     <button onClick={() => deleteRow(row.id)} className="text-red-600 hover:text-red-800 font-bold text-xl">
+//                       ×
+//                     </button>
+//                   )}
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       <div className="mt-6 flex justify-between items-center">
+//         <button onClick={addCustomRow} className="text-[#15BBB3] font-medium hover:underline flex items-center gap-2">
+//           <span className="text-xl">+</span> Add Custom Indemnity Limit
+//         </button>
+
+//         <div className="flex gap-3">
+//           <button onClick={onEdit} className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">
+//             Edit Form
+//           </button>
+//           <button
+//             onClick={onSave}
+//             disabled={rows.length === 0 || rows.every(r => r.disabled)}
+//             className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+//           >
+//             Save Quotation
+//           </button>
+//         </div>
+//       </div>
+//     </>
+//   );
+// };
+
+// export default CreateQuotation;
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState, useEffect, useMemo } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import apiClient, { apiEndpoints } from '../../../services/apiClient';
+// import { toast } from 'react-toastify';
+// import Select from 'react-select';
+
+// const CreateQuotation = () => {
+//   const [isPreview, setIsPreview] = useState(false);
+//   const [doctors, setDoctors] = useState([]);
+//   const [packages, setPackages] = useState([]);
+//   const [loadingDoctors, setLoadingDoctors] = useState(true);
+//   const [membershipTypeLocked, setMembershipTypeLocked] = useState(false);
+//   const [selectedYears, setSelectedYears] = useState([]);
+//   const [priceMatrix, setPriceMatrix] = useState([]);
+//   const [selectedDoctor, setSelectedDoctor] = useState(null);
+
+//   const [formData, setFormData] = useState({
+//     trno: '',
+//     quotationDate: new Date().toISOString().split('T')[0],
+//     doctorId: '',
+//     doctorName: '',
+//     membershipType: 'INDIVIDUAL MEMBERSHIP',
+//     specialization: '',
+//     area: 'All India',
+//     narration: '',
+//     monthly: false,
+//     indemnityCover: false,
+//     beds: 'N/A',
+//   });
+
+//   const navigate = useNavigate();
+
+//   // React Select ke liye doctors options format
+//   const doctorOptions = useMemo(() => {
+//     return doctors.map(doctor => ({
+//       value: doctor._id,
+//       label: `${doctor.fullName} (${doctor.doctorId})`,
+//       doctorType: doctor.doctorType,
+//       specialization: doctor.specialization,
+//       rawData: doctor
+//     }));
+//   }, [doctors]);
+
+//   // Fetch Doctors Dropdown
+//   useEffect(() => {
+//     const fetchDoctors = async () => {
+//       try {
+//         setLoadingDoctors(true);
+//         const response = await apiClient.get(apiEndpoints.doctors.dropdown, { params: { limit: 1000 } });
+//         setDoctors(response.data.data || []);
+//       } catch (error) {
+//         console.error('Error fetching doctors:', error);
+//         toast.error('Failed to load doctors list');
+//         try {
+//           const response = await apiClient.get('/doctors', { params: { limit: 1000 } });
+//           setDoctors(response.data.data || []);
+//         } catch (fallbackError) {
+//           console.error('Fallback failed:', fallbackError);
+//         }
+//       } finally {
+//         setLoadingDoctors(false);
+//       }
+//     };
+//     fetchDoctors();
+//   }, []);
+
+//   // Fetch Packages
+//   useEffect(() => {
+//     const fetchPackages = async () => {
+//       try {
+//         const response = await apiClient.get('/service-packages/list');
+//         setPackages(response.data.data || []);
+//       } catch (error) {
+//         toast.error('Failed to load packages');
+//       }
+//     };
+//     fetchPackages();
+//   }, []);
+
+//   const handleDoctorSelect = (selectedOption) => {
+//     setSelectedDoctor(selectedOption);
+
+//     if (!selectedOption) {
+//       setFormData(prev => ({
+//         ...prev,
+//         doctorId: '',
+//         doctorName: '',
+//         membershipType: 'INDIVIDUAL MEMBERSHIP',
+//         specialization: '',
+//         beds: 'N/A'
+//       }));
+//       setMembershipTypeLocked(false);
+//       return;
+//     }
+
+//     const doctor = selectedOption.rawData;
+
+//     // Determine membership type
+//     const isHospitalType = ['hospital', 'hospital_individual'].includes(doctor.doctorType);
+//     const membershipType = doctor.doctorType === 'hospital'
+//       ? 'HOSPITAL MEMBERSHIP'
+//       : doctor.doctorType === 'hospital_individual'
+//         ? 'HOSPITAL + INDIVIDUAL MEMBERSHIP'
+//         : 'INDIVIDUAL MEMBERSHIP';
+
+//     // Set basic info immediately
+//     setFormData(prev => ({
+//       ...prev,
+//       doctorId: doctor._id,
+//       doctorName: selectedOption.label,
+//       membershipType,
+//       specialization: isHospitalType ? 'Loading...' : (doctor.specialization?.join(', ') || 'General Practitioner'),
+//       beds: isHospitalType ? 'Loading...' : 'N/A'
+//     }));
+//     setMembershipTypeLocked(true);
+
+//     // Fetch full doctor details for hospitalType & beds
+//     if (isHospitalType) {
+//       apiClient.get(`/doctors/${doctor._id}`)
+//         .then(response => {
+//           const doctorDetails = response.data.data;
+
+//           const hospitalType = doctorDetails.hospitalDetails?.hospitalType || 'Not Specified';
+//           const bedsCount = doctorDetails.hospitalDetails?.beds || 'Not Specified';
+
+//           setFormData(prev => ({
+//             ...prev,
+//             specialization: hospitalType,
+//             beds: bedsCount
+//           }));
+//         })
+//         .catch(err => {
+//           console.error("Failed to load hospital details:", err);
+//           toast.warn("Hospital details not available");
+//           setFormData(prev => ({
+//             ...prev,
+//             specialization: 'Hospital (Details Unavailable)',
+//             beds: 'Not Specified'
+//           }));
+//         });
+//     }
+//   };
+
+//   const handleChange = (e) => {
+//     const { name, value, type, checked } = e.target;
+
+//     if (name.startsWith('year_')) {
+//       const year = name.split('_')[1];
+//       setSelectedYears(prev =>
+//         prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year].sort((a, b) => a - b)
+//       );
+//     }
+//     else {
+//       if (name === 'membershipType' && membershipTypeLocked) {
+//         toast.info('Membership type is auto-selected');
+//         return;
+//       }
+//       setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+//     }
+//   };
+
+//   const handlePreview = () => {
+//     if (!formData.doctorName) {
+//       toast.error('Please select a doctor');
+//       return;
+//     }
+//     if (selectedYears.length === 0) {
+//       toast.error('Select at least one year');
+//       return;
+//     }
+//     setIsPreview(true);
+//   };
+
+//   const handleEdit = () => setIsPreview(false);
+
+//   const handleGeneratePDF = () => {
+//     if (!formData.doctorId || priceMatrix.length === 0) {
+//       toast.error('Complete form first');
+//       return;
+//     }
+
+//     const dataToPass = {
+//       membershipType: formData.membershipType,
+//       doctorData: { name: formData.doctorName.split(' (')[0].trim() },
+//       hospitalData: { name: formData.doctorName.split(' (')[0].trim(), address: formData.area || 'All India' },
+//       membershipData: {
+//         membershipType: formData.membershipType,
+//         specialization: formData.specialization || 'All Specializations',
+//         numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' ? formData.beds : 'Not Specified',
+//         priceMatrix: priceMatrix.filter(r => !r.disabled).map(row => ({
+//           indemnity: row.indemnity || 'Custom Limit',
+//           monthly: row.monthly,
+//           y1: row.y1,
+//           y5: row.y5,
+//         }))
+//       }
+//     };
+
+//     navigate(`/admin/quotation/${id}/`, { state: dataToPass });
+//   };
+
+//   const handleSave = async () => {
+//     // ✅ VALIDATION
+//     if (!formData.doctorId || !formData.doctorName) {
+//       toast.error('Please select a doctor before saving');
+//       return;
+//     }
+
+//     console.log("🔍 BEFORE SAVE CHECK:", {
+//       doctorId: formData.doctorId,
+//       doctorName: formData.doctorName,
+//       membershipType: formData.membershipType
+//     });
+
+//     if (!priceMatrix || priceMatrix.length === 0 || priceMatrix[0]?.disabled) {
+//       toast.error('No pricing data to save');
+//       return;
+//     }
+
+//     // ✅ FIXED: Backend-compatible requester types
+//     // Backend sirf "doctor" ya "hospital" accept karta hai
+//     let requesterType = 'hospital'; // default
+
+//     if (formData.membershipType === "INDIVIDUAL MEMBERSHIP") {
+//       requesterType = 'doctor';
+//     }
+//     else if (formData.membershipType === "HOSPITAL MEMBERSHIP") {
+//       requesterType = 'hospital';
+//     }
+//     else if (formData.membershipType === "HOSPITAL + INDIVIDUAL MEMBERSHIP") {
+//       // ✅ BACKEND FIX: Use "hospital" for combined (since backend doesn't accept "combined")
+//       requesterType = 'hospital';
+
+//       // ✅ ADD A NOTE IN NARRATION
+//       formData.narration = (formData.narration || '');
+
+//       console.log("🏥 Hospital+Individual detected, using 'hospital' as requester type");
+//     }
+
+//     console.log("🎯 FINAL REQUESTER TYPE:", requesterType);
+
+//     const requestDetails = {
+//       policyTerms: selectedYears.map(Number),
+//       paymentFrequency: formData.monthly ? 'monthly' : 'yearly',
+//       additionalRequirements: formData.narration,
+//       specialConditions: formData.indemnityCover ? 'Indemnity Cover Required' : '',
+//       numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' ? Number(formData.beds) : undefined,
+//       items: priceMatrix.map(row => {
+//         const item = { indemnity: row.indemnity?.trim() || 'Custom' };
+//         selectedYears.forEach(y => {
+//           const val = row[`y${y}`];
+//           if (val != null && val !== '') item[`year_${y}`] = Number(val);
+//         });
+//         if (formData.monthly && row.monthly != null && row.monthly !== '') {
+//           item.monthly = Number(row.monthly);
+//         }
+//         return item;
+//       }).filter(item => Object.keys(item).length > 1)
+//     };
+
+//     // ✅ Extract doctor name
+//     let doctorDisplayName = formData.doctorName;
+//     if (doctorDisplayName.includes(' (')) {
+//       doctorDisplayName = doctorDisplayName.split(' (')[0].trim();
+//     }
+
+//     const quotationData = {
+//       requester: {
+//         type: requesterType, // ✅ Now only "doctor" or "hospital"
+//         name: doctorDisplayName,
+//         entityId: formData.doctorId,
+//         contactPerson: doctorDisplayName
+//       },
+//       requestDetails,
+//       status: 'responses_pending',
+//       priority: 'medium',
+//       ...(formData.trno && { trno: formData.trno }),
+
+//       // ✅ ADD CUSTOM FIELD FOR FRONTEND TO IDENTIFY COMBINED
+//       metadata: {
+//         isCombinedMembership: formData.membershipType === "HOSPITAL + INDIVIDUAL MEMBERSHIP",
+//         originalMembershipType: formData.membershipType
+//       }
+//     };
+
+//     console.log("📤 QUOTATION PAYLOAD:", {
+//       type: quotationData.requester.type,
+//       entityId: quotationData.requester.entityId,
+//       isCombined: quotationData.metadata?.isCombinedMembership
+//     });
+
+//     try {
+//       const response = await apiClient.post(apiEndpoints.quotations.create, quotationData);
+
+//       if (response.data.success) {
+//         console.log("✅ QUOTATION CREATED:", response.data.data);
+//         toast.success('Quotation created successfully!');
+//         navigate('/admin/quotation-list');
+//       }
+//     } catch (error) {
+//       console.error("❌ ERROR:", error.response?.data);
+//       toast.error(error.response?.data?.message || 'Failed to save quotation');
+//     }
+//   };
+
+//   return (
+//     <div className="mx-auto m-4 sm:mt-14 p-2 max-w-7xl">
+//       <div className="bg-white p-6 rounded-lg shadow-lg">
+//         <h1 className="mb-6 text-2xl font-bold text-gray-800">Create Quotation</h1>
+
+//         <form onSubmit={e => e.preventDefault()} className="space-y-6">
+
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">
+//                 TRNO <span className="text-xs text-gray-500">(Optional)</span>
+//               </label>
+//               <input
+//                 type="text"
+//                 name="trno"
+//                 value={formData.trno}
+//                 onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+//                 placeholder="Auto-generated"
+//               />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Doctor / Hospital Name</label>
+//               <Select
+//                 options={doctorOptions}
+//                 value={selectedDoctor}
+//                 onChange={handleDoctorSelect}
+//                 isLoading={loadingDoctors}
+//                 isClearable={true}
+//                 isSearchable={true}
+//                 placeholder={loadingDoctors ? "Loading doctors..." : "Search or select doctor/hospital"}
+//                 className="mt-1"
+//                 classNamePrefix="react-select"
+//                 styles={{
+//                   control: (base) => ({
+//                     ...base,
+//                     border: '1px solid #d1d5db',
+//                     borderRadius: '0.375rem',
+//                     padding: '2px 8px',
+//                     minHeight: '42px'
+//                   }),
+//                   menu: (base) => ({
+//                     ...base,
+//                     zIndex: 9999
+//                   })
+//                 }}
+//                 formatOptionLabel={(option) => (
+//                   <div className="flex flex-col">
+//                     <span className="font-medium">{option.label}</span>
+//                     <span className="text-xs text-gray-500">
+//                       {option.doctorType === 'hospital' ? 'Hospital' :
+//                        option.specialization?.join(', ') || 'General Practitioner'}
+//                     </span>
+//                   </div>
+//                 )}
+//               />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Area</label>
+//               <input
+//                 type="text"
+//                 name="area"
+//                 value={formData.area}
+//                 onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+//               />
+//             </div>
+//           </div>
+
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Quotation Date</label>
+//               <input
+//                 type="date"
+//                 name="quotationDate"
+//                 value={formData.quotationDate}
+//                 onChange={handleChange}
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+//               />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">
+//                 Membership Type {membershipTypeLocked && <span className="ml-2 text-xs text-green-600">(Auto)</span>}
+//               </label>
+//               <select
+//                 name="membershipType"
+//                 value={formData.membershipType}
+//                 onChange={handleChange}
+//                 className={`mt-1 block w-full border rounded-md p-2 ${membershipTypeLocked ? 'bg-green-50 border-green-300 cursor-not-allowed' : 'border-gray-300'}`}
+//                 disabled={membershipTypeLocked}
+//               >
+//                 <option value="">Select</option>
+//                 <option value="HOSPITAL MEMBERSHIP">Hospital Membership</option>
+//                 <option value="INDIVIDUAL MEMBERSHIP">Individual Membership</option>
+//                 <option value="INDIVIDUAL + HOSPITAL MEMBERSHIP"> Invdividual + Hospital</option>
+//               </select>
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700">Specialization / Hospital Type</label>
+//               <input
+//                 type="text"
+//                 value={formData.specialization}
+//                 disabled
+//                 className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-50"
+//               />
+//             </div>
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700">Narration</label>
+//             <input
+//               type="text"
+//               name="narration"
+//               value={formData.narration}
+//               onChange={handleChange}
+//               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-2">Membership Year</label>
+//             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+//               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(year => (
+//                 <label key={year} className="flex items-center cursor-pointer">
+//                   <input
+//                     type="checkbox"
+//                     name={`year_${year}`}
+//                     checked={selectedYears.includes(year.toString())}
+//                     onChange={handleChange}
+//                     className="mr-2 w-5 h-5 accent-[#15BBB3] rounded"
+//                   />
+//                   <span className="text-sm">{year} Year</span>
+//                 </label>
+//               ))}
+//             </div>
+//           </div>
+
+//           <div className="flex gap-6">
+//             <label className="flex items-center">
+//               <input
+//                 type="checkbox"
+//                 name="monthly"
+//                 checked={formData.monthly}
+//                 onChange={handleChange}
+//                 className="mr-2 w-5 h-5 accent-[#15BBB3]"
+//               />
+//               <span className="text-sm">Monthly Payment</span>
+//             </label>
+//             <label className="flex items-center">
+//               <input
+//                 type="checkbox"
+//                 name="indemnityCover"
+//                 checked={formData.indemnityCover}
+//                 onChange={handleChange}
+//                 className="mr-2 w-5 h-5 accent-[#15BBB3]"
+//               />
+//               <span className="text-sm">Indemnity Cover</span>
+//             </label>
+//           </div>
+
+//           <div className="flex flex-wrap gap-3">
+//             <button
+//               type="button"
+//               onClick={handlePreview}
+//               className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]"
+//             >
+//               Preview
+//             </button>
+//             <button
+//               type="button"
+//               onClick={handleGeneratePDF}
+//               className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]"
+//             >
+//               Generate PDF
+//             </button>
+//           </div>
+//         </form>
+
+//         {isPreview && (
+//           <div className="mt-10 border-t pt-8">
+//             <h2 className="text-lg font-semibold text-gray-800 mb-4">Preview Quotation</h2>
+//             <PricePreviewTable
+//               membershipType={formData.membershipType}
+//               selectedYears={selectedYears}
+//               showMonthly={formData.monthly}
+//               packages={packages}
+//               specialization={formData.specialization}
+//               beds={formData.beds}
+//               setPriceMatrix={setPriceMatrix}
+//               onEdit={handleEdit}
+//               onSave={handleSave}
+//               indemnityCover={formData.indemnityCover}
+//             />
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// const PricePreviewTable = ({
+//   membershipType, selectedYears, showMonthly, packages, specialization, beds, setPriceMatrix, onEdit, onSave, indemnityCover
+// }) => {
+//   const [rows, setRows] = useState([]);
+//   const isHospital = membershipType.includes('HOSPITAL');
+
+//   const formatNumber = (num) => (num == null || num === '') ? '' : Number(num).toLocaleString('en-IN');
+//   const parseNumber = (str) => str === '' ? null : Number(str.replace(/,/g, ''));
+
+//   useEffect(() => {
+//     if (!packages.length || selectedYears.length === 0) {
+//       setRows([]);
+//       setPriceMatrix([]);
+//       return;
+//     }
+
+//     const newRows = [];
+
+//     packages.forEach(pkg => {
+//       const typeMatch = pkg.detail?.toLowerCase() === 'doctors' ||
+//                         membershipType.toLowerCase().includes(pkg.detail?.toLowerCase()) ||
+//                         pkg.detail?.toLowerCase().includes('all');
+
+//       if (!typeMatch) return;
+
+//       // Monthly filter सिर्फ़ तब लगाओ जब Monthly ON है और Indemnity Cover OFF है
+//       if (showMonthly && !indemnityCover) {
+//         const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount;
+//         const hasValidMonthly = monthlyValue != null &&
+//                                 monthlyValue !== '' &&
+//                                 monthlyValue !== 'N/A' &&
+//                                 !isNaN(parseFloat(monthlyValue));
+
+//         if (!hasValidMonthly) {
+//           return; // row skip
+//         }
+//       }
+
+//       // बाकी कोड same रहेगा...
+//       const row = {
+//         id: pkg._id + '_' + Date.now(),
+//         indemnity: pkg.indemnity || 'Not Specified',
+//         packageId: pkg._id
+//       };
+
+//       const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount;
+//       if (monthlyValue && monthlyValue !== 'N/A' && !isNaN(parseFloat(monthlyValue))) {
+//         row.monthly = parseFloat(monthlyValue);
+//       }
+
+//       if (pkg.yearlyCharges && Array.isArray(pkg.yearlyCharges)) {
+//         selectedYears.forEach(y => {
+//           const yearNum = parseInt(y);
+//           const chargeObj = pkg.yearlyCharges.find(yc => yc.year === yearNum);
+//           if (chargeObj?.charge != null) {
+//             row[`y${y}`] = chargeObj.charge;
+//           }
+//         });
+//       }
+
+//       const hasValue = selectedYears.some(y => row[`y${y}`] != null) ||
+//                       (showMonthly && row.monthly != null);
+
+//       if (hasValue) {
+//         newRows.push(row);
+//       }
+//     });
+
+//     if (newRows.length === 0) {
+//       const message = showMonthly && !indemnityCover
+//         ? 'No package with a monthly payment option was found.'
+//         : 'No package found for the selected criteria.';
+
+//       newRows.push({
+//         id: 'no-data',
+//         indemnity: message,
+//         disabled: true
+//       });
+//     }
+
+//     setRows(newRows);
+//     setPriceMatrix(newRows.filter(r => !r.disabled));
+//   }, [packages, membershipType, selectedYears, showMonthly, indemnityCover, setPriceMatrix]);
+
+//   const updateRow = (id, field, value) => {
+//     const updated = rows.map(row => row.id === id ? { ...row, [field]: parseNumber(value) || '' } : row);
+//     setRows(updated);
+//     setPriceMatrix(updated.filter(r => !r.disabled));
+//   };
+
+//   const deleteRow = (id) => {
+//     const updated = rows.filter(row => row.id !== id);
+//     setRows(updated);
+//     setPriceMatrix(updated.filter(r => !r.disabled));
+//   };
+
+//   const addCustomRow = () => {
+//     const newRow = {
+//       id: 'custom_' + Date.now(),
+//       indemnity: 'Custom Limit',
+//       isCustom: true,
+//       monthly: null,
+//       ...selectedYears.reduce((acc, y) => ({ ...acc, [`y${y}`]: null }), {})
+//     };
+//     setRows([...rows.filter(r => !r.disabled), newRow]);
+//     setPriceMatrix(prev => [...prev, newRow]);
+//   };
+
+//   return (
+//     <>
+//       <div className="overflow-x-auto border border-gray-300 rounded-lg">
+//         <table className="min-w-full bg-white">
+//           <thead className="bg-gray-100">
+//             <tr>
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Type</th>
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Specialization / Hospital Type</th>
+//               {isHospital && <th className="px-4 py-3 text-left text-sm font-semibold border-r">No. of Beds</th>}
+//               <th className="px-4 py-3 text-left text-sm font-semibold border-r">Indemnity Limit</th>
+//               {showMonthly && <th className="px-4 py-3 text-left text-sm font-semibold border-r">Monthly</th>}
+//               {selectedYears.map(y => (
+//                 <th key={y} className="px-4 py-3 text-left text-sm font-semibold border-r">{y} Year</th>
+//               ))}
+//               <th className="px-4 py-3 text-left text-sm font-semibold w-12">Action</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {rows.map((row, i) => (
+//               <tr key={row.id} className={`${i % 2 === 1 ? 'bg-gray-50' : ''} ${row.disabled ? 'opacity-60' : ''}`}>
+//                 {i === 0 && (
+//                   <>
+//                     <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                       {membershipType}
+//                     </td>
+//                     <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                       {specialization || 'All'}
+//                     </td>
+//                     {isHospital && (
+//                       <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+//                         {beds === 'Loading...' ? 'Loading...' : beds && beds !== 'N/A' ? `${beds} Beds` : 'Not Specified'}
+//                       </td>
+//                     )}
+//                   </>
+//                 )}
+//                 <td className="px-4 py-3 border-r">
+//                   {row.disabled ? (
+//                     <span className="text-red-600">{row.indemnity}</span>
+//                   ) : (
+//                     <input
+//                       type="text"
+//                       value={row.indemnity || ''}
+//                       onChange={(e) => updateRow(row.id, 'indemnity', e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                       placeholder="e.g. 10 Cr"
+//                     />
+//                   )}
+//                 </td>
+
+//                 {showMonthly && (
+//                   <td className="px-4 py-3 border-r">
+//                     <input
+//                       type="text"
+//                       disabled={row.disabled}
+//                       value={formatNumber(row.monthly)}
+//                       onChange={(e) => updateRow(row.id, 'monthly', e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                     />
+//                   </td>
+//                 )}
+
+//                 {selectedYears.map(y => (
+//                   <td key={`y${y}`} className="px-4 py-3 border-r">
+//                     <input
+//                       type="text"
+//                       disabled={row.disabled}
+//                       value={formatNumber(row[`y${y}`])}
+//                       onChange={(e) => updateRow(row.id, `y${y}`, e.target.value)}
+//                       className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+//                     />
+//                   </td>
+//                 ))}
+
+//                 <td className="px-4 py-3 text-center">
+//                   {!row.disabled && (
+//                     <button onClick={() => deleteRow(row.id)} className="text-red-600 hover:text-red-800 font-bold text-xl">
+//                       ×
+//                     </button>
+//                   )}
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       <div className="mt-6 flex justify-between items-center">
+//         <button onClick={addCustomRow} className="text-[#15BBB3] font-medium hover:underline flex items-center gap-2">
+//           <span className="text-xl">+</span> Add Custom Indemnity Limit
+//         </button>
+
+//         <div className="flex gap-3">
+//           <button onClick={onEdit} className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">
+//             Edit Form
+//           </button>
+//           <button
+//             onClick={onSave}
+//             disabled={rows.length === 0 || rows.every(r => r.disabled)}
+//             className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+//           >
+//             Save Quotation
+//           </button>
+//         </div>
+//       </div>
+//     </>
+//   );
+// };
+
+// export default CreateQuotation;
+
+
+
+
+
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import apiClient, { apiEndpoints } from '../../../services/apiClient';
+import { toast } from 'react-toastify';
+import Select from 'react-select';
+
+const CreateQuotation = () => {
+  const [searchParams] = useSearchParams();
+  const [isPreview, setIsPreview] = useState(false);
+  const [doctors, setDoctors] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [membershipTypeLocked, setMembershipTypeLocked] = useState(false);
+  const [selectedYears, setSelectedYears] = useState([]);
+  const [priceMatrix, setPriceMatrix] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+
+  const [formData, setFormData] = useState({
+    trno: '',
+    quotationDate: new Date().toISOString().split('T')[0],
+    doctorId: '',
+    doctorName: '',
+    membershipType: 'INDIVIDUAL MEMBERSHIP',
+    specialization: '',
+    area: 'All India',
+    narration: '',
+    monthly: false,
+    indemnityCover: false,
+    beds: 'N/A',
+  });
+
+  const navigate = useNavigate();
+
+  // Get doctorId from URL params
+  const urlDoctorId = searchParams.get('doctorId');
+
+  // React Select ke liye doctors options format
+  const doctorOptions = useMemo(() => {
+    return doctors.map(doctor => ({
+      value: doctor._id,
+      label: `${doctor.fullName} (${doctor.doctorId})`,
+      doctorType: doctor.doctorType,
+      specialization: doctor.specialization,
+      rawData: doctor
+    }));
+  }, [doctors]);
+
+  // Fetch Doctors Dropdown
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        setLoadingDoctors(true);
+        const response = await apiClient.get(apiEndpoints.doctors.dropdown, { params: { limit: 1000 } });
+        setDoctors(response.data.data || []);
+
+        // If there's a doctorId in the URL, auto-select that doctor
+        if (urlDoctorId) {
+          const doctorToSelect = response.data.data.find(doctor => doctor._id === urlDoctorId);
+          if (doctorToSelect) {
+            const selectedOption = {
+              value: doctorToSelect._id,
+              label: `${doctorToSelect.fullName} (${doctorToSelect.doctorId})`,
+              doctorType: doctorToSelect.doctorType,
+              specialization: doctorToSelect.specialization,
+              rawData: doctorToSelect
+            };
+
+            setSelectedDoctor(selectedOption);
+
+            // Determine membership type
+            const isHospitalType = ['hospital', 'hospital_individual'].includes(doctorToSelect.doctorType);
+            const membershipType = doctorToSelect.doctorType === 'hospital'
+              ? 'HOSPITAL MEMBERSHIP'
+              : doctorToSelect.doctorType === 'hospital_individual'
+                ? 'HOSPITAL + INDIVIDUAL MEMBERSHIP'
+                : 'INDIVIDUAL MEMBERSHIP';
+
+            // Set basic info immediately
+            setFormData(prev => ({
+              ...prev,
+              doctorId: doctorToSelect._id,
+              doctorName: selectedOption.label,
+              membershipType,
+              specialization: isHospitalType ? 'Loading...' : (doctorToSelect.specialization?.join(', ') || 'General Practitioner'),
+              beds: isHospitalType ? 'Loading...' : 'N/A'
+            }));
+            setMembershipTypeLocked(true);
+
+            // Fetch full doctor details for hospitalType & beds
+            if (isHospitalType) {
+              apiClient.get(`/doctors/${doctorToSelect._id}`)
+                .then(response => {
+                  const doctorDetails = response.data.data;
+
+                  const hospitalType = doctorDetails.hospitalDetails?.hospitalType || 'Not Specified';
+                  const bedsCount = doctorDetails.hospitalDetails?.beds || 'Not Specified';
+
+                  setFormData(prev => ({
+                    ...prev,
+                    specialization: hospitalType,
+                    beds: bedsCount
+                  }));
+                })
+                .catch(err => {
+                  console.error("Failed to load hospital details:", err);
+                  toast.warn("Hospital details not available");
+                  setFormData(prev => ({
+                    ...prev,
+                    specialization: 'Hospital (Details Unavailable)',
+                    beds: 'Not Specified'
+                  }));
+                });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching doctors:', error);
+        toast.error('Failed to load doctors list');
+        try {
+          const response = await apiClient.get('/doctors', { params: { limit: 1000 } });
+          setDoctors(response.data.data || []);
+        } catch (fallbackError) {
+          console.error('Fallback failed:', fallbackError);
+        }
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    fetchDoctors();
+  }, [urlDoctorId]); // Add urlDoctorId as dependency to trigger effect when it changes
+
+  // Fetch Packages
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const response = await apiClient.get('/service-packages/list');
+        setPackages(response.data.data || []);
+      } catch (error) {
+        toast.error('Failed to load packages');
+      }
+    };
+    fetchPackages();
+  }, []);
+
+  const handleDoctorSelect = (selectedOption) => {
+    setSelectedDoctor(selectedOption);
+
+    if (!selectedOption) {
+      setFormData(prev => ({
+        ...prev,
+        doctorId: '',
+        doctorName: '',
+        membershipType: 'INDIVIDUAL MEMBERSHIP',
+        specialization: '',
+        beds: 'N/A'
+      }));
+      setMembershipTypeLocked(false);
+      return;
+    }
+
+    const doctor = selectedOption.rawData;
+
+    // Determine membership type
+    const isHospitalType = ['hospital', 'hospital_individual'].includes(doctor.doctorType);
+    const membershipType = doctor.doctorType === 'hospital'
+      ? 'HOSPITAL MEMBERSHIP'
+      : doctor.doctorType === 'hospital_individual'
+        ? 'HOSPITAL + INDIVIDUAL MEMBERSHIP'
+        : 'INDIVIDUAL MEMBERSHIP';
+
+    // Set basic info immediately
+    setFormData(prev => ({
+      ...prev,
+      doctorId: doctor._id,
+      doctorName: selectedOption.label,
+      membershipType,
+      specialization: isHospitalType ? 'Loading...' : (doctor.specialization?.join(', ') || 'General Practitioner'),
+      beds: isHospitalType ? 'Loading...' : 'N/A'
+    }));
+    setMembershipTypeLocked(true);
+
+    // Fetch full doctor details for hospitalType & beds
+    if (isHospitalType) {
+      apiClient.get(`/doctors/${doctor._id}`)
+        .then(response => {
+          const doctorDetails = response.data.data;
+
+          const hospitalType = doctorDetails.hospitalDetails?.hospitalType || 'Not Specified';
+          const bedsCount = doctorDetails.hospitalDetails?.beds || 'Not Specified';
+
+          setFormData(prev => ({
+            ...prev,
+            specialization: hospitalType,
+            beds: bedsCount
+          }));
+        })
+        .catch(err => {
+          console.error("Failed to load hospital details:", err);
+          toast.warn("Hospital details not available");
+          setFormData(prev => ({
+            ...prev,
+            specialization: 'Hospital (Details Unavailable)',
+            beds: 'Not Specified'
+          }));
+        });
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    if (name.startsWith('year_')) {
+      const year = name.split('_')[1];
+      setSelectedYears(prev =>
+        prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year].sort((a, b) => a - b)
+      );
+    }
+    else {
+      if (name === 'membershipType' && membershipTypeLocked) {
+        toast.info('Membership type is auto-selected');
+        return;
+      }
+      setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+    }
+  };
+
+  const handlePreview = () => {
+    if (!formData.doctorName) {
+      toast.error('Please select a doctor');
+      return;
+    }
+    if (selectedYears.length === 0) {
+      toast.error('Select at least one year');
+      return;
+    }
+    setIsPreview(true);
+  };
+
+  const handleEdit = () => setIsPreview(false);
+
+  const handleGeneratePDF = () => {
+    if (!formData.doctorId || priceMatrix.length === 0) {
+      toast.error('Complete form first');
+      return;
+    }
+
+    const dataToPass = {
+      membershipType: formData.membershipType,
+      doctorData: { name: formData.doctorName.split(' (')[0].trim() },
+      hospitalData: { name: formData.doctorName.split(' (')[0].trim(), address: formData.area || 'All India' },
+      membershipData: {
+        membershipType: formData.membershipType,
+        specialization: formData.specialization || 'All Specializations',
+        numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' ? formData.beds : 'Not Specified',
+        priceMatrix: priceMatrix.filter(r => !r.disabled).map(row => ({
+          indemnity: typeof row.indemnity === 'string' ? row.indemnity : String(row.indemnity || 'Custom Limit'),
+          monthly: row.monthly,
+          y1: row.y1,
+          y5: row.y5,
+        }))
+      }
+    };
+
+    navigate('/admin/quotation/pdf-preview', { state: dataToPass });
+  };
+
+  const handleSave = async () => {
+    // ✅ VALIDATION
+    if (!formData.doctorId || !formData.doctorName) {
+      toast.error('Please select a doctor before saving');
+      return;
+    }
+
+    console.log("🔍 BEFORE SAVE CHECK:", {
+      doctorId: formData.doctorId,
+      doctorName: formData.doctorName,
+      membershipType: formData.membershipType
+    });
+
+    if (!priceMatrix || priceMatrix.length === 0 || priceMatrix[0]?.disabled) {
+      toast.error('No pricing data to save');
+      return;
+    }
+
+    // ✅ FIXED: Backend-compatible requester types
+    // Backend sirf "doctor" ya "hospital" accept karta hai
+    let requesterType = 'hospital'; // default
+
+    if (formData.membershipType === "INDIVIDUAL MEMBERSHIP") {
+      requesterType = 'doctor';
+    }
+    else if (formData.membershipType === "HOSPITAL MEMBERSHIP") {
+      requesterType = 'hospital';
+    }
+    else if (formData.membershipType === "HOSPITAL + INDIVIDUAL MEMBERSHIP" || formData.membershipType === "INDIVIDUAL + HOSPITAL MEMBERSHIP") {
+      // ✅ BACKEND FIX: Use "hospital" for combined (since backend doesn't accept "combined")
+      requesterType = 'hospital';
+
+      console.log("🏥 Hospital+Individual detected, using 'hospital' as requester type");
+    }
+
+    console.log("🎯 FINAL REQUESTER TYPE:", requesterType);
+
+    // ✅ FIXED: Properly handle indemnity field - handle both string and number values
+    const requestDetails = {
+      policyTerms: selectedYears.map(Number),
+      paymentFrequency: formData.monthly ? 'monthly' : 'yearly',
+      additionalRequirements: formData.narration,
+      specialConditions: formData.indemnityCover ? 'Indemnity Cover Required' : '',
+      numberOfBeds: formData.beds !== 'N/A' && formData.beds !== 'Loading...' && !isNaN(Number(formData.beds)) ? Number(formData.beds) : undefined,
+      items: priceMatrix
+        .filter(row => !row.disabled)
+        .map(row => {
+          // ✅ FIXED: Properly handle indemnity field
+          let indemnityValue = 'Custom';
+          if (row.indemnity !== null && row.indemnity !== undefined) {
+            if (typeof row.indemnity === 'string') {
+              indemnityValue = row.indemnity.trim();
+            } else if (typeof row.indemnity === 'number') {
+              indemnityValue = String(row.indemnity);
+            } else {
+              indemnityValue = String(row.indemnity);
+            }
+          }
+
+          const item = {
+            indemnity: indemnityValue || 'Custom',
+            packageId: row.packageId || null
+          };
+
+          selectedYears.forEach(y => {
+            const val = row[`y${y}`];
+            if (val != null && val !== '' && !isNaN(Number(val))) {
+              item[`year_${y}`] = Number(val);
+            }
+          });
+
+          if (formData.monthly && row.monthly != null && row.monthly !== '' && !isNaN(Number(row.monthly))) {
+            item.monthly = Number(row.monthly);
+          }
+
+          return item;
+        })
+        .filter(item => {
+          // Check if item has at least one year value or monthly value
+          const hasYearValue = selectedYears.some(y => item[`year_${y}`] !== undefined);
+          const hasMonthlyValue = formData.monthly ? item.monthly !== undefined : true;
+          return hasYearValue || hasMonthlyValue;
+        })
+    };
+
+    // ✅ Extract doctor name
+    let doctorDisplayName = formData.doctorName;
+    if (doctorDisplayName.includes(' (')) {
+      doctorDisplayName = doctorDisplayName.split(' (')[0].trim();
+    }
+
+    const quotationData = {
+      requester: {
+        type: requesterType, // ✅ Now only "doctor" or "hospital"
+        name: doctorDisplayName,
+        entityId: formData.doctorId,
+        contactPerson: doctorDisplayName
+      },
+      requestDetails,
+      status: 'responses_pending',
+      priority: 'medium',
+      ...(formData.trno && { trno: formData.trno }),
+
+      // ✅ ADD CUSTOM FIELD FOR FRONTEND TO IDENTIFY COMBINED
+      metadata: {
+        isCombinedMembership: formData.membershipType.includes("HOSPITAL + INDIVIDUAL") || formData.membershipType.includes("INDIVIDUAL + HOSPITAL"),
+        originalMembershipType: formData.membershipType,
+        area: formData.area,
+        specialization: formData.specialization,
+        quotationDate: formData.quotationDate
+      }
+    };
+
+    console.log("📤 QUOTATION PAYLOAD:", {
+      type: quotationData.requester.type,
+      entityId: quotationData.requester.entityId,
+      isCombined: quotationData.metadata?.isCombinedMembership,
+      items: quotationData.requestDetails.items
+    });
+
+    try {
+      const response = await apiClient.post(apiEndpoints.quotations.create, quotationData);
+
+      if (response.data.success) {
+        console.log("✅ QUOTATION CREATED:", response.data.data);
+        toast.success('Quotation created successfully!');
+        navigate('/admin/quotation-list');
+      }
+    } catch (error) {
+      console.error("❌ ERROR:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'Failed to save quotation');
+    }
+  };
+
+  return (
+    <div className="mx-auto m-4 sm:mt-14 p-2 max-w-7xl">
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <h1 className="mb-6 text-2xl font-bold text-gray-800">Create Quotation</h1>
+
+        <form onSubmit={e => e.preventDefault()} className="space-y-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                TRNO <span className="text-xs text-gray-500">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                name="trno"
+                value={formData.trno}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                placeholder="Auto-generated"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Doctor / Hospital Name</label>
+              <Select
+                options={doctorOptions}
+                value={selectedDoctor}
+                onChange={handleDoctorSelect}
+                isLoading={loadingDoctors}
+                isClearable={true}
+                isSearchable={true}
+                placeholder={loadingDoctors ? "Loading doctors..." : "Search or select doctor/hospital"}
+                className="mt-1"
+                classNamePrefix="react-select"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    padding: '2px 8px',
+                    minHeight: '42px'
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    zIndex: 9999
+                  })
+                }}
+                formatOptionLabel={(option) => (
+                  <div className="flex flex-col">
+                    <span className="font-medium">{option.label}</span>
+                    <span className="text-xs text-gray-500">
+                      {option.doctorType === 'hospital' ? 'Hospital' :
+                       option.specialization?.join(', ') || 'General Practitioner'}
+                    </span>
+                  </div>
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Area</label>
+              <input
+                type="text"
+                name="area"
+                value={formData.area}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Quotation Date</label>
+              <input
+                type="date"
+                name="quotationDate"
+                value={formData.quotationDate}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Membership Type {membershipTypeLocked && <span className="ml-2 text-xs text-green-600">(Auto)</span>}
+              </label>
+              <select
+                name="membershipType"
+                value={formData.membershipType}
+                onChange={handleChange}
+                className={`mt-1 block w-full border rounded-md p-2 ${membershipTypeLocked ? 'bg-green-50 border-green-300 cursor-not-allowed' : 'border-gray-300'}`}
+                disabled={membershipTypeLocked}
+              >
+                <option value="">Select</option>
+                <option value="HOSPITAL MEMBERSHIP">Hospital Membership</option>
+                <option value="INDIVIDUAL MEMBERSHIP">Individual Membership</option>
+                <option value="HOSPITAL + INDIVIDUAL MEMBERSHIP">Hospital + Individual</option>
+                <option value="INDIVIDUAL + HOSPITAL MEMBERSHIP">Individual + Hospital</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Specialization / Hospital Type</label>
+              <input
+                type="text"
+                value={formData.specialization}
+                disabled
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-50"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Narration</label>
+            <input
+              type="text"
+              name="narration"
+              value={formData.narration}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Membership Year</label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(year => (
+                <label key={year} className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name={`year_${year}`}
+                    checked={selectedYears.includes(year.toString())}
+                    onChange={handleChange}
+                    className="mr-2 w-5 h-5 accent-[#15BBB3] rounded"
+                  />
+                  <span className="text-sm">{year} Year</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-6">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="monthly"
+                checked={formData.monthly}
+                onChange={handleChange}
+                className="mr-2 w-5 h-5 accent-[#15BBB3]"
+              />
+              <span className="text-sm">Monthly Payment</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="indemnityCover"
+                checked={formData.indemnityCover}
+                onChange={handleChange}
+                className="mr-2 w-5 h-5 accent-[#15BBB3]"
+              />
+              <span className="text-sm">Indemnity Cover</span>
+            </label>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handlePreview}
+              className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]"
+            >
+              Preview
+            </button>
+            <button
+              type="button"
+              onClick={handleGeneratePDF}
+              className="bg-[#15BBB3] text-white px-6 py-2 rounded-lg hover:bg-[#13a89e]"
+            >
+              Generate PDF
+            </button>
+          </div>
+        </form>
+
+        {isPreview && (
+          <div className="mt-10 border-t pt-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Preview Quotation</h2>
+            <PricePreviewTable
+              membershipType={formData.membershipType}
+              selectedYears={selectedYears}
+              showMonthly={formData.monthly}
+              packages={packages}
+              specialization={formData.specialization}
+              beds={formData.beds}
+              setPriceMatrix={setPriceMatrix}
+              onEdit={handleEdit}
+              onSave={handleSave}
+              indemnityCover={formData.indemnityCover}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+const PricePreviewTable = ({
+  membershipType, selectedYears, showMonthly, packages, specialization, beds, setPriceMatrix, onEdit, onSave, indemnityCover
+}) => {
+  const [rows, setRows] = useState([]);
+  const isHospital = membershipType.includes('HOSPITAL');
+
+  const formatNumber = (num) => (num == null || num === '') ? '' : Number(num).toLocaleString('en-IN');
+  const parseNumber = (str) => str === '' ? null : Number(str.replace(/,/g, ''));
+
+  useEffect(() => {
+    if (!packages.length || selectedYears.length === 0) {
+      setRows([]);
+      setPriceMatrix([]);
+      return;
+    }
+
+    const newRows = [];
+
+    packages.forEach(pkg => {
+      const typeMatch = pkg.detail?.toLowerCase() === 'doctors' ||
+                        membershipType.toLowerCase().includes(pkg.detail?.toLowerCase()) ||
+                        pkg.detail?.toLowerCase().includes('all');
+
+      if (!typeMatch) return;
+
+      // Monthly filter सिर्फ़ तब लगाओ जब Monthly ON है और Indemnity Cover OFF है
+      if (showMonthly && !indemnityCover) {
+        const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount;
+        const hasValidMonthly = monthlyValue != null &&
+                                monthlyValue !== '' &&
+                                monthlyValue !== 'N/A' &&
+                                !isNaN(parseFloat(monthlyValue));
+
+        if (!hasValidMonthly) {
+          return; // row skip
+        }
+      }
+
+      // बाकी कोड same रहेगा...
+      const row = {
+        id: pkg._id + '_' + Date.now(),
+        indemnity: pkg.indemnity || 'Not Specified',
+        packageId: pkg._id
+      };
+
+      const monthlyValue = pkg.monthlyamount || pkg.monthlyAmount;
+      if (monthlyValue && monthlyValue !== 'N/A' && !isNaN(parseFloat(monthlyValue))) {
+        row.monthly = parseFloat(monthlyValue);
+      }
+
+      if (pkg.yearlyCharges && Array.isArray(pkg.yearlyCharges)) {
+        selectedYears.forEach(y => {
+          const yearNum = parseInt(y);
+          const chargeObj = pkg.yearlyCharges.find(yc => yc.year === yearNum);
+          if (chargeObj?.charge != null) {
+            row[`y${y}`] = chargeObj.charge;
+          }
+        });
+      }
+
+      const hasValue = selectedYears.some(y => row[`y${y}`] != null) ||
+                      (showMonthly && row.monthly != null);
+
+      if (hasValue) {
+        newRows.push(row);
+      }
+    });
+
+    if (newRows.length === 0) {
+      const message = showMonthly && !indemnityCover
+        ? 'No package with a monthly payment option was found.'
+        : 'No package found for the selected criteria.';
+
+      newRows.push({
+        id: 'no-data',
+        indemnity: message,
+        disabled: true
+      });
+    }
+
+    setRows(newRows);
+    setPriceMatrix(newRows.filter(r => !r.disabled));
+  }, [packages, membershipType, selectedYears, showMonthly, indemnityCover, setPriceMatrix]);
+
+  const updateRow = (id, field, value) => {
+    const updated = rows.map(row => {
+      if (row.id === id) {
+        if (field === 'indemnity') {
+          return { ...row, [field]: value }; // Keep string as is for indemnity
+        } else {
+          return { ...row, [field]: parseNumber(value) || '' };
+        }
+      }
+      return row;
+    });
+    setRows(updated);
+    setPriceMatrix(updated.filter(r => !r.disabled));
+  };
+
+  const deleteRow = (id) => {
+    const updated = rows.filter(row => row.id !== id);
+    setRows(updated);
+    setPriceMatrix(updated.filter(r => !r.disabled));
+  };
+
+  const addCustomRow = () => {
+    const newRow = {
+      id: 'custom_' + Date.now(),
+      indemnity: 'Custom Limit',
+      isCustom: true,
+      monthly: null,
+      ...selectedYears.reduce((acc, y) => ({ ...acc, [`y${y}`]: null }), {})
+    };
+    setRows([...rows.filter(r => !r.disabled), newRow]);
+    setPriceMatrix(prev => [...prev, newRow]);
+  };
+
+  return (
+    <>
+      <div className="overflow-x-auto border border-gray-300 rounded-lg">
+        <table className="min-w-full bg-white">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold border-r">Type</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold border-r">Specialization / Hospital Type</th>
+              {isHospital && <th className="px-4 py-3 text-left text-sm font-semibold border-r">No. of Beds</th>}
+              <th className="px-4 py-3 text-left text-sm font-semibold border-r">Indemnity Limit</th>
+              {showMonthly && <th className="px-4 py-3 text-left text-sm font-semibold border-r">Monthly</th>}
+              {selectedYears.map(y => (
+                <th key={y} className="px-4 py-3 text-left text-sm font-semibold border-r">{y} Year</th>
+              ))}
+              <th className="px-4 py-3 text-left text-sm font-semibold w-12">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={row.id} className={`${i % 2 === 1 ? 'bg-gray-50' : ''} ${row.disabled ? 'opacity-60' : ''}`}>
+                {i === 0 && (
+                  <>
+                    <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+                      {membershipType}
+                    </td>
+                    <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+                      {specialization || 'All'}
+                    </td>
+                    {isHospital && (
+                      <td rowSpan={rows.length} className="px-4 py-3 text-sm font-medium border-r align-middle bg-white">
+                        {beds === 'Loading...' ? 'Loading...' : beds && beds !== 'N/A' ? `${beds} Beds` : 'Not Specified'}
+                      </td>
+                    )}
+                  </>
+                )}
+                <td className="px-4 py-3 border-r">
+                  {row.disabled ? (
+                    <span className="text-red-600">{row.indemnity}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      value={row.indemnity || ''}
+                      onChange={(e) => updateRow(row.id, 'indemnity', e.target.value)}
+                      className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+                      placeholder="e.g. 10 Cr"
+                    />
+                  )}
+                </td>
+
+                {showMonthly && (
+                  <td className="px-4 py-3 border-r">
+                    <input
+                      type="text"
+                      disabled={row.disabled}
+                      value={formatNumber(row.monthly)}
+                      onChange={(e) => updateRow(row.id, 'monthly', e.target.value)}
+                      className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+                    />
+                  </td>
+                )}
+
+                {selectedYears.map(y => (
+                  <td key={`y${y}`} className="px-4 py-3 border-r">
+                    <input
+                      type="text"
+                      disabled={row.disabled}
+                      value={formatNumber(row[`y${y}`])}
+                      onChange={(e) => updateRow(row.id, `y${y}`, e.target.value)}
+                      className="w-full border rounded px-2 py-1 text-sm focus:ring-[#15BBB3]"
+                    />
+                  </td>
+                ))}
+
+                <td className="px-4 py-3 text-center">
+                  {!row.disabled && (
+                    <button
+                      onClick={() => deleteRow(row.id)}
+                      className="text-red-600 hover:text-red-800 font-bold text-xl p-1"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 flex justify-between items-center">
+        <button
+          onClick={addCustomRow}
+          className="text-[#15BBB3] font-medium hover:underline flex items-center gap-2"
+          type="button"
+        >
+          <span className="text-xl">+</span> Add Custom Indemnity Limit
+        </button>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onEdit}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700"
+            type="button"
+          >
+            Edit Form
+          </button>
+          <button
+            onClick={onSave}
+            disabled={rows.length === 0 || rows.every(r => r.disabled)}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+          >
+            Save Quotation
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default CreateQuotation;
