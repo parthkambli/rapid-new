@@ -245,6 +245,7 @@ export const apiEndpoints = {
   advocates: {
     list: "/advocates",
     listdropdown: "/advocates/dropdown",
+    dropdown: "/advocates/dropdown",
     create: "/advocates",
     get: (id) => `/advocates/${id}`,
     update: (id) => `/advocates/${id}`,
@@ -265,6 +266,8 @@ export const apiEndpoints = {
   // Experts
   experts: {
     list: "/experts",
+    listdropdown: "/experts/dropdown",
+    dropdown: "/experts/dropdown",
     byRole: "/employees/roles/expert", // Alternative endpoint with broader permissions
     create: "/experts",
     get: (id) => `/experts/${id}`,
