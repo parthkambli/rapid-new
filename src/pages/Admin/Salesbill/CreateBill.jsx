@@ -947,7 +947,7 @@
 
 
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import apiClient, { apiEndpoints } from "../../../services/apiClient";
 import { toast } from "react-toastify";
@@ -957,10 +957,12 @@ const SalesBillForm = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [doctors, setDoctors] = useState([]);
-  const [doctorOptions, setDoctorOptions] = useState([]); // ✅ React-select ke liye options array
+  const [selectedDoctor, setSelectedDoctor] = useState(null); // ✅ PERSISTENT SELECTION
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [fetchingPreviousBill, setFetchingPreviousBill] = useState(false);
+  const debounceTimerRef = useRef(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -979,45 +981,59 @@ const SalesBillForm = () => {
     note: "",
   });
 
-  // ✅ FETCH DOCTORS - Updated for react-select
-  useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        setLoadingDoctors(true);
-        const response = await apiClient.get(apiEndpoints.doctors.list, {
-          params: {
-            limit: 1000,
-            typeOfEnquiry: "closed",
-            populate: "hospitalAddress,membership"
-          },
-        });
+  // ✅ FETCH DOCTORS - Server-side search implementation
+  const fetchDoctorsBySearch = useCallback(async (searchQuery = "") => {
+    try {
+      setLoadingDoctors(true);
+      const response = await apiClient.get(apiEndpoints.doctors.list, {
+        params: {
+          limit: searchQuery ? 50 : 10, // Search ke waqt thoda kam, shuru me thoda zyada
+          typeOfEnquiry: "closed",
+          populate: "hospitalAddress,membership",
+          ...(searchQuery && searchQuery.trim() ? { search: searchQuery.trim() } : {})
+        },
+      });
 
-        const doctorsData = response.data.data || [];
-        setDoctors(doctorsData);
+      const doctorsData = response.data.data || [];
+      setDoctors(doctorsData);
 
-        // ✅ Convert doctors to react-select format
-        const options = doctorsData.map((doctor) => ({
-          value: doctor._id,
-          label: `${doctor.fullName || "No Name"}${doctor.hospitalName ? ` - ${doctor.hospitalName}` : ""}${
-            doctor.membershipId ? ` (${doctor.membershipId})` : ""
-          }${
-            doctor.phoneNumber ? ` 📞 ${doctor.phoneNumber}` : ""
+      // ✅ Convert doctors to react-select format
+      const options = doctorsData.map((doctor) => ({
+        value: doctor._id,
+        label: `${doctor.fullName || "No Name"}${doctor.hospitalName ? ` - ${doctor.hospitalName}` : ""}${doctor.membershipId ? ` (${doctor.membershipId})` : ""
+          }${doctor.phoneNumber ? ` 📞 ${doctor.phoneNumber}` : ""
           }`,
-          doctorData: doctor,
-        }));
+        doctorData: doctor,
+      }));
 
-        setDoctorOptions(options);
-      } catch (error) {
-        console.error("Error fetching doctors:", error);
-        toast.error("Failed to load doctors list");
-        setDoctorOptions([]);
-      } finally {
-        setLoadingDoctors(false);
-      }
-    };
-
-    fetchDoctors();
+      setDoctorOptions(options);
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+      toast.error("Failed to load doctors list");
+      setDoctorOptions([]);
+    } finally {
+      setLoadingDoctors(false);
+    }
   }, []);
+
+  // ✅ DEBOUNCED SEARCH HANDLER
+  const handleDoctorSearchInputChange = useCallback((value, { action }) => {
+    // Sirf typing par hi search trigger karo, select ya blur par nahi
+    if (action === "input-change") {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        fetchDoctorsBySearch(value);
+      }, 500); // 500ms delay for performance
+    }
+  }, [fetchDoctorsBySearch]);
+
+  // Initial load
+  useEffect(() => {
+    fetchDoctorsBySearch("");
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [fetchDoctorsBySearch]);
 
   useEffect(() => {
     const renewFromId = searchParams.get('renew_from');
@@ -1033,9 +1049,9 @@ const SalesBillForm = () => {
 
             let membershipType = "One-time";
             if (billToRenew.membershipType === 'monthly') {
-                membershipType = "Monthly";
+              membershipType = "Monthly";
             } else if (billToRenew.membershipType === 'yearly') {
-                membershipType = "Yearly";
+              membershipType = "Yearly";
             }
 
             setFormData(prev => ({
@@ -1060,7 +1076,7 @@ const SalesBillForm = () => {
           console.error("Error fetching bill for renewal:", error);
           toast.error('Failed to load data for renewal.');
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
       };
 
@@ -1144,6 +1160,7 @@ const SalesBillForm = () => {
   const handleDoctorSelect = async (selectedOption) => {
     if (!selectedOption) {
       // Reset if doctor is cleared
+      setSelectedDoctor(null);
       setFormData(prev => ({
         ...prev,
         doctorId: "",
@@ -1154,6 +1171,7 @@ const SalesBillForm = () => {
     }
 
     const doctorId = selectedOption.value;
+    setSelectedDoctor(selectedOption.doctorData); // ✅ Save full object
 
     // Set doctor immediately in form
     setFormData(prev => ({
@@ -1239,7 +1257,10 @@ const SalesBillForm = () => {
     try {
       const amount = parseFloat(formData.amount);
       const years = Number(formData.membershipYear) || 1;
-      const selectedDoctor = doctors.find(d => d._id === formData.doctorId);
+
+      // Use the stored selectedDoctor state instead of searching in the 'doctors' array
+      // which might have changed during subsequent searches.
+      const selectedDoctorDoc = selectedDoctor;
 
       const payload = {
         ...(formData.sbNo && { billNumber: formData.sbNo }),
@@ -1248,7 +1269,7 @@ const SalesBillForm = () => {
         dueDate: formData.expiry,
         client: {
           type: "doctor",
-          name: selectedDoctor?.fullName || "Unknown Doctor",
+          name: selectedDoctorDoc?.fullName || "Unknown Doctor",
           entityId: formData.doctorId,
         },
         type: formData.type.toLowerCase(),
@@ -1273,9 +1294,9 @@ const SalesBillForm = () => {
         paymentTerms: "30_days",
         currency: "INR",
         status: formData.type === "Renewal" ? "renewal" : "draft",
-          narration: formData.narration || "", // Narration alag
-      internalNote: formData.note || "",
-        notes :  formData.narration || "",
+        narration: formData.narration || "", // Narration alag
+        internalNote: formData.note || "",
+        notes: formData.narration || "",
       };
 
       const response = await apiClient.post(apiEndpoints.salesBills.create, payload);
@@ -1388,11 +1409,10 @@ const SalesBillForm = () => {
               type="text"
               value={formData.oldSbNo}
               readOnly
-              className={`mt-1 p-2 w-full border rounded-md font-medium ${
-                formData.oldSbNo
-                  ? "bg-green-50 border-green-400 text-green-700"
-                  : "bg-gray-100 border-gray-300 text-gray-500"
-              }`}
+              className={`mt-1 p-2 w-full border rounded-md font-medium ${formData.oldSbNo
+                ? "bg-green-50 border-green-400 text-green-700"
+                : "bg-gray-100 border-gray-300 text-gray-500"
+                }`}
               placeholder={formData.oldSbNo ? "" : "None"}
             />
             {fetchingPreviousBill && (
@@ -1408,11 +1428,13 @@ const SalesBillForm = () => {
               options={doctorOptions}
               value={doctorOptions.find(option => option.value === formData.doctorId) || null}
               onChange={handleDoctorSelect}
+              onInputChange={handleDoctorSearchInputChange} // ✅ Added debounced input change
               isLoading={loadingDoctors}
-              loadingMessage={() => "Loading doctors..."}
-              placeholder={loadingDoctors ? "Loading..." : "Select Doctor"}
+              loadingMessage={() => "Searching doctors..."}
+              placeholder={loadingDoctors ? "Loading..." : "Search & Select Doctor"}
               isSearchable={true}
               isClearable={true}
+              filterOption={() => true} // ✅ Important: Disable client-side filtering
               noOptionsMessage={() => "No doctors found"}
               styles={customSelectStyles}
               className="react-select-container"
