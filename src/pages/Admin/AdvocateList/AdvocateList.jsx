@@ -14,6 +14,11 @@ const AdvocateList = () => {
   const [searchStatus, setSearchStatus] = useState("All");
   const [searchSpecialization, setSearchSpecialization] = useState("All");
   const [searchCity, setSearchCity] = useState("");
+  
+  // Server-side pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Fetch advocates from API
   const fetchAdvocates = async (searchParams = {}) => {
@@ -22,14 +27,16 @@ const AdvocateList = () => {
       setError(null);
 
       const params = {
-        page: 1,
-        limit: 100,
+        page: currentPage,
+        limit: pageSize,
         ...searchParams
       };
 
       // Use list endpoint with all params
       const response = await apiClient.get(apiEndpoints.advocates.list, { params });
       setAdvocates(response.data.data || []);
+      // Extract total from pagination object
+      setTotalItems(response.data.pagination?.total || response.data.total || response.data.count || 0);
     } catch (err) {
       console.error('Error fetching advocates:', err);
       setError(err.response?.data?.message || 'Failed to fetch advocates');
@@ -251,6 +258,18 @@ const AdvocateList = () => {
           excludeColumns={['whatsappNumber', 'barCouncilNumber', 'upi', 'courts', 'qualifications', 'availability', 'rating', 'successRate', 'assignedCases', 'user', 'enrollmentDate', 'practiceType', 'aadhar', 'license', 'remarks', 'totalCases', 'successfulCases']}
           columnOrder={['advocateId', 'fullName', 'gender', 'dateOfBirth', 'city', 'specialization', 'experience', 'email']}
           pagination={true}
+          serverPagination={true}
+          totalServerItems={totalItems}
+          currentServerPage={currentPage}
+          onPageChange={(page) => {
+            setCurrentPage(page);
+            fetchAdvocates({ page });
+          }}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+            fetchAdvocates({ page: 1, limit: size });
+          }}
         />
       )}
     </div>
