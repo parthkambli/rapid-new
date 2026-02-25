@@ -576,7 +576,7 @@
 
 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import apiClient from "../../../services/apiClient";
 import Select from "react-select"; // ✅ React-select import
@@ -618,9 +618,10 @@ const CreateQueryCase = () => {
 
   const [doctors, setDoctors] = useState([]);
   const [doctorOptions, setDoctorOptions] = useState([]); // ✅ React-select ke liye options
-  const [selectedDoctorId, setSelectedDoctorId] = useState(""); // Track selected doctor ID
+  const [selectedDoctorOption, setSelectedDoctorOption] = useState(null); // Full option object for Select value
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const debounceTimerRef = useRef(null); // For debouncing search
 
   // ✅ Custom styles for react-select
   const customSelectStyles = {
@@ -708,14 +709,14 @@ const CreateQueryCase = () => {
 
       const doctorsData = response.data.data || [];
       setDoctors(doctorsData);
-      
+
       // ✅ Convert doctors to react-select options format
       const options = doctorsData.map((doctor) => ({
         value: doctor._id,
         label: `${doctor.fullName} (ID: ${doctor.doctorId})`,
         doctorData: doctor,
       }));
-      
+
       setDoctorOptions(options);
     } catch (err) {
       console.error('Error fetching doctors:', err);
@@ -729,22 +730,17 @@ const CreateQueryCase = () => {
     fetchClosedEnquiryDoctors();
   }, []);
 
-  // Set selected doctor ID when doctors are loaded and we're in edit mode
+  // Set selected doctor option when doctors are loaded and we're in edit mode
   useEffect(() => {
     if (editData && doctorOptions.length > 0 && formData.doctorName) {
-      // Find the doctor by name or doctorId
-      const matchingDoctor = doctors.find(
-        (doc) => doc.fullName === formData.doctorName || doc.doctorId === formData.doctorId
+      const matchingOption = doctorOptions.find(
+        (opt) => opt.doctorData.fullName === formData.doctorName || opt.doctorData.doctorId === formData.doctorId
       );
-
-      if (matchingDoctor) {
-        setSelectedDoctorId(matchingDoctor._id);
-        console.log('Selected doctor set:', matchingDoctor.fullName, matchingDoctor._id);
-      } else {
-        console.log('No matching doctor found for:', formData.doctorName, formData.doctorId);
+      if (matchingOption) {
+        setSelectedDoctorOption(matchingOption);
       }
     }
-  }, [doctors, editData, formData.doctorName, formData.doctorId, doctorOptions]);
+  }, [doctorOptions, editData, formData.doctorName, formData.doctorId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -755,7 +751,7 @@ const CreateQueryCase = () => {
   const handleDoctorSelect = (selectedOption) => {
     if (!selectedOption) {
       // Reset if doctor is cleared
-      setSelectedDoctorId("");
+      setSelectedDoctorOption(null);
       setFormData(prev => ({
         ...prev,
         doctorName: "",
@@ -764,18 +760,104 @@ const CreateQueryCase = () => {
       return;
     }
 
-    const doctorId = selectedOption.value;
-    setSelectedDoctorId(doctorId);
+    // Store full option so dropdown stays selected regardless of option list changes
+    setSelectedDoctorOption(selectedOption);
 
-    const selectedDoctor = doctors.find(doctor => doctor._id === doctorId);
-    if (selectedDoctor) {
+    // Use doctorData directly from the option (no need to search doctors array)
+    const doctor = selectedOption.doctorData;
+    if (doctor) {
       setFormData(prev => ({
         ...prev,
-        doctorName: selectedDoctor.fullName,
-        doctorId: selectedDoctor.doctorId
+        doctorName: doctor.fullName,
+        doctorId: doctor.doctorId
       }));
     }
   };
+
+  // ✅ Fetch doctors from API based on search term (debounced)
+  const fetchDoctorsBySearch = useCallback(async (searchQuery) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // If no search query, fetch from regular /doctors endpoint
+      if (!searchQuery || !searchQuery.trim()) {
+        // Fetch default closed enquiry doctors when search is empty
+        const response = await apiClient.get('/doctors', {
+          params: {
+            typeOfEnquiry: 'closed',
+            limit: 100
+          }
+        });
+
+        const doctorsData = response.data.data || [];
+        setDoctors(doctorsData);
+
+        const options = doctorsData.map((doctor) => ({
+          value: doctor._id,
+          label: `${doctor.fullName} (ID: ${doctor.doctorId})`,
+          doctorData: doctor,
+        }));
+
+        setDoctorOptions(options);
+        setLoading(false);
+        return;
+      }
+
+      // If search query exists, use /doctors/search endpoint with 'q' parameter
+      const response = await apiClient.get('/doctors/search', {
+        params: {
+          q: searchQuery.trim(),
+          typeOfEnquiry: 'closed',
+          limit: 50
+        }
+      });
+
+      const doctorsData = response.data.data || response.data || [];
+      setDoctors(doctorsData);
+
+      // Convert doctors to react-select options format
+      const options = doctorsData.map((doctor) => ({
+        value: doctor._id,
+        label: `${doctor.fullName} (ID: ${doctor.doctorId})`,
+        doctorData: doctor,
+      }));
+
+      setDoctorOptions(options);
+    } catch (err) {
+      console.error('Error searching doctors:', err);
+      setError('Failed to search doctors');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ✅ Debounced search handler — don't re-search after a selection is made
+  const handleSearchChange = useCallback((value, { action }) => {
+    // Ignore input changes that happen due to menu-close / select events
+    if (action === 'set-value' || action === 'input-blur' || action === 'menu-close') {
+      return;
+    }
+
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer with debounce (300ms)
+    debounceTimerRef.current = setTimeout(() => {
+      fetchDoctorsBySearch(value);
+    }, 300);
+  }, [fetchDoctorsBySearch]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -853,18 +935,20 @@ const CreateQueryCase = () => {
                   </p>
                 </div>
               </label>
-              
+
               {/* ✅ React-select Implementation */}
               <Select
                 name="doctorName"
                 options={doctorOptions}
-                value={doctorOptions.find(option => option.value === selectedDoctorId) || null}
+                value={selectedDoctorOption}
                 onChange={handleDoctorSelect}
+                onInputChange={handleSearchChange}
                 isLoading={loading}
                 loadingMessage={() => "Loading doctors..."}
-                placeholder="Select doctor "
+                placeholder="Select doctor"
                 isSearchable={true}
                 isClearable={true}
+                filterOption={() => true}
                 noOptionsMessage={() => "No doctors found"}
                 styles={customSelectStyles}
                 className="react-select-container"
@@ -894,8 +978,8 @@ const CreateQueryCase = () => {
                 onChange={handleChange}
                 placeholder="e.g. C-2025-001"
                 className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#398C89]"
-                
-                
+
+
               />
             </div>
 

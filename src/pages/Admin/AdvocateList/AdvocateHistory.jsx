@@ -28,7 +28,7 @@ const AdvocateHistory = () => {
 
         // Fetch bills for this advocate
         const billsResponse = await apiClient.get(apiEndpoints.advocateBills.list, {
-          params: { advocate: advocateId, limit: 1000 }
+          params: { advocate: advocateId, limit: 100000 }
         });
         
         if (billsResponse.data.success) {

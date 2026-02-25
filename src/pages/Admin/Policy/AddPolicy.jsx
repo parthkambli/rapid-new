@@ -1,7 +1,7 @@
 
 
 // AddPolicy.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient, { apiEndpoints, apiHelpers } from "../../../services/apiClient";
 import DateInput from "../../../components/DateInput/DateInput"; // DateInput component import
@@ -94,8 +94,8 @@ const AddPolicy = () => {
 
       // Format to YYYY-MM-DD without timezone conversion issues
       const isoDate = date.getFullYear() + '-' +
-                     String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                     String(date.getDate()).padStart(2, '0');
+        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+        String(date.getDate()).padStart(2, '0');
       return isoDate;
     } catch (error) {
       console.error('Error converting to ISO:', error);
@@ -116,11 +116,12 @@ const AddPolicy = () => {
     endDate: '',
     duration: '',
     narration: '',
+    selectedOption: null,        // Selection for dropdown
     files: {                     // ← YE NAYA ADD KAR
-    policyDocument: null,
-    proposalForm: null,
-    otherDocuments: []
-  }
+      policyDocument: null,
+      proposalForm: null,
+      otherDocuments: []
+    }
   }]);
   const [hospitalForms, setHospitalForms] = useState([{
     policyHolder: { type: 'hospital' },
@@ -134,17 +135,21 @@ const AddPolicy = () => {
     endDate: '',
     duration: '',
     narration: '',
+    selectedOption: null,        // Selection for dropdown
     files: {                     // ← YE NAYA ADD KAR
-    policyDocument: null,
-    proposalForm: null,
-    otherDocuments: []
-  }
+      policyDocument: null,
+      proposalForm: null,
+      otherDocuments: []
+    }
   }]);
 
   // API data states
   const [insuranceCompanies, setInsuranceCompanies] = useState([]);
   const [allInsuranceTypes, setAllInsuranceTypes] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const [doctorSearchLoading, setDoctorSearchLoading] = useState(false);
+  const debounceTimerRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
@@ -237,16 +242,16 @@ const AddPolicy = () => {
       console.log('Insurance types received:', typesResponse.data);
       setAllInsuranceTypes(typesResponse.data);
 
-      // Fetch all doctors with pagination and filter for closed typeOfEnquiry
+      // Fetch initial doctors (small batch) - search will load more
       try {
-        const doctorsResponse = await apiHelpers.getList(apiEndpoints.doctors.forpolicy, { page: 1, limit: 1000 });
-        console.log('Doctors received:', doctorsResponse.data);
-        const closedDoctors = doctorsResponse.data.filter(doctor =>
-          doctor.typeOfEnquiry === 'closed' ||
-          doctor.doctorType === 'hospital' ||
-          doctor.doctorType === 'hospital_individual'
-        );
-        setDoctors(closedDoctors);
+        const doctorsResponse = await apiHelpers.getList(apiEndpoints.doctors.forpolicy, { page: 1, limit: 100 });
+        const fetchedDoctors = doctorsResponse.data || [];
+        setDoctors(fetchedDoctors);
+        setDoctorOptions(fetchedDoctors.map(d => ({
+          value: d._id,
+          label: `${d.fullName || d.hospitalName} - ${d.employeeId || d.membershipId || 'No ID'}`,
+          ...d
+        })));
       } catch (error) {
         console.warn('Doctors API not available:', error);
       }
@@ -281,194 +286,194 @@ const AddPolicy = () => {
 
 
 
-// original
+  // original
 
-// const handleSubmit = async (e) => {
-//   e.preventDefault();
-//   setSubmitting(true);
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setSubmitting(true);
 
-//   try {
-//     const allPolicies = [];
+  //   try {
+  //     const allPolicies = [];
 
-//     // DOCTOR FORMS SE SIRF 1 POLICY PER FORM
-//     doctorForms.forEach((form) => {
-//       if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
-//         allPolicies.push({
-//           policyNumber: form.policyNumber || '',
-//           policyHolder: {
-//             type: 'doctor',
-//             name: form.policyHolder.name,
-//             entityId: form.policyHolder.entityId,
-//           },
-//           insuranceCompany: form.insuranceCompany,
-//           insuranceType: form.insuranceType,
-//           coverageAmount: parseFloat(form.coverageAmount) || 0,
-//           premiumAmount: parseFloat(form.premiumAmount) || 0,
-//           premiumFrequency: 'yearly',
-//           startDate: convertToISO(form.startDate),
-//           // endDate: convertToISO(form.endDate),
-//          // Doctor loop mein
-// endDate: form.endDate && form.endDate.length >= 8
-//   ? convertToISO(form.endDate)
-//   : convertToISO(addYearsToDate(form.startDate || getTodayDate(), parseFloat(form.duration) || 1)),
-//           duration: parseFloat(form.duration) || 0,
-//           paidBy: form.premiumPaidBy === 'By Rapid' ? 'by_company' : 'by_doctor',
-//           status: 'active',
-//           renewalStatus: 'not_due',
-//           narration: form.narration,
-//           totalPremiumPaid: 0,
-//         });
-//       }
-//     });
+  //     // DOCTOR FORMS SE SIRF 1 POLICY PER FORM
+  //     doctorForms.forEach((form) => {
+  //       if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
+  //         allPolicies.push({
+  //           policyNumber: form.policyNumber || '',
+  //           policyHolder: {
+  //             type: 'doctor',
+  //             name: form.policyHolder.name,
+  //             entityId: form.policyHolder.entityId,
+  //           },
+  //           insuranceCompany: form.insuranceCompany,
+  //           insuranceType: form.insuranceType,
+  //           coverageAmount: parseFloat(form.coverageAmount) || 0,
+  //           premiumAmount: parseFloat(form.premiumAmount) || 0,
+  //           premiumFrequency: 'yearly',
+  //           startDate: convertToISO(form.startDate),
+  //           // endDate: convertToISO(form.endDate),
+  //          // Doctor loop mein
+  // endDate: form.endDate && form.endDate.length >= 8
+  //   ? convertToISO(form.endDate)
+  //   : convertToISO(addYearsToDate(form.startDate || getTodayDate(), parseFloat(form.duration) || 1)),
+  //           duration: parseFloat(form.duration) || 0,
+  //           paidBy: form.premiumPaidBy === 'By Rapid' ? 'by_company' : 'by_doctor',
+  //           status: 'active',
+  //           renewalStatus: 'not_due',
+  //           narration: form.narration,
+  //           totalPremiumPaid: 0,
+  //         });
+  //       }
+  //     });
 
-//     // HOSPITAL FORMS SE SIRF 1 POLICY PER FORM
-//     hospitalForms.forEach((form) => {
-//       if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
-//         allPolicies.push({
-//           policyNumber: form.policyNumber || '',
-//           policyHolder: {
-//             type: 'hospital',
-//             name: form.policyHolder.name,
-//             entityId: form.policyHolder.entityId,
-//           },
-//           insuranceCompany: form.insuranceCompany,
-//           insuranceType: form.insuranceType,
-//           coverageAmount: parseFloat(form.coverageAmount) || 0,
-//           premiumAmount: parseFloat(form.premiumAmount) || 0,
-//           premiumFrequency: 'yearly',
-//           startDate: convertToISO(form.startDate),
-//          // Doctor loop mein
-// endDate: form.endDate && form.endDate.length >= 8
-//   ? convertToISO(form.endDate)
-//   : convertToISO(addYearsToDate(form.startDate || getTodayDate(), parseFloat(form.duration) || 1)),
-//           // endDate: convertToISO(form.endDate),
-//           duration: parseFloat(form.duration) || 0,
-//           paidBy: form.premiumPaidBy === 'By Rapid' ? 'by_company' : 'by_hospital',
-//           status: 'active',
-//           renewalStatus: 'not_due',
-//           narration: form.narration,
-//           totalPremiumPaid: 0,
-//         });
-//       }
-//     });
+  //     // HOSPITAL FORMS SE SIRF 1 POLICY PER FORM
+  //     hospitalForms.forEach((form) => {
+  //       if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
+  //         allPolicies.push({
+  //           policyNumber: form.policyNumber || '',
+  //           policyHolder: {
+  //             type: 'hospital',
+  //             name: form.policyHolder.name,
+  //             entityId: form.policyHolder.entityId,
+  //           },
+  //           insuranceCompany: form.insuranceCompany,
+  //           insuranceType: form.insuranceType,
+  //           coverageAmount: parseFloat(form.coverageAmount) || 0,
+  //           premiumAmount: parseFloat(form.premiumAmount) || 0,
+  //           premiumFrequency: 'yearly',
+  //           startDate: convertToISO(form.startDate),
+  //          // Doctor loop mein
+  // endDate: form.endDate && form.endDate.length >= 8
+  //   ? convertToISO(form.endDate)
+  //   : convertToISO(addYearsToDate(form.startDate || getTodayDate(), parseFloat(form.duration) || 1)),
+  //           // endDate: convertToISO(form.endDate),
+  //           duration: parseFloat(form.duration) || 0,
+  //           paidBy: form.premiumPaidBy === 'By Rapid' ? 'by_company' : 'by_hospital',
+  //           status: 'active',
+  //           renewalStatus: 'not_due',
+  //           narration: form.narration,
+  //           totalPremiumPaid: 0,
+  //         });
+  //       }
+  //     });
 
-//     if (allPolicies.length === 0) {
-//       alert('Koi valid form nahi bhara!');
-//       setSubmitting(false);
-//       return;
-//     }
+  //     if (allPolicies.length === 0) {
+  //       alert('Koi valid form nahi bhara!');
+  //       setSubmitting(false);
+  //       return;
+  //     }
 
-//     // Sab policies ek saath create karo
-//     const results = await Promise.allSettled(
-//       allPolicies.map((policy) => submitPolicy(policy))
-//     );
+  //     // Sab policies ek saath create karo
+  //     const results = await Promise.allSettled(
+  //       allPolicies.map((policy) => submitPolicy(policy))
+  //     );
 
-//     const successful = results.filter((r) => r.status === 'fulfilled').length;
-//     alert(`${successful} policies successfully create ho gayi!`);
-//     navigate('/admin/policy');
-//   } catch (error) {
-//     alert('Error: ' + error.message);
-//   } finally {
-//     setSubmitting(false);
-//   }
-// };
-
-
-
-
-// new
+  //     const successful = results.filter((r) => r.status === 'fulfilled').length;
+  //     alert(`${successful} policies successfully create ho gayi!`);
+  //     navigate('/admin/policy');
+  //   } catch (error) {
+  //     alert('Error: ' + error.message);
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
 
 
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setSubmitting(true);
 
-  try {
-    // Collect all valid forms
-    const allForms = [];
+  // new
 
-    doctorForms.forEach((form, idx) => {
-      if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
-        allForms.push({ ...form, _type: 'doctor', _index: allForms.length });
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Collect all valid forms
+      const allForms = [];
+
+      doctorForms.forEach((form, idx) => {
+        if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
+          allForms.push({ ...form, _type: 'doctor', _index: allForms.length });
+        }
+      });
+
+      hospitalForms.forEach((form, idx) => {
+        if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
+          allForms.push({ ...form, _type: 'hospital', _index: allForms.length });
+        }
+      });
+
+      if (allForms.length === 0) {
+        alert('Koi valid policy nahi bhari!');
+        return;
       }
-    });
 
-    hospitalForms.forEach((form, idx) => {
-      if (form.insuranceCompany && form.insuranceType && form.policyHolder?.entityId) {
-        allForms.push({ ...form, _type: 'hospital', _index: allForms.length });
-      }
-    });
+      // Create FormData
+      const formData = new FormData();
 
-    if (allForms.length === 0) {
-      alert('Koi valid policy nahi bhari!');
-      return;
+      // Add policies as JSON string (backend expect karta hai policiesData ya direct array)
+      formData.append('policiesData', JSON.stringify(
+        allForms.map(form => ({
+          policyNumber: form.policyNumber || '',
+          policyHolder: {
+            type: form.policyHolder.type,
+            name: form.policyHolder.name,
+            entityId: form.policyHolder.entityId,
+          },
+          insuranceCompany: form.insuranceCompany,
+          insuranceType: form.insuranceType,
+          coverageAmount: parseFloat(form.coverageAmount) || 0,
+          premiumAmount: parseFloat(form.premiumAmount) || 0,
+          premiumFrequency: 'yearly',
+          startDate: convertToISO(form.startDate),
+          endDate: form.endDate && form.endDate.length >= 8
+            ? convertToISO(form.endDate)
+            : convertToISO(addYearsToDate(form.startDate || getTodayDate(), parseFloat(form.duration) || 1)),
+          duration: parseFloat(form.duration) || 0,
+          paidBy: form.premiumPaidBy === 'By Rapid' ? 'by_company' : (form.policyHolder.type === 'hospital' ? 'by_hospital' : 'by_doctor'),
+          status: 'active',
+          renewalStatus: 'not_due',
+          narration: form.narration,
+          totalPremiumPaid: 0,
+        }))
+      ));
+
+      // Add files with proper indexing
+      allForms.forEach((form, originalIndex) => {
+        const files = form.files || {};
+
+        if (files.policyDocument) {
+          formData.append('policyDocument', files.policyDocument);
+        }
+        if (files.proposalForm) {
+          formData.append('proposalForm', files.proposalForm);
+        }
+        if (files.otherDocuments && files.otherDocuments.length > 0) {
+          files.otherDocuments.forEach(file => {
+            formData.append('otherDocuments', file);
+          });
+        }
+      });
+
+      // Send with axios/apiClient
+      const response = await apiClient.post(apiEndpoints.policies.create, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      alert(`${response.data.count || allForms.length} policies successfully created!`);
+      navigate('/admin/policy');
+
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('Error: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setSubmitting(false);
     }
-
-    // Create FormData
-    const formData = new FormData();
-
-    // Add policies as JSON string (backend expect karta hai policiesData ya direct array)
-    formData.append('policiesData', JSON.stringify(
-      allForms.map(form => ({
-        policyNumber: form.policyNumber || '',
-        policyHolder: {
-          type: form.policyHolder.type,
-          name: form.policyHolder.name,
-          entityId: form.policyHolder.entityId,
-        },
-        insuranceCompany: form.insuranceCompany,
-        insuranceType: form.insuranceType,
-        coverageAmount: parseFloat(form.coverageAmount) || 0,
-        premiumAmount: parseFloat(form.premiumAmount) || 0,
-        premiumFrequency: 'yearly',
-        startDate: convertToISO(form.startDate),
-        endDate: form.endDate && form.endDate.length >= 8
-          ? convertToISO(form.endDate)
-          : convertToISO(addYearsToDate(form.startDate || getTodayDate(), parseFloat(form.duration) || 1)),
-        duration: parseFloat(form.duration) || 0,
-        paidBy: form.premiumPaidBy === 'By Rapid' ? 'by_company' : (form.policyHolder.type === 'hospital' ? 'by_hospital' : 'by_doctor'),
-        status: 'active',
-        renewalStatus: 'not_due',
-        narration: form.narration,
-        totalPremiumPaid: 0,
-      }))
-    ));
-
-    // Add files with proper indexing
-    allForms.forEach((form, originalIndex) => {
-      const files = form.files || {};
-
-      if (files.policyDocument) {
-        formData.append('policyDocument', files.policyDocument);
-      }
-      if (files.proposalForm) {
-        formData.append('proposalForm', files.proposalForm);
-      }
-      if (files.otherDocuments && files.otherDocuments.length > 0) {
-        files.otherDocuments.forEach(file => {
-          formData.append('otherDocuments', file);
-        });
-      }
-    });
-
-    // Send with axios/apiClient
-    const response = await apiClient.post(apiEndpoints.policies.create, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-
-    alert(`${response.data.count || allForms.length} policies successfully created!`);
-    navigate('/admin/policy');
-
-  } catch (error) {
-    console.error('Submit error:', error);
-    alert('Error: ' + (error.response?.data?.message || error.message));
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
 
 
@@ -490,7 +495,8 @@ const handleSubmit = async (e) => {
     startDate: getTodayDate(),
     endDate: '',
     duration: '',
-    narration: ''
+    narration: '',
+    selectedOption: null
   }]);
 
   const addHospitalForm = () => setHospitalForms([...hospitalForms, {
@@ -504,7 +510,8 @@ const handleSubmit = async (e) => {
     startDate: getTodayDate(),
     endDate: '',
     duration: '',
-    narration: ''
+    narration: '',
+    selectedOption: null
   }]);
 
   const removeForm = (type, index) => {
@@ -541,8 +548,38 @@ const handleSubmit = async (e) => {
     );
   };
 
+  // Debounced server-side doctor search
+  const fetchDoctorsBySearch = useCallback(async (searchQuery) => {
+    try {
+      setDoctorSearchLoading(true);
+      const response = await apiHelpers.getList(apiEndpoints.doctors.forpolicy, {
+        page: 1,
+        limit: 50,
+        ...(searchQuery && searchQuery.trim() ? { search: searchQuery.trim() } : {})
+      });
+      const fetchedDoctors = response.data || [];
+      setDoctors(fetchedDoctors);
+      setDoctorOptions(fetchedDoctors.map(d => ({
+        value: d._id,
+        label: `${d.fullName || d.hospitalName} - ${d.employeeId || d.membershipId || 'No ID'}`,
+        ...d
+      })));
+    } catch (err) {
+      console.error('Error searching doctors:', err);
+    } finally {
+      setDoctorSearchLoading(false);
+    }
+  }, []);
+
+  const handleDoctorSearchChange = useCallback((value, { action }) => {
+    if (action === 'set-value' || action === 'input-blur' || action === 'menu-close') return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => fetchDoctorsBySearch(value), 300);
+  }, [fetchDoctorsBySearch]);
+
   useEffect(() => {
     fetchData();
+    return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); };
   }, []);
 
   // Determine if only hospital checkbox is selected
@@ -620,11 +657,9 @@ const handleSubmit = async (e) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Doctor Name</label>
                     <Select
-                      value={formData.policyHolder?.entityId ?
-                        formatDoctorOptions(doctors).find(option => option.value === formData.policyHolder.entityId) :
-                        null
-                      }
-                      onChange={(selectedOption) => {
+                      value={formData.selectedOption}
+                      onChange={async (selectedOption) => {
+                        updateFormData('doctor', index, 'selectedOption', selectedOption || null);
                         if (selectedOption) {
                           // 1. Logic for Auto-generation on First Doctor Selection
                           if (index === 0) {
@@ -633,13 +668,11 @@ const handleSubmit = async (e) => {
                             const hasSpouse = doc.linkedDoctorId && doc.relationshipType === 'spouse';
 
                             if (isHospitalIndividual || hasSpouse) {
-                            let newDoctorForms = [];
-                              // const newDoctorForms = [];
-                              // const newHospitalForms = [];
+                              let newDoctorForms = [];
                               let newHospitalForms = [];
 
                               // Helper
-                              const createForm = (docType, id, name, narrationSuffix = '') => ({
+                              const createForm = (docType, id, name, opt = null, narrationSuffix = '') => ({
                                 policyHolder: { type: docType, entityId: id, name: name },
                                 insuranceCompany: formData.insuranceCompany || '',
                                 insuranceType: formData.insuranceType || '',
@@ -650,48 +683,49 @@ const handleSubmit = async (e) => {
                                 startDate: formData.startDate || getTodayDate(),
                                 endDate: formData.endDate || '',
                                 duration: formData.duration || '',
+                                selectedOption: opt,
                                 narration: narrationSuffix
                                   ? (formData.narration ? `${formData.narration} (${narrationSuffix})` : narrationSuffix)
-                                  : (formData.narration || '')
+                                  : (formData.narration || ''),
+                                files: { policyDocument: null, proposalForm: null, otherDocuments: [] }
                               });
 
                               // Add Selected Doc
-                              newDoctorForms.push(createForm('doctor', doc._id, doc.fullName || doc.hospitalName, ''));
+                              newDoctorForms.push(createForm('doctor', doc._id, doc.fullName || doc.hospitalName, selectedOption, ''));
 
                               // Add Spouse if needed
                               if (hasSpouse) {
-                                const linkedSpouse = doctors.find(d => d._id === doc.linkedDoctorId);
+                                let linkedSpouse = doctors.find(d => d._id === doc.linkedDoctorId);
+
+                                // NEW: If spouse is not in current search results, fetch them from server
+                                if (!linkedSpouse) {
+                                  try {
+                                    const spouseRes = await apiHelpers.getById(apiEndpoints.doctors.get, doc.linkedDoctorId);
+                                    linkedSpouse = spouseRes.data || spouseRes;
+                                  } catch (err) {
+                                    console.error('Error fetching spouse for auto-gen:', err);
+                                  }
+                                }
+
                                 if (linkedSpouse) {
-                                  newDoctorForms.push(createForm('doctor', linkedSpouse._id, linkedSpouse.fullName || linkedSpouse.hospitalName, 'Spouse Policy'));
+                                  const spouseOpt = {
+                                    value: linkedSpouse._id,
+                                    label: `${linkedSpouse.fullName || linkedSpouse.hospitalName} - ${linkedSpouse.employeeId || linkedSpouse.membershipId || 'No ID'}`,
+                                    ...linkedSpouse
+                                  };
+                                  newDoctorForms.push(createForm('doctor', linkedSpouse._id, linkedSpouse.fullName || linkedSpouse.hospitalName, spouseOpt, 'Spouse Policy'));
                                 }
                               }
 
                               // Add Hospital if needed
                               if (isHospitalIndividual) {
-                                newHospitalForms.push(createForm('hospital', doc._id, doc.hospitalName || doc.fullName, 'Hospital Policy'));
+                                newHospitalForms.push(createForm('hospital', doc._id, doc.hospitalName || doc.fullName, selectedOption, 'Hospital Policy'));
                                 setSelectedTypes({ doctor: true, hospital: true });
-                              // } else if (hasSpouse) {
-                              //   setSelectedTypes({ doctor: true, hospital: false });
-                              //   // Keep existing hospital form or reset? Let's reset to ensure clean state
-                              //   newHospitalForms.push({
-                              //     policyHolder: { type: 'hospital' },
-                              //     insuranceCompany: '',
-                              //     insuranceType: '',
-                              //     policyNumber: '',
-                              //     coverageAmount: '',
-                              //     premiumAmount: '',
-                              //     premiumPaidBy: 'By Rapid',
-                              //     startDate: getTodayDate(),
-                              //     endDate: '',
-                              //     duration: '',
-                              //     narration: ''
-                              //   });
-
                               }
                               else {
-  setSelectedTypes({ doctor: true, hospital: false });
-  newHospitalForms = []; // existing hospital forms clear
-}
+                                setSelectedTypes({ doctor: true, hospital: false });
+                                newHospitalForms = [];
+                              }
 
                               setDoctorForms(newDoctorForms);
                               setHospitalForms(newHospitalForms);
@@ -720,8 +754,12 @@ const handleSubmit = async (e) => {
                           });
                         }
                       }}
-                      options={formatDoctorOptions(doctors)}
-                      placeholder="Select Doctor"
+                      onInputChange={handleDoctorSearchChange}
+                      options={doctorOptions}
+                      isLoading={doctorSearchLoading}
+                      loadingMessage={() => "Searching..."}
+                      filterOption={() => true}
+                      placeholder="Search & Select Doctor"
                       isClearable
                       isSearchable
                     />
@@ -841,25 +879,25 @@ const handleSubmit = async (e) => {
 
 
 
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">Policy Document</label>
-  <input
-    type="file"
-    accept=".pdf,.jpg,.jpeg,.png"
-    onChange={(e) => {
-      const file = e.target.files[0];
-      updateFormData('doctor', index, 'files', {
-        ...formData.files,
-        policyDocument: file || null
-      });
-    }}
-    className="w-full p-2 border border-gray-300 rounded-md bg-white"
-  />
-  {formData.files?.policyDocument && (
-    <p className="text-xs text-green-600 mt-1">✓ {formData.files.policyDocument.name}</p>
-  )}
-</div>
-{/*
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Policy Document</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        updateFormData('doctor', index, 'files', {
+                          ...formData.files,
+                          policyDocument: file || null
+                        });
+                      }}
+                      className="w-full p-2 border border-gray-300 rounded-md bg-white"
+                    />
+                    {formData.files?.policyDocument && (
+                      <p className="text-xs text-green-600 mt-1">✓ {formData.files.policyDocument.name}</p>
+                    )}
+                  </div>
+                  {/*
 <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">Proposal Form</label>
   <input
@@ -942,16 +980,14 @@ const handleSubmit = async (e) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Hospital Name</label>
                     {isOnlyHospitalSelected ? (
                       <Select
-                        value={formData.policyHolder?.entityId ?
-                          formatHospitalOptions(filterHospitals()).find(option => option.value === formData.policyHolder.entityId) :
-                          null
-                        }
+                        value={formData.selectedOption}
                         onChange={(selectedOption) => {
+                          updateFormData('hospital', index, 'selectedOption', selectedOption || null);
                           if (selectedOption) {
                             updateFormData('hospital', index, 'policyHolder', {
                               ...formData.policyHolder,
                               entityId: selectedOption.value,
-                              name: selectedOption.label.split(' - ')[0] // Extract name from label
+                              name: selectedOption.label.split(' - ')[0]
                             });
                           } else {
                             updateFormData('hospital', index, 'policyHolder', {
@@ -961,8 +997,12 @@ const handleSubmit = async (e) => {
                             });
                           }
                         }}
+                        onInputChange={handleDoctorSearchChange}
                         options={formatHospitalOptions(filterHospitals())}
-                        placeholder="Select Hospital"
+                        isLoading={doctorSearchLoading}
+                        loadingMessage={() => "Searching..."}
+                        filterOption={() => true}
+                        placeholder="Search & Select Hospital"
                         isClearable
                         isSearchable
                       />
@@ -1095,26 +1135,26 @@ const handleSubmit = async (e) => {
 
 
 
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">Policy Document</label>
-  <input
-    type="file"
-    accept=".pdf,.jpg,.jpeg,.png"
-    onChange={(e) => {
-      const file = e.target.files[0];
-      updateFormData('hospital', index, 'files', {
-        ...formData.files,
-        policyDocument: file || null
-      });
-    }}
-    className="w-full p-2 border border-gray-300 rounded-md bg-white"
-  />
-  {formData.files?.policyDocument && (
-    <p className="text-xs text-green-600 mt-1">✓ {formData.files.policyDocument.name}</p>
-  )}
-</div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Policy Document</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        updateFormData('hospital', index, 'files', {
+                          ...formData.files,
+                          policyDocument: file || null
+                        });
+                      }}
+                      className="w-full p-2 border border-gray-300 rounded-md bg-white"
+                    />
+                    {formData.files?.policyDocument && (
+                      <p className="text-xs text-green-600 mt-1">✓ {formData.files.policyDocument.name}</p>
+                    )}
+                  </div>
 
-{/* <div>
+                  {/* <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">Proposal Form</label>
   <input
     type="file"

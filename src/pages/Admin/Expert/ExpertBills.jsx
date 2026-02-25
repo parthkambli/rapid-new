@@ -30,7 +30,7 @@ const ExpertBills = () => {
       setLoading(true);
       setError(null);
       // Always fetch all bills for client-side filtering
-      const queryParams = { page: 1, limit: 1000, ...params }; // Increased limit to get more records
+      const queryParams = { page: 1, limit: 1000000, ...params }; // Increased limit to get more records
       const response = await apiClient.get(apiEndpoints.expertBills.list, { params: queryParams });
       const fetchedBills = response.data.data || [];
       setAllBills(fetchedBills);

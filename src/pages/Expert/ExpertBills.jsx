@@ -26,7 +26,7 @@ const ExpertBills = () => {
     try {
       setLoading(true);
       setError(null);
-      const queryParams = { page: 1, limit: 100, ...params };
+      const queryParams = { page: 1, limit: 100000, ...params };
       const response = await apiClient.get(apiEndpoints.expertBills.list, { params: queryParams });
       setBills(response.data.data || []);
     } catch (err) {

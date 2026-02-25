@@ -22,7 +22,7 @@ const ExpertHistory = () => {
         setExpert(expertRes.data.data);
 
         const billsRes = await apiClient.get(apiEndpoints.expertBills.list, {
-          params: { expert: expertId, limit: 1000 }
+          params: { expert: expertId, limit: 1000000 }
         });
         setBills(billsRes.data.data || []);
       } catch (err) {

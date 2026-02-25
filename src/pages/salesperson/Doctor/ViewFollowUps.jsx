@@ -724,7 +724,7 @@ const DoctorFollowUps = () => {
         // Use the dedicated follow-ups endpoint that returns doctors with their follow-ups
         const response = await apiClient.get(apiEndpoints.doctors.followUps.my, {
         // const response = await apiClient.get(apiEndpoints.doctors.myDoctorss, {
-          params: { page: 1, limit: 1000 } // High limit to get all follow-ups in one call
+          params: { page: 1, limit: 1000000 } // High limit to get all follow-ups in one call
         });
 
         if (response.data.success) {

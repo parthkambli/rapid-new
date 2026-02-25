@@ -131,7 +131,7 @@ const AttendanceRecord = () => {
         // If filtering by role, first get employees with that role
         const employeesResponse = await apiClient.get(apiEndpoints.employees.byRole(selectedRole), {
           params: {
-            limit: 100 // Get up to 100 employees with this role
+            limit: 1000000 // Get up to 100 employees with this role
           }
         });
 
@@ -150,7 +150,7 @@ const AttendanceRecord = () => {
         const employeesResponse = await apiClient.get(apiEndpoints.employees.list, {
           params: {
             ...employeeParams,
-            limit: 1000 // Get all employees
+            limit: 1000000 // Get all employees
           }
         });
 
@@ -162,7 +162,7 @@ const AttendanceRecord = () => {
       // Get existing attendance records for the selected date
       const attendanceParams = {
         date: selectedDate,
-        limit: 1000, // Get all attendance records for the date
+        limit: 1000000, // Get all attendance records for the date
         page: 1
       };
 
