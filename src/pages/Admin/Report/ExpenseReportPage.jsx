@@ -472,7 +472,6 @@
 
 
 
-
 // src/pages/ExpenseReportPage.jsx
 import React, { useEffect, useState } from "react";
 import Table from "../../../components/mainComponents/Table";
@@ -521,7 +520,7 @@ export default function ExpenseReportPage() {
     search: "",
   });
 
-  // Fetch all expenses once
+  // Fetch expenses with limit logic similar to DoctorReport
   const fetchExpenses = async () => {
     setLoading(true);
     setError(null);
@@ -530,7 +529,21 @@ export default function ExpenseReportPage() {
       const API_BASE = (
         import.meta.env.VITE_API_URI || "http://localhost:5000"
       ).trim();
-      const url = `${API_BASE}/expenses`;
+
+      // ────────────────────────────────────────────────
+      //   LIMIT LOGIC (same philosophy as DoctorReportList)
+      // ────────────────────────────────────────────────
+      const hasAnyFilter =
+        appliedFilters.fromDate ||
+        appliedFilters.toDate ||
+        appliedFilters.category.trim() ||
+        appliedFilters.paidBy ||
+        appliedFilters.minAmount ||
+        appliedFilters.search.trim();
+
+      const limit = hasAnyFilter ? 100000 : 100000; // both cases 100000 as requested
+
+      const url = `${API_BASE}/expenses?limit=${limit}`;
 
       const token = localStorage.getItem("token") || "";
 
@@ -577,7 +590,6 @@ export default function ExpenseReportPage() {
         amount: Number(exp.amount) || 0,
         mode: formatPaymentMethod(exp.paymentMethod, exp.chequeNumber),
         receiptNo: exp.voucherNo || exp.chequeNumber || "-",
-        // status: exp.status || "draft",
         original: exp,
       }));
 
@@ -683,7 +695,7 @@ export default function ExpenseReportPage() {
   };
 
   // ────────────────────────────────────────────────
-  //  PRINT using hidden iframe (same behavior as AccountStatement)
+  //  PRINT using hidden iframe (unchanged)
   // ────────────────────────────────────────────────
   const handlePrint = () => {
     const dataToPrint = filteredData;
@@ -833,7 +845,6 @@ export default function ExpenseReportPage() {
       </html>
     `;
 
-    // Hidden iframe method – same as AccountStatementPage
     const printFrame = document.createElement("iframe");
     printFrame.style.position = "absolute";
     printFrame.style.width = "0";
@@ -848,14 +859,12 @@ export default function ExpenseReportPage() {
       doc.write(printContent);
       doc.close();
 
-      // Give it a moment to render styles
       setTimeout(() => {
         const win = printFrame.contentWindow;
         if (win) {
           win.focus();
           win.print();
 
-          // Cleanup
           setTimeout(() => {
             if (document.body.contains(printFrame)) {
               document.body.removeChild(printFrame);
@@ -872,9 +881,6 @@ export default function ExpenseReportPage() {
     }
   };
 
-  // ────────────────────────────────────────────────
-  // EXPORT CSV (unchanged)
-  // ────────────────────────────────────────────────
   const handleExportCSV = () => {
     const headers = [
       "SR No",
@@ -1120,17 +1126,12 @@ export default function ExpenseReportPage() {
 
 
 
-
-
-
-
-
-
-
 // // src/pages/ExpenseReportPage.jsx
-// import React, { useEffect, useState } from "react";
+// import React, { useState, useEffect } from "react";
 // import Table from "../../../components/mainComponents/Table";
 // import { Printer, Download } from "lucide-react";
+// import { toast } from "react-toastify";
+// import apiClient, { apiEndpoints } from "../../../services/apiClient";
 
 // // Helper
 // function formatPaymentMethod(method, chequeNo) {
@@ -1138,551 +1139,354 @@ export default function ExpenseReportPage() {
 //   const m = String(method).toLowerCase();
 //   if (m === "cash") return "Cash";
 //   if (m === "bank_transfer") return "Bank Transfer";
-//   if (m === "cheque" || chequeNo)
-//     return `Cheque${chequeNo ? ` #${chequeNo}` : ""}`;
+//   if (m === "cheque" || chequeNo) return `Cheque${chequeNo ? ` #${chequeNo}` : ""}`;
 //   return String(method).charAt(0).toUpperCase() + String(method).slice(1);
 // }
 
 // export default function ExpenseReportPage() {
-//   const [rawData, setRawData] = useState([]); // full unfiltered transformed data
-//   const [filteredData, setFilteredData] = useState([]); // filtered → shown in Table
-
-//   const [totals, setTotals] = useState({
-//     totalExpenses: 0,
-//     totalAmount: 0,
-//     paidByCash: 0,
-//     paidByBank: 0,
-//   });
-
+//   const [expenses, setExpenses] = useState([]);
 //   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
+
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [pageSize, setPageSize] = useState(10);
+//   const [totalItems, setTotalItems] = useState(0);
+//   const [totalPages, setTotalPages] = useState(0);
 
 //   const [filters, setFilters] = useState({
 //     fromDate: "",
 //     toDate: "",
 //     category: "",
-//     paidBy: "",
+//     paymentMode: "",
 //     minAmount: "",
 //     search: "",
 //   });
 
-//   const [appliedFilters, setAppliedFilters] = useState({
-//     fromDate: "",
-//     toDate: "",
-//     category: "",
-//     paidBy: "",
-//     minAmount: "",
-//     search: "",
-//   });
-
-//   // Fetch all expenses once
-//   const fetchExpenses = async () => {
-//     setLoading(true);
-//     setError(null);
-
+//   const fetchExpenses = async (page = currentPage, size = pageSize) => {
 //     try {
-//       const API_BASE = (
-//         import.meta.env.VITE_API_URI || "http://localhost:5000"
-//       ).trim();
-//       const url = `${API_BASE}/expenses`;
+//       setLoading(true);
 
-//       const token = localStorage.getItem("token") || "";
+//       // ────────────────────────────────────────────────
+//       // DEBUG: Log what we're about to send
+//       console.log(`[Expense Fetch] page=${page}, requested size=${size}`);
 
-//       const res = await fetch(url, {
-//         method: "GET",
-//         headers: {
-//           Accept: "application/json",
-//           ...(token && { Authorization: `Bearer ${token}` }),
-//         },
+//       const params = new URLSearchParams({
+//         page: page.toString(),
+//         limit: size.toString(),          // ← CHANGED HERE (most common name)
+//         // Try these alternatives one by one if limit doesn't work:
+//         // pageSize: size.toString(),
+//         // perPage: size.toString(),
+//         // size: size.toString(),
+//         // count: size.toString(),
 //       });
 
-//       if (!res.ok) {
-//         if (res.status === 401)
-//           throw new Error("401 Unauthorized – please log in");
-//         const text = await res.text().catch(() => "");
-//         throw new Error(
-//           `HTTP ${res.status}${text ? ` - ${text.substring(0, 140)}` : ""}`,
-//         );
+//       // Add filters
+//       if (filters.fromDate)   params.append("fromDate", filters.fromDate);
+//       if (filters.toDate)     params.append("toDate", filters.toDate);
+//       if (filters.category?.trim())     params.append("category", filters.category.trim());
+//       if (filters.paymentMode) params.append("paymentMode", filters.paymentMode);
+//       if (filters.minAmount && Number(filters.minAmount) > 0) {
+//         params.append("minAmount", filters.minAmount);
+//       }
+//       if (filters.search?.trim()) {
+//         params.append("search", filters.search.trim());
 //       }
 
-//       const json = await res.json();
+//       console.log("[Expense Fetch] Query params:", params.toString());
 
-//       if (!json?.success || !Array.isArray(json.data)) {
-//         throw new Error("Invalid API response format");
+//       const endpoint = apiEndpoints?.expenses?.list || "/expenses";
+//       const response = await apiClient.get(`${endpoint}?${params.toString()}`);
+
+//       console.log("[Expense Fetch] Response pagination:", response.data?.pagination);
+
+//       if (response.data?.success) {
+//         const raw = response.data.data || [];
+
+//         const transformed = raw.map((exp) => ({
+//           id: exp._id || exp.id,
+//           date: exp.expenseDate
+//             ? new Date(exp.expenseDate).toLocaleDateString("en-GB", {
+//                 day: "2-digit",
+//                 month: "2-digit",
+//                 year: "numeric",
+//               })
+//             : "-",
+//           rawDate: exp.expenseDate || null,
+//           categoryDisplay: exp.subCategory
+//             ? `${exp.category} • ${exp.subCategory}`
+//             : exp.category || "-",
+//           description: exp.description || exp.title || "-",
+//           vendor: exp.vendor?.name || exp.vendor || "-",
+//           paidBy: exp.bankName || "Self",
+//           amount: Number(exp.amount) || 0,
+//           mode: formatPaymentMethod(exp.paymentMethod, exp.chequeNumber),
+//           receiptNo: exp.voucherNo || exp.chequeNumber || "-",
+//           original: exp,
+//         }));
+
+//         setExpenses(transformed);
+
+//         const pag = response.data.pagination || {};
+//         setTotalItems(pag.totalItems || raw.length);
+//         setTotalPages(pag.totalPages || 1);
+//         setCurrentPage(pag.currentPage || page);
+//         setPageSize(pag.itemsPerPage || size); // sync backend value if returned
+//       } else {
+//         toast.error("Failed to load expenses");
+//         setExpenses([]);
+//         setTotalItems(0);
+//         setTotalPages(1);
 //       }
-
-//       const raw = json.data;
-
-//       const transformed = raw.map((exp) => ({
-//         date: exp.expenseDate
-//           ? new Date(exp.expenseDate).toLocaleDateString("en-GB", {
-//               day: "2-digit",
-//               month: "2-digit",
-//               year: "numeric",
-//             })
-//           : "-",
-//         rawDate: exp.expenseDate || null,
-//         categoryDisplay: exp.subCategory
-//           ? `${exp.category} • ${exp.subCategory}`
-//           : exp.category || "-",
-//         description: exp.description || exp.title || "-",
-//         vendor: exp.vendor?.name || "-",
-//         paidBy: exp.bankName || "Self",
-//         amount: Number(exp.amount) || 0,
-//         mode: formatPaymentMethod(exp.paymentMethod, exp.chequeNumber),
-//         receiptNo: exp.voucherNo || exp.chequeNumber || "-",
-//         // status: exp.status || "draft",
-//         original: exp,
-//       }));
-
-//       setRawData(transformed);
-//       setFilteredData(transformed);
-//       updateTotals(transformed);
 //     } catch (err) {
 //       console.error("Fetch error:", err);
-//       setError(err.message || "Failed to load expenses");
-//       setRawData([]);
-//       setFilteredData([]);
+//       toast.error("Could not fetch expense data");
+//       setExpenses([]);
+//       setTotalItems(0);
+//       setTotalPages(1);
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
 //   useEffect(() => {
-//     fetchExpenses();
-//   }, []);
-
-//   useEffect(() => {
-//     if (!rawData.length) return;
-
-//     let result = [...rawData];
-
-//     const f = appliedFilters;
-
-//     if (f.fromDate || f.toDate) {
-//       const from = f.fromDate ? new Date(f.fromDate) : null;
-//       const to = f.toDate ? new Date(f.toDate) : null;
-//       if (to) to.setHours(23, 59, 59, 999);
-
-//       result = result.filter((exp) => {
-//         if (!exp.rawDate) return false;
-//         const d = new Date(exp.rawDate);
-//         return (!from || d >= from) && (!to || d <= to);
-//       });
-//     }
-
-//     if (f.category) {
-//       const term = f.category.toLowerCase();
-//       result = result.filter((exp) =>
-//         exp.categoryDisplay.toLowerCase().includes(term),
-//       );
-//     }
-
-//     if (f.paidBy) {
-//       const term = f.paidBy.toLowerCase();
-//       result = result.filter((exp) => exp.mode.toLowerCase().includes(term));
-//     }
-
-//     if (f.minAmount) {
-//       const min = Number(f.minAmount);
-//       if (!isNaN(min)) result = result.filter((exp) => exp.amount >= min);
-//     }
-
-//     if (f.search) {
-//       const term = f.search.toLowerCase();
-//       result = result.filter(
-//         (exp) =>
-//           exp.description.toLowerCase().includes(term) ||
-//           exp.vendor.toLowerCase().includes(term) ||
-//           exp.receiptNo.toLowerCase().includes(term),
-//       );
-//     }
-
-//     setFilteredData(result);
-//     updateTotals(result);
-//   }, [rawData, appliedFilters]);
-
-//   const updateTotals = (data) => {
-//     setTotals({
-//       totalExpenses: data.length,
-//       totalAmount: data.reduce((sum, r) => sum + r.amount, 0),
-//       paidByCash: data
-//         .filter((r) => r.mode?.toLowerCase().includes("cash"))
-//         .reduce((sum, r) => sum + r.amount, 0),
-//       paidByBank: data
-//         .filter((r) => !r.mode?.toLowerCase().includes("cash"))
-//         .reduce((sum, r) => sum + r.amount, 0),
-//     });
-//   };
-
-//   const handleFilterChange = (field, value) => {
-//     setFilters((prev) => ({ ...prev, [field]: value }));
-//   };
+//     fetchExpenses(currentPage, pageSize);
+//   }, [currentPage, pageSize]);
 
 //   const handleApplyFilters = () => {
-//     setAppliedFilters({ ...filters });
+//     setCurrentPage(1);
+//     fetchExpenses(1, pageSize);
 //   };
 
-//   const handleReset = () => {
-//     const empty = {
+//   const handleResetFilters = () => {
+//     setFilters({
 //       fromDate: "",
 //       toDate: "",
 //       category: "",
-//       paidBy: "",
+//       paymentMode: "",
 //       minAmount: "",
 //       search: "",
-//     };
-//     setFilters(empty);
-//     setAppliedFilters(empty);
+//     });
+//     setCurrentPage(1);
+//     fetchExpenses(1, pageSize);
 //   };
 
-//   // ────────────────────────────────────────────────
-//   // PRINT filtered data when filters are active, otherwise all
-//   // ────────────────────────────────────────────────
+//   // Print logic (unchanged from previous version)
 //   const handlePrint = () => {
-//     const dataToPrint = filteredData;
-
-//     if (dataToPrint.length === 0) {
-//       alert("No expenses available to print.");
+//     if (!expenses.length) {
+//       toast.info("No data to print");
 //       return;
 //     }
 
-//     // Check if any filter is actually applied
-//     const isFiltered =
-//       appliedFilters.fromDate !== "" ||
-//       appliedFilters.toDate !== "" ||
-//       appliedFilters.category !== "" ||
-//       appliedFilters.paidBy !== "" ||
-//       appliedFilters.minAmount !== "" ||
-//       appliedFilters.search !== "";
+//     const isFiltered = Object.values(filters).some(Boolean);
 
-//     const title = isFiltered
-//       ? "Expense Report - Filtered"
-//       : "Expense Report - Complete";
-
-//     const printTotals = {
-//       total: dataToPrint.length,
-//       amount: dataToPrint.reduce((s, r) => s + r.amount, 0),
-//       paidByCash: dataToPrint
-//         .filter((r) => r.mode?.toLowerCase().includes("cash"))
-//         .reduce((s, r) => s + r.amount, 0),
-//       paidByBank: dataToPrint
-//         .filter((r) => !r.mode?.toLowerCase().includes("cash"))
-//         .reduce((s, r) => s + r.amount, 0),
-//     };
-
-//     const printWindow = window.open("", "", "width=1100,height=800");
+//     const pageTotal = expenses.reduce((sum, r) => sum + r.amount, 0);
+//     const cashThisPage = expenses
+//       .filter((r) => r.mode?.toLowerCase().includes("cash"))
+//       .reduce((sum, r) => sum + r.amount, 0);
+//     const otherThisPage = pageTotal - cashThisPage;
 
 //     const printContent = `
 //       <!DOCTYPE html>
 //       <html>
 //       <head>
-//         <title>${title}</title>
+//         <title>Expense Report ${isFiltered ? "- Filtered" : ""}</title>
 //         <style>
-//           body { font-family: Arial, sans-serif; padding: 20px; font-size: 11pt; margin: 0; }
-//           h1 { text-align: center; margin-bottom: 20px; font-size: 16pt; }
-//           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-//           th, td { border: 1px solid #333; padding: 8px 10px; text-align: left; }
-//           th { background-color: #006d77; color: white; font-weight: bold; }
-//           td { vertical-align: middle; }
-//           .totals { margin-top: 20px; padding: 12px; background: #f8f8f8; border: 1px solid #ccc; font-weight: bold; text-align: center; }
+//           body { font-family: Arial, sans-serif; padding: 20px; font-size: 11pt; }
+//           h1 { text-align: center; margin-bottom: 8px; }
+//           .subtitle { text-align: center; color: #555; margin-bottom: 20px; }
+//           table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+//           th, td { border: 1px solid #888; padding: 8px; text-align: left; }
+//           th { background: #e0f2f1; text-align: center; font-weight: bold; }
+//           .amount { text-align: right; }
+//           .totals { margin-top: 20px; padding: 12px; background: #f9fafb; border: 1px solid #ccc; text-align: center; font-weight: bold; }
 //         </style>
 //       </head>
 //       <body>
-//         <h1>${title}</h1>
+//         <h1>Expense Report</h1>
+//         <div class="subtitle">
+//           ${isFiltered ? "Filtered Results" : "All Expenses"} • ${new Date().toLocaleDateString("en-IN")}
+//         </div>
 //         <table>
 //           <thead>
 //             <tr>
-//               <th>SR No</th>
+//               <th>SR</th>
 //               <th>Date</th>
 //               <th>Category</th>
 //               <th>Description</th>
 //               <th>Vendor</th>
 //               <th>Paid By</th>
-//               <th>Amount</th>
+//               <th class="amount">Amount (₹)</th>
 //               <th>Mode</th>
 //               <th>Receipt No</th>
-//               <th>Status</th>
 //             </tr>
 //           </thead>
 //           <tbody>
-//             ${dataToPrint
-//               .map(
-//                 (exp, i) => `
+//             ${expenses.map((exp, i) => `
 //               <tr>
-//                 <td>${i + 1}</td>
+//                 <td style="text-align:center;">${i + 1}</td>
 //                 <td>${exp.date}</td>
 //                 <td>${exp.categoryDisplay}</td>
 //                 <td>${exp.description}</td>
 //                 <td>${exp.vendor}</td>
 //                 <td>${exp.paidBy}</td>
-//                 <td>₹${exp.amount.toLocaleString("en-IN")}</td>
+//                 <td class="amount">${exp.amount.toLocaleString("en-IN")}</td>
 //                 <td>${exp.mode}</td>
 //                 <td>${exp.receiptNo}</td>
-//                 <td>${exp.status || "-"}</td>
 //               </tr>
-//             `,
-//               )
-//               .join("")}
+//             `).join("")}
 //           </tbody>
 //         </table>
 //         <div class="totals">
-//           Total Expenses: ${printTotals.total} | 
-//           Total Amount: ₹${printTotals.amount.toLocaleString("en-IN")} | 
-//           Paid by Cash: ₹${printTotals.paidByCash.toLocaleString("en-IN")} | 
-//           Paid by Bank/Other: ₹${printTotals.paidByBank.toLocaleString("en-IN")}
+//           Page Expenses: ${expenses.length} | Page Total: ₹${pageTotal.toLocaleString("en-IN")} | Cash: ₹${cashThisPage.toLocaleString("en-IN")} | Other: ₹${otherThisPage.toLocaleString("en-IN")}
+//           <br><small>(Grand total: ${totalItems} expenses across ${totalPages} pages)</small>
 //         </div>
 //       </body>
 //       </html>
 //     `;
 
-//     printWindow.document.write(printContent);
-//     printWindow.document.close();
+//     const frame = document.createElement("iframe");
+//     frame.style.display = "none";
+//     document.body.appendChild(frame);
+//     const doc = frame.contentDocument || frame.contentWindow.document;
+//     doc.open();
+//     doc.write(printContent);
+//     doc.close();
 
-//     printWindow.onload = () => {
-//       printWindow.focus();
-//       printWindow.print();
-//     };
+//     setTimeout(() => {
+//       frame.contentWindow.focus();
+//       frame.contentWindow.print();
+//       setTimeout(() => document.body.removeChild(frame), 1000);
+//     }, 500);
 //   };
 
-//   // ────────────────────────────────────────────────
-//   // EXPORT CSV (already uses filtered data – good)
-//   // ────────────────────────────────────────────────
 //   const handleExportCSV = () => {
-//     const headers = [
-//       "SR No",
-//       "Date",
-//       "Category",
-//       "Description",
-//       "Vendor",
-//       "Paid By",
-//       "Amount",
-//       "Mode",
-//       "Receipt No",
-//       "Status",
-//     ];
+//     if (!expenses.length) return toast.info("No data to export");
 
-//     const csvRows = filteredData.map((exp, i) =>
-//       [
-//         i + 1,
-//         `"${exp.date.replace(/"/g, '""')}"`,
-//         `"${exp.categoryDisplay.replace(/"/g, '""')}"`,
-//         `"${exp.description.replace(/"/g, '""')}"`,
-//         `"${exp.vendor.replace(/"/g, '""')}"`,
-//         `"${exp.paidBy.replace(/"/g, '""')}"`,
-//         exp.amount,
-//         `"${exp.mode.replace(/"/g, '""')}"`,
-//         `"${exp.receiptNo.replace(/"/g, '""')}"`,
-//         `"${(exp.status || "-").replace(/"/g, '""')}"`,
-//       ].join(","),
-//     );
+//     const headers = ["SR", "Date", "Category", "Description", "Vendor", "Paid By", "Amount", "Mode", "Receipt No"];
+//     const rows = expenses.map((exp, i) => [
+//       i + 1,
+//       exp.date,
+//       `"${exp.categoryDisplay.replace(/"/g, '""')}"`,
+//       `"${exp.description.replace(/"/g, '""')}"`,
+//       `"${exp.vendor.replace(/"/g, '""')}"`,
+//       `"${exp.paidBy.replace(/"/g, '""')}"`,
+//       exp.amount,
+//       `"${exp.mode.replace(/"/g, '""')}"`,
+//       `"${exp.receiptNo.replace(/"/g, '""')}"`,
+//     ].join(","));
 
-//     const csvContent = [headers.join(","), ...csvRows].join("\n");
-//     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+//     const csv = [headers.join(","), ...rows].join("\n");
+//     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 //     const url = URL.createObjectURL(blob);
 //     const link = document.createElement("a");
 //     link.href = url;
-//     link.setAttribute(
-//       "download",
-//       `expense-report-${new Date().toISOString().split("T")[0]}.csv`,
-//     );
-//     document.body.appendChild(link);
+//     link.download = `expenses-${new Date().toISOString().slice(0,10)}.csv`;
 //     link.click();
-//     document.body.removeChild(link);
 //     URL.revokeObjectURL(url);
 //   };
 
 //   return (
 //     <div className="min-h-screen bg-gray-50 p-6">
 //       <div className="max-w-full mx-auto">
-//         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-//           Expense Report
-//         </h1>
-//         <p className="text-sm text-gray-600 mb-6">
-//           View, filter and export expense transactions
-//         </p>
+//         <h1 className="text-2xl font-bold text-gray-900 mb-1">Expense Report</h1>
+//         <p className="text-sm text-gray-600 mb-6">View and export expense records</p>
 
-//         {/* Filters */}
+//         {/* Filters section remains the same */}
 //         <div className="bg-white rounded-lg shadow-sm p-5 mb-6">
 //           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
 //             <div>
-//               <label className="block text-xs text-gray-600 mb-1.5">
-//                 From Date
-//               </label>
-//               <input
-//                 type="date"
-//                 value={filters.fromDate}
-//                 onChange={(e) => handleFilterChange("fromDate", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-//               />
+//               <label className="block text-xs text-gray-600 mb-1.5">From Date</label>
+//               <input type="date" value={filters.fromDate} onChange={e => setFilters(p => ({ ...p, fromDate: e.target.value }))} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
 //             </div>
-
 //             <div>
-//               <label className="block text-xs text-gray-600 mb-1.5">
-//                 To Date
-//               </label>
-//               <input
-//                 type="date"
-//                 value={filters.toDate}
-//                 onChange={(e) => handleFilterChange("toDate", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-//               />
+//               <label className="block text-xs text-gray-600 mb-1.5">To Date</label>
+//               <input type="date" value={filters.toDate} onChange={e => setFilters(p => ({ ...p, toDate: e.target.value }))} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
 //             </div>
-
 //             <div>
-//               <label className="block text-xs text-gray-600 mb-1.5">
-//                 Category
-//               </label>
-//               <input
-//                 type="text"
-//                 placeholder="e.g. Professional Fees, Travel, Rent"
-//                 value={filters.category}
-//                 onChange={(e) => handleFilterChange("category", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm placeholder-gray-400"
-//               />
+//               <label className="block text-xs text-gray-600 mb-1.5">Category</label>
+//               <input type="text" placeholder="e.g. Travel, Rent" value={filters.category} onChange={e => setFilters(p => ({ ...p, category: e.target.value }))} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
 //             </div>
-
-//             <div>
-//               <label className="block text-xs text-gray-600 mb-1.5">
-//                 Payment Mode
-//               </label>
-//               <select
-//                 value={filters.paidBy}
-//                 onChange={(e) => handleFilterChange("paidBy", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-//               >
-//                 <option value="">All Modes</option>
+//             {/* <div>
+//               <label className="block text-xs text-gray-600 mb-1.5">Payment Mode</label>
+//               <select value={filters.paymentMode} onChange={e => setFilters(p => ({ ...p, paymentMode: e.target.value }))} className="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+//                 <option value="">All</option>
 //                 <option value="cash">Cash</option>
-//                 <option value="bank">Bank / Transfer</option>
+//                 <option value="bank_transfer">Bank Transfer</option>
 //                 <option value="cheque">Cheque</option>
 //               </select>
-//             </div>
-
+//             </div> */}
 //             <div>
-//               <label className="block text-xs text-gray-600 mb-1.5">
-//                 Min Amount (₹)
-//               </label>
-//               <input
-//                 type="number"
-//                 value={filters.minAmount}
-//                 onChange={(e) =>
-//                   handleFilterChange("minAmount", e.target.value)
-//                 }
-//                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-//               />
+//               <label className="block text-xs text-gray-600 mb-1.5">Min Amount (₹)</label>
+//               <input type="number" min="0" value={filters.minAmount} onChange={e => setFilters(p => ({ ...p, minAmount: e.target.value }))} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
 //             </div>
 //           </div>
 
 //           <div className="flex flex-col sm:flex-row gap-4">
 //             <div className="flex-1">
-//               <label className="block text-xs text-gray-600 mb-1.5">
-//                 Search
-//               </label>
-//               <input
-//                 type="text"
-//                 placeholder="Search vendor, description, receipt..."
-//                 value={filters.search}
-//                 onChange={(e) => handleFilterChange("search", e.target.value)}
-//                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-//               />
+//               <label className="block text-xs text-gray-600 mb-1.5">Search</label>
+//               <input type="text" placeholder="Vendor, description, receipt..." value={filters.search} onChange={e => setFilters(p => ({ ...p, search: e.target.value }))} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
 //             </div>
-
 //             <div className="flex items-end gap-3 pt-5 sm:pt-0">
-//               <button
-//                 onClick={handleReset}
-//                 className="px-5 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50 transition"
-//               >
-//                 Reset
-//               </button>
-//               <button
-//                 onClick={handleApplyFilters}
-//                 disabled={loading}
-//                 className="px-6 py-2 bg-teal-700 text-white rounded-md text-sm hover:bg-teal-800 transition disabled:opacity-60"
-//               >
+//               <button onClick={handleResetFilters} className="px-5 py-2 border rounded text-sm hover:bg-gray-50">Reset</button>
+//               <button onClick={handleApplyFilters} disabled={loading} className="px-6 py-2 bg-teal-700 text-white rounded text-sm hover:bg-teal-800 disabled:opacity-60">
 //                 {loading ? "Loading..." : "Apply Filters"}
 //               </button>
 //             </div>
 //           </div>
 //         </div>
 
-//         {error && (
-//           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-//             {error}
-//           </div>
-//         )}
-
 //         {/* Summary */}
 //         <div className="bg-white rounded-lg shadow-sm p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 //           <div>
 //             <p className="text-sm text-gray-600">Total Expenses</p>
-//             <p className="text-2xl font-bold">{totals.totalExpenses}</p>
+//             <p className="text-2xl font-bold">{totalItems}</p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-gray-600">Total Amount</p>
-//             <p className="text-2xl font-bold">
-//               ₹{totals.totalAmount.toLocaleString("en-IN")}
-//             </p>
+//             <p className="text-sm text-gray-600">Page Expenses</p>
+//             <p className="text-2xl font-bold">{expenses.length}</p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-gray-600">Paid by Cash</p>
-//             <p className="text-2xl font-bold">
-//               ₹{totals.paidByCash.toLocaleString("en-IN")}
-//             </p>
+//             <p className="text-sm text-gray-600">Page Total</p>
+//             <p className="text-2xl font-bold">₹{expenses.reduce((s, r) => s + r.amount, 0).toLocaleString("en-IN")}</p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-gray-600">Paid by Bank/Other</p>
-//             <p className="text-2xl font-bold">
-//               ₹{totals.paidByBank.toLocaleString("en-IN")}
-//             </p>
+//             <p className="text-sm text-gray-600">Pages</p>
+//             <p className="text-2xl font-bold">{totalPages}</p>
 //           </div>
 //         </div>
 
-//         {/* Print & Export Buttons */}
+//         {/* Actions */}
 //         <div className="flex justify-end gap-3 mb-4">
-//           <button
-//             onClick={handlePrint}
-//             className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
-//             disabled={loading || rawData.length === 0}
-//           >
-//             <Printer size={16} />
-//             Print Report
+//           <button onClick={handlePrint} disabled={loading || !expenses.length} className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-60">
+//             <Printer size={16} /> Print Page
 //           </button>
-//           <button
-//             onClick={handleExportCSV}
-//             className="flex items-center gap-2 px-6 py-2 bg-teal-600 text-white rounded text-sm font-medium hover:bg-teal-700"
-//             disabled={loading || filteredData.length === 0}
-//           >
-//             <Download size={16} />
-//             Export CSV
+//           <button onClick={handleExportCSV} disabled={loading || !expenses.length} className="flex items-center gap-2 px-5 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 disabled:opacity-60">
+//             <Download size={16} /> Export Page (CSV)
 //           </button>
 //         </div>
 
 //         {/* Table */}
-//         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-//           {loading ? (
-//             <div className="p-12 text-center text-gray-500">
-//               Loading expenses...
-//             </div>
-//           ) : filteredData.length === 0 ? (
-//             <div className="p-12 text-center text-gray-500 italic">
-//               No expenses match the selected filters
-//             </div>
-//           ) : (
-//             <Table
-//               data={filteredData}
-//               pagination={true}
-//               defaultPageSize={10}
-//               showSrNo={true}
-//             />
-//           )}
-//         </div>
+//         {loading ? (
+//           <div className="bg-white p-12 text-center text-gray-500 rounded shadow-sm">Loading expenses...</div>
+//         ) : expenses.length === 0 ? (
+//           <div className="bg-white p-12 text-center text-gray-500 italic rounded shadow-sm">No expenses found matching your filters</div>
+//         ) : (
+//           <Table
+//             data={expenses}
+//             pagination={true}
+//             serverPagination={true}
+//             totalServerItems={totalItems}
+//             currentServerPage={currentPage}
+//             defaultPageSize={pageSize}
+//             onPageChange={setCurrentPage}
+//             onPageSizeChange={(newSize) => {
+//               console.log("[Table] Page size changed to:", newSize); // ← debug
+//               setPageSize(newSize);
+//               setCurrentPage(1);
+//             }}
+//             showSrNo={true}
+//           />
+//         )}
 //       </div>
 //     </div>
 //   );
 // }
-
-
-
-
-
-
