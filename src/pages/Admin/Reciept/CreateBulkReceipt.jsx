@@ -2605,23 +2605,28 @@ const CreateBulkReceipt = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await apiClient.get('/sales-bills', {
-        params: {
-          page,
-          limit,
-          search: searchTerm,
-          status: statusFilter,
-          membershipType: 'monthly',
-          fromNextDebitDate: fromDate,
-          toNextDebitDate: toDate
-        }
-      });
+      const params = {
+        page,
+        limit,
+        search: searchTerm,
+        status: statusFilter,
+        membershipType: 'monthly'
+      };
+      
+      // Add date filters only if they have values
+      if (fromDate) {
+        params.fromNextDebitDate = fromDate;
+      }
+      if (toDate) {
+        params.toNextDebitDate = toDate;
+      }
+
+      const response = await apiClient.get('/sales-bills', { params });
       if (response.data.success) {
         const bills = response.data.data || [];
         setSalesBills(bills);
         setMonthlyBills(bills);
-      setTotalPages(response.data.pagination?.pages || 1);
-        // setTotalPages(response.data.totalPages || 1);
+        setTotalPages(response.data.pagination?.pages || 1);
       }
     } catch (err) {
       setError('Failed to fetch sales bills: ' + err.message);
@@ -3046,6 +3051,20 @@ const CreateBulkReceipt = () => {
                   placeholder="To Next Debit Date"
                   className="p-2 border border-gray-300 rounded-md"
                 />
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1); // Reset to first page when changing limit
+                  }}
+                  className="p-2 border border-gray-300 rounded-md"
+                  title="Items per page"
+                >
+                  <option value={5}>5 / page</option>
+                  <option value={10}>10 / page</option>
+                  <option value={50}>50 / page</option>
+                  <option value={100}>100 / page</option>
+                </select>
               </div>
 
               {/* Select controls */}
