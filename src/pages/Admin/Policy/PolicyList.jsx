@@ -666,22 +666,23 @@ const PolicyList = () => {
       filtered = filtered.filter((p) => p.policyHolder?.type === policyHolderType);
     }
 
-    // From Date filter (startDate >= fromDate)
+    // From Date filter (createdAt >= fromDate) - Using YYYY-MM-DD comparison
     if (fromDate) {
-      const from = new Date(fromDate);
       filtered = filtered.filter((p) => {
-        if (!p.startDate) return false;
-        return new Date(p.startDate) >= from;
+        if (!p.createdAt) return false;
+        // Extract YYYY-MM-DD from ISO string and compare directly
+        const policyCreatedAt = p.createdAt.split('T')[0];
+        return policyCreatedAt >= fromDate;
       });
     }
 
-    // To Date filter (endDate <= toDate)
+    // To Date filter (createdAt <= toDate) - Using YYYY-MM-DD comparison
     if (toDate) {
-      const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999); // Include full day
       filtered = filtered.filter((p) => {
-        if (!p.endDate) return false;
-        return new Date(p.endDate) <= to;
+        if (!p.createdAt) return false;
+        // Extract YYYY-MM-DD from ISO string and compare directly
+        const policyCreatedAt = p.createdAt.split('T')[0];
+        return policyCreatedAt <= toDate;
       });
     }
 
