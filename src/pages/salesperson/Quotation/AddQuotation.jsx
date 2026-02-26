@@ -50,7 +50,7 @@ const CreateQuotation = () => {
     const fetchDoctors = async () => {
       try {
         setLoadingDoctors(true);
-        const response = await apiClient.get(apiEndpoints.doctors.dropdown, { params: { limit: 1000 } });
+        const response = await apiClient.get(apiEndpoints.doctors.myDoctorss, { params: { limit: 1000 } });
         setDoctors(response.data.data || []);
       } catch (error) {
         console.error('Error fetching doctors:', error);
