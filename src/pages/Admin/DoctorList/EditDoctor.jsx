@@ -2023,7 +2023,7 @@ const EditDoctor = () => {
                       <div className="flex space-x-2">
                         <button
                           type="button"
-                          onClick={() => window.open(`${process.env.REACT_APP_API_URI || 'https://rapid-apis.onrender.com'}/uploads/${doc.split('/').pop()}`, '_blank')}
+                          onClick={() => window.open(`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doc.split('/').pop()}`, '_blank')}
                           className="text-xs text-blue-600 hover:underline"
                         >
                           View
