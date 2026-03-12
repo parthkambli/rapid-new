@@ -159,72 +159,73 @@ const AddPolicy = () => {
     console.log(`Updating form field: ${field} with value:`, value);
 
     const setter = type === 'doctor' ? setDoctorForms : setHospitalForms;
-    const forms = type === 'doctor' ? doctorForms : hospitalForms;
 
-    let updatedForms = [...forms];
-    let updatedForm = { ...updatedForms[index] };
+    // Use functional state update to avoid stale closure issues
+    // This ensures back-to-back calls (e.g. selectedOption + policyHolder) don't overwrite each other
+    setter(prevForms => {
+      let updatedForms = [...prevForms];
+      let updatedForm = { ...updatedForms[index] };
 
-    // Special handling for date-related fields
-    if (field === 'startDate' || field === 'endDate' || field === 'duration') {
-      const newValue = value || '';
+      // Special handling for date-related fields
+      if (field === 'startDate' || field === 'endDate' || field === 'duration') {
+        const newValue = value || '';
 
-      if (field === 'startDate') {
-        updatedForm.startDate = newValue;
+        if (field === 'startDate') {
+          updatedForm.startDate = newValue;
 
-        // If both start date and duration exist, calculate end date
-        if (newValue && updatedForm.duration) {
-          const endDate = addYearsToDate(newValue, parseFloat(updatedForm.duration));
-          updatedForm.endDate = endDate;
+          // If both start date and duration exist, calculate end date
+          if (newValue && updatedForm.duration) {
+            const endDate = addYearsToDate(newValue, parseFloat(updatedForm.duration));
+            updatedForm.endDate = endDate;
+          }
+          // If both start date and end date exist, recalculate duration
+          else if (newValue && updatedForm.endDate) {
+            const duration = calculateDurationInYears(newValue, updatedForm.endDate);
+            updatedForm.duration = duration.toString();
+          }
         }
-        // If both start date and end date exist, recalculate duration
-        else if (newValue && updatedForm.endDate) {
-          const duration = calculateDurationInYears(newValue, updatedForm.endDate);
-          updatedForm.duration = duration.toString();
+        else if (field === 'endDate') {
+          updatedForm.endDate = newValue;
+
+          // If both start date and end date exist, calculate duration
+          if (updatedForm.startDate && newValue) {
+            const duration = calculateDurationInYears(updatedForm.startDate, newValue);
+            updatedForm.duration = duration.toString();
+          }
+          // Clear duration if end date is cleared
+          else if (!newValue) {
+            updatedForm.duration = '';
+          }
+        }
+        else if (field === 'duration') {
+          updatedForm.duration = newValue;
+
+          // If both start date and duration exist, calculate end date
+          if (updatedForm.startDate && newValue && !isNaN(parseFloat(newValue))) {
+            const endDate = addYearsToDate(updatedForm.startDate, parseFloat(newValue));
+            updatedForm.endDate = endDate;
+          }
+          // Clear end date if duration is cleared
+          else if (!newValue) {
+            updatedForm.endDate = '';
+          }
         }
       }
-      else if (field === 'endDate') {
-        updatedForm.endDate = newValue;
-
-        // If both start date and end date exist, calculate duration
-        if (updatedForm.startDate && newValue) {
-          const duration = calculateDurationInYears(updatedForm.startDate, newValue);
-          updatedForm.duration = duration.toString();
-        }
-        // Clear duration if end date is cleared
-        else if (!newValue) {
-          updatedForm.duration = '';
-        }
+      else if (field === 'insuranceCompany') {
+        updatedForm[field] = value;
+        // Reset insurance type when company changes
+        updatedForm.insuranceType = '';
       }
-      else if (field === 'duration') {
-        updatedForm.duration = newValue;
-
-        // If both start date and duration exist, calculate end date
-        if (updatedForm.startDate && newValue && !isNaN(parseFloat(newValue))) {
-          const endDate = addYearsToDate(updatedForm.startDate, parseFloat(newValue));
-          updatedForm.endDate = endDate;
-        }
-        // Clear end date if duration is cleared
-        else if (!newValue) {
-          updatedForm.endDate = '';
-        }
+      else if (field === 'policyHolder') {
+        updatedForm[field] = value;
       }
-    }
-    else if (field === 'insuranceCompany') {
-      updatedForm[field] = value;
-      // Reset insurance type when company changes
-      updatedForm.insuranceType = '';
-    }
-    // Special handling for policyHolder field to handle hospital_individual type and spouse relationships
-    // Special handling for policyHolder field to handle hospital_individual type and spouse relationships
-    else if (field === 'policyHolder') {
-      updatedForm[field] = value;
-    }
-    else {
-      updatedForm[field] = value;
-    }
+      else {
+        updatedForm[field] = value;
+      }
 
-    updatedForms[index] = updatedForm;
-    setter(updatedForms);
+      updatedForms[index] = updatedForm;
+      return updatedForms;
+    });
   };
 
   // Fetch data from APIs
@@ -559,11 +560,23 @@ const AddPolicy = () => {
       });
       const fetchedDoctors = response.data || [];
       setDoctors(fetchedDoctors);
-      setDoctorOptions(fetchedDoctors.map(d => ({
+
+      const newOptions = fetchedDoctors.map(d => ({
         value: d._id,
         label: `${d.fullName || d.hospitalName} - ${d.employeeId || d.membershipId || 'No ID'}`,
         ...d
-      })));
+      }));
+
+      // Preserve currently selected options so they don't vanish from the dropdown
+      setDoctorOptions(prevOpts => {
+        // Collect all currently selected options from doctorForms
+        const selectedValues = new Set();
+        // We can't read doctorForms here (stale closure), so preserve any option
+        // from prevOpts that is NOT in new results — they might be selected
+        const newValueSet = new Set(newOptions.map(o => o.value));
+        const preservedOpts = prevOpts.filter(o => !newValueSet.has(o.value));
+        return [...newOptions, ...preservedOpts];
+      });
     } catch (err) {
       console.error('Error searching doctors:', err);
     } finally {
