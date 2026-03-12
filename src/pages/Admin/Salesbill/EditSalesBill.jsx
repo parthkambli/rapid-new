@@ -418,7 +418,6 @@ const internalNoteText = notesParts.length > 1
               name="expiry"
               value={formData.expiry}
               onChange={handleChange}
-              min={today}
               className="mt-1 p-2 w-full border border-gray-300 rounded-md bg-blue-50 font-medium"
               required
             />
