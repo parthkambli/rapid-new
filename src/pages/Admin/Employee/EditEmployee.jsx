@@ -1027,7 +1027,7 @@ const getApiBaseUrl = () => {
     // Fallback if import.meta is not available
   }
   // Default fallback
-  return 'https://rapid-apis.onrender.com';
+  return 'http://localhost:3000';
 };
 
 const getDocumentUrl = (filePath) => {
@@ -1037,7 +1037,7 @@ const getDocumentUrl = (filePath) => {
 
     // Convert server path to URL
     // Server stores: C:\Users\User\OneDrive\Desktop\rapid-main\rapid-apis\uploads\aadhar-cards\file.png
-    // Should map to: https://rapid-apis.onrender.com/uploads/aadhar-cards/file.png
+    // Should map to: http://localhost:3000/uploads/aadhar-cards/file.png
     if (filePath.includes("uploads\\")) {
       // Extract the path after 'uploads\'
       const uploadsIndex = filePath.indexOf("uploads\\");
