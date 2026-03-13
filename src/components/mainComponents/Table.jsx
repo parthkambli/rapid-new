@@ -700,10 +700,20 @@ const Table = ({
   const totalItems = serverPagination ? totalServerItems : data?.length || 0;
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  // SYNC SERVER PAGE
+  // SYNC SERVER PAGE & PAGE SIZE
   useEffect(() => {
-    if (serverPagination) setCurrentPage(currentServerPage);
+    if (serverPagination) {
+      setCurrentPage(currentServerPage);
+    }
   }, [currentServerPage, serverPagination]);
+
+  // Sync pageSize when parent changes it (for server pagination)
+  useEffect(() => {
+    if (serverPagination && onPageSizeChange) {
+      // Parent controls pageSize, sync it
+      setPageSize(defaultPageSize);
+    }
+  }, [defaultPageSize, serverPagination, onPageSizeChange]);
 
   // HANDLE PAGE CHANGE
   const handlePageChange = (page) => {
