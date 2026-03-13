@@ -1439,59 +1439,12 @@ const AllVisitedDoctorLists = () => {
     }
   };
 
-  // === Client-side filtering (including robust date range) ===
-  const filteredData = data.filter((row) => {
-    // Name
-    if (searchByName && !row.drName.toLowerCase().includes(searchByName.toLowerCase())) return false;
+  // Backend already filters the data, so we use the data directly
+  // No client-side filtering needed
 
-    // Status
-    if (sortByStatus !== "All" && row.typeOfEnquiries.toLowerCase() !== sortByStatus.toLowerCase()) return false;
-
-    // Membership
-    if (sortByMembership !== "All" && row.typeOfMembership.toLowerCase() !== sortByMembership.toLowerCase()) return false;
-
-    // City
-    if (searchByCity && !row.city.toLowerCase().includes(searchByCity.toLowerCase())) return false;
-
-    // Specialty
-    if (searchBySpecialty && !row.specialty.toLowerCase().includes(searchBySpecialty.toLowerCase())) return false;
-
-    // Salesman (initial letter search)
-    if (searchBySalesman) {
-      const matchesSalesman = row.followUps.some(fu =>
-        fu.salesman.toLowerCase().includes(searchBySalesman.toLowerCase())
-      );
-      if (!matchesSalesman) return false;
-    }
-
-    // === DATE RANGE FILTER (Client-side) ===
-    if (row.createdAt) {
-      const doctorDate = row.createdAt;
-
-      if (sortByDateFrom) {
-        const fromDate = new Date(sortByDateFrom);
-        fromDate.setHours(0, 0, 0, 0); // Start of day
-        if (doctorDate < fromDate) return false;
-      }
-
-      if (sortByDateTo) {
-        const toDate = new Date(sortByDateTo);
-        toDate.setHours(23, 59, 59, 999); // End of day
-        if (doctorDate > toDate) return false;
-      }
-    } else if (sortByDateFrom || sortByDateTo) {
-      // If no createdAt but date filter applied → exclude
-      return false;
-    }
-
-    return true;
-  });
-
-  // Reset to first page when filters change to avoid "no data" on empty filtered pages
+  // Reset to page 1 whenever filters change (this will trigger fetchDoctors via currentPage dependency)
   useEffect(() => {
-    if (currentPage > 1) {
-      setCurrentPage(1);
-    }
+    setCurrentPage(1);
   }, [searchByName, sortByStatus, sortByMembership, searchByCity, searchBySpecialty, searchBySalesman, sortByDateFrom, sortByDateTo]);
 
   const extraColumns = [
@@ -1635,7 +1588,7 @@ const AllVisitedDoctorLists = () => {
       {!loading && (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <Table
-            data={filteredData}
+            data={data}
             extraColumns={extraColumns}
             actions={actions}
             excludeColumns={["typeOfMembership", "typeOfEnquiries", "createdAt"]}
