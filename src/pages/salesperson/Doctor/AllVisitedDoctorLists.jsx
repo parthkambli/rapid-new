@@ -1270,6 +1270,12 @@ const AllVisitedDoctorLists = () => {
   const [sortByDateTo, setSortByDateTo] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const [data, setData] = useState([]);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1315,6 +1321,10 @@ const AllVisitedDoctorLists = () => {
       if (sortByDateFrom) params.dateFrom = sortByDateFrom;
       if (sortByDateTo) params.dateTo = sortByDateTo;
 
+      // Add pagination parameters
+      params.page = currentPage;
+      params.limit = pageSize;
+
       const response = await apiClient.get(apiEndpoints.doctors.myDoctorss, { params });
 
       if (response.data.success) {
@@ -1339,6 +1349,12 @@ const AllVisitedDoctorLists = () => {
           }))
         }));
         setData(mappedData);
+        
+        // Update pagination info from backend response
+        if (response.data.pagination) {
+          setTotalItems(response.data.pagination.total || 0);
+          setTotalPages(response.data.pagination.pages || 0);
+        }
       } else {
         toast.error("Failed to fetch doctors");
       }
@@ -1355,7 +1371,9 @@ const AllVisitedDoctorLists = () => {
     searchBySpecialty,
     sortByMembership,
     sortByDateFrom,
-    sortByDateTo
+    sortByDateTo,
+    currentPage,
+    pageSize
   ]);
 
   useEffect(() => {
@@ -1468,6 +1486,13 @@ const AllVisitedDoctorLists = () => {
 
     return true;
   });
+
+  // Reset to first page when filters change to avoid "no data" on empty filtered pages
+  useEffect(() => {
+    if (currentPage > 1) {
+      setCurrentPage(1);
+    }
+  }, [searchByName, sortByStatus, sortByMembership, searchByCity, searchBySpecialty, searchBySalesman, sortByDateFrom, sortByDateTo]);
 
   const extraColumns = [
     {
@@ -1615,6 +1640,12 @@ const AllVisitedDoctorLists = () => {
             actions={actions}
             excludeColumns={["typeOfMembership", "typeOfEnquiries", "createdAt"]}
             pagination={true}
+            serverPagination={true}
+            totalServerItems={totalItems}
+            currentServerPage={currentPage}
+            defaultPageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+            onPageSizeChange={(size) => setPageSize(size)}
           />
         </div>
       )}
