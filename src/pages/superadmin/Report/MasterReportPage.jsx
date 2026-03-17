@@ -27,6 +27,22 @@ export default function MasterReportPage() {
     paymentMode: 'All'
   });
 
+  // Pagination states for Owner Snapshot tables
+  const [doctorInflowsPage, setDoctorInflowsPage] = useState(1);
+  const [doctorInflowsRows, setDoctorInflowsRows] = useState(10);
+  const [payoutsPage, setPayoutsPage] = useState(1);
+  const [payoutsRows, setPayoutsRows] = useState(10);
+  const [allItemsPage, setAllItemsPage] = useState(1);
+  const [allItemsRows, setAllItemsRows] = useState(10);
+
+  // Pagination states for Finance Dashboard tables
+  const [insurancePage, setInsurancePage] = useState(1);
+  const [insuranceRows, setInsuranceRows] = useState(10);
+  const [salaryPage, setSalaryPage] = useState(1);
+  const [salaryRows, setSalaryRows] = useState(10);
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const [transactionsRows, setTransactionsRows] = useState(10);
+
   const fetchMasterReport = async (tab = activeTab) => {
     setLoading(true);
     try {
@@ -272,9 +288,28 @@ export default function MasterReportPage() {
 
               {/* Doctor Inflows Table */}
               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Doctor Inflows ({reportData?.doctorInflows?.length || 0})
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Doctor Inflows ({reportData?.doctorInflows?.length || 0})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={doctorInflowsRows}
+                      onChange={(e) => {
+                        setDoctorInflowsRows(Number(e.target.value));
+                        setDoctorInflowsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
@@ -287,7 +322,9 @@ export default function MasterReportPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {reportData?.doctorInflows?.map((item, index) => (
+                      {reportData?.doctorInflows
+                        ?.slice((doctorInflowsPage - 1) * doctorInflowsRows, doctorInflowsPage * doctorInflowsRows)
+                        .map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{item.doctor}</td>
@@ -304,13 +341,58 @@ export default function MasterReportPage() {
                     </tbody>
                   </table>
                 </div>
+                {reportData?.doctorInflows && reportData.doctorInflows.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((doctorInflowsPage - 1) * doctorInflowsRows + 1, reportData.doctorInflows.length)} to {Math.min(doctorInflowsPage * doctorInflowsRows, reportData.doctorInflows.length)} of {reportData.doctorInflows.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setDoctorInflowsPage(prev => Math.max(1, prev - 1))}
+                        disabled={doctorInflowsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {doctorInflowsPage} of {Math.ceil(reportData.doctorInflows.length / doctorInflowsRows)}
+                      </span>
+                      <button
+                        onClick={() => setDoctorInflowsPage(prev => Math.min(Math.ceil(reportData.doctorInflows.length / doctorInflowsRows), prev + 1))}
+                        disabled={doctorInflowsPage >= Math.ceil(reportData.doctorInflows.length / doctorInflowsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Payouts Table */}
               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Payouts - Advocates, Experts & Insurance (Adv: {reportData?.payouts?.advocates?.length || 0}, Exp: {reportData?.payouts?.experts?.length || 0}, Ins: {reportData?.payouts?.insurance?.length || 0})
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Payouts - Advocates, Experts & Insurance (Adv: {reportData?.payouts?.advocates?.length || 0}, Exp: {reportData?.payouts?.experts?.length || 0}, Ins: {reportData?.payouts?.insurance?.length || 0})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={payoutsRows}
+                      onChange={(e) => {
+                        setPayoutsRows(Number(e.target.value));
+                        setPayoutsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
@@ -323,26 +405,14 @@ export default function MasterReportPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {reportData?.payouts?.advocates?.map((item, index) => (
-                        <tr key={`adv-${index}`} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{item.person}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
-                          <td className="px-4 py-2 text-sm text-right font-medium text-red-600">-{formatCurrency(item.amount)}</td>
-                        </tr>
-                      ))}
-                      {reportData?.payouts?.experts?.map((item, index) => (
-                        <tr key={`exp-${index}`} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{item.person}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
-                          <td className="px-4 py-2 text-sm text-right font-medium text-red-600">-{formatCurrency(item.amount)}</td>
-                        </tr>
-                      ))}
-                      {reportData?.payouts?.insurance?.map((item, index) => (
-                        <tr key={`ins-${index}`} className="hover:bg-gray-50">
+                      {[
+                        ...(reportData?.payouts?.advocates || []),
+                        ...(reportData?.payouts?.experts || []),
+                        ...(reportData?.payouts?.insurance || [])
+                      ]
+                        .slice((payoutsPage - 1) * payoutsRows, payoutsPage * payoutsRows)
+                        .map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{item.person}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
@@ -358,13 +428,58 @@ export default function MasterReportPage() {
                     </tbody>
                   </table>
                 </div>
+                {reportData?.payouts && (reportData.payouts.advocates?.length || reportData.payouts.experts?.length || reportData.payouts.insurance?.length) > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((payoutsPage - 1) * payoutsRows + 1, (reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0))} to {Math.min(payoutsPage * payoutsRows, (reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0))} of {(reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setPayoutsPage(prev => Math.max(1, prev - 1))}
+                        disabled={payoutsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {payoutsPage} of {Math.ceil(((reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)) / payoutsRows)}
+                      </span>
+                      <button
+                        onClick={() => setPayoutsPage(prev => Math.min(Math.ceil(((reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)) / payoutsRows), prev + 1))}
+                        disabled={payoutsPage >= Math.ceil(((reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)) / payoutsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* All Items Table */}
               <div className="bg-white rounded-lg shadow-sm p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  All Items (Combined) ({reportData?.allItems?.length || 0} items)
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    All Items (Combined) ({reportData?.allItems?.length || 0} items)
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={allItemsRows}
+                      onChange={(e) => {
+                        setAllItemsRows(Number(e.target.value));
+                        setAllItemsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
@@ -378,7 +493,9 @@ export default function MasterReportPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {reportData?.allItems?.map((item, index) => (
+                      {reportData?.allItems
+                        ?.slice((allItemsPage - 1) * allItemsRows, allItemsPage * allItemsRows)
+                        .map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{item.type}</td>
@@ -398,6 +515,32 @@ export default function MasterReportPage() {
                     </tbody>
                   </table>
                 </div>
+                {reportData?.allItems && reportData.allItems.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((allItemsPage - 1) * allItemsRows + 1, reportData.allItems.length)} to {Math.min(allItemsPage * allItemsRows, reportData.allItems.length)} of {reportData.allItems.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setAllItemsPage(prev => Math.max(1, prev - 1))}
+                        disabled={allItemsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {allItemsPage} of {Math.ceil(reportData.allItems.length / allItemsRows)}
+                      </span>
+                      <button
+                        onClick={() => setAllItemsPage(prev => Math.min(Math.ceil(reportData.allItems.length / allItemsRows), prev + 1))}
+                        disabled={allItemsPage >= Math.ceil(reportData.allItems.length / allItemsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -533,7 +676,26 @@ export default function MasterReportPage() {
               {/* Insurance by Company */}
               {reportData?.insuranceByCompany && reportData.insuranceByCompany.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Insurance by Company</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Insurance by Company</h3>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Rows:</label>
+                      <select
+                        value={insuranceRows}
+                        onChange={(e) => {
+                          setInsuranceRows(Number(e.target.value));
+                          setInsurancePage(1);
+                        }}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-gray-50">
@@ -543,7 +705,9 @@ export default function MasterReportPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {reportData.insuranceByCompany.map((item, index) => (
+                        {reportData.insuranceByCompany
+                          .slice((insurancePage - 1) * insuranceRows, insurancePage * insuranceRows)
+                          .map((item, index) => (
                           <tr key={index} className="hover:bg-gray-50">
                             <td className="px-4 py-2 text-sm text-gray-700">{item.company}</td>
                             <td className="px-4 py-2 text-sm text-right font-medium text-gray-900">{formatCurrency(item.amount)}</td>
@@ -552,13 +716,56 @@ export default function MasterReportPage() {
                       </tbody>
                     </table>
                   </div>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((insurancePage - 1) * insuranceRows + 1, reportData.insuranceByCompany.length)} to {Math.min(insurancePage * insuranceRows, reportData.insuranceByCompany.length)} of {reportData.insuranceByCompany.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setInsurancePage(prev => Math.max(1, prev - 1))}
+                        disabled={insurancePage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {insurancePage} of {Math.ceil(reportData.insuranceByCompany.length / insuranceRows)}
+                      </span>
+                      <button
+                        onClick={() => setInsurancePage(prev => Math.min(Math.ceil(reportData.insuranceByCompany.length / insuranceRows), prev + 1))}
+                        disabled={insurancePage >= Math.ceil(reportData.insuranceByCompany.length / insuranceRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Salary by Role */}
               {reportData?.salaryByRole && reportData.salaryByRole.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Salary by Role</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Salary by Role</h3>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Rows:</label>
+                      <select
+                        value={salaryRows}
+                        onChange={(e) => {
+                          setSalaryRows(Number(e.target.value));
+                          setSalaryPage(1);
+                        }}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-gray-50">
@@ -568,7 +775,9 @@ export default function MasterReportPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {reportData.salaryByRole.map((item, index) => (
+                        {reportData.salaryByRole
+                          .slice((salaryPage - 1) * salaryRows, salaryPage * salaryRows)
+                          .map((item, index) => (
                           <tr key={index} className="hover:bg-gray-50">
                             <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
                             <td className="px-4 py-2 text-sm text-right font-medium text-gray-900">{formatCurrency(item.amount)}</td>
@@ -577,14 +786,57 @@ export default function MasterReportPage() {
                       </tbody>
                     </table>
                   </div>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((salaryPage - 1) * salaryRows + 1, reportData.salaryByRole.length)} to {Math.min(salaryPage * salaryRows, reportData.salaryByRole.length)} of {reportData.salaryByRole.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSalaryPage(prev => Math.max(1, prev - 1))}
+                        disabled={salaryPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {salaryPage} of {Math.ceil(reportData.salaryByRole.length / salaryRows)}
+                      </span>
+                      <button
+                        onClick={() => setSalaryPage(prev => Math.min(Math.ceil(reportData.salaryByRole.length / salaryRows), prev + 1))}
+                        disabled={salaryPage >= Math.ceil(reportData.salaryByRole.length / salaryRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Transactions Table */}
               <div className="bg-white rounded-lg shadow-sm p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  All Transactions ({reportData?.transactions?.length || 0})
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    All Transactions ({reportData?.transactions?.length || 0})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={transactionsRows}
+                      onChange={(e) => {
+                        setTransactionsRows(Number(e.target.value));
+                        setTransactionsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
@@ -598,7 +850,9 @@ export default function MasterReportPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {reportData?.transactions?.map((item, index) => (
+                      {reportData?.transactions
+                        ?.slice((transactionsPage - 1) * transactionsRows, transactionsPage * transactionsRows)
+                        .map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{item.category}</td>
@@ -618,6 +872,32 @@ export default function MasterReportPage() {
                     </tbody>
                   </table>
                 </div>
+                {reportData?.transactions && reportData.transactions.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((transactionsPage - 1) * transactionsRows + 1, reportData.transactions.length)} to {Math.min(transactionsPage * transactionsRows, reportData.transactions.length)} of {reportData.transactions.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setTransactionsPage(prev => Math.max(1, prev - 1))}
+                        disabled={transactionsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {transactionsPage} of {Math.ceil(reportData.transactions.length / transactionsRows)}
+                      </span>
+                      <button
+                        onClick={() => setTransactionsPage(prev => Math.min(Math.ceil(reportData.transactions.length / transactionsRows), prev + 1))}
+                        disabled={transactionsPage >= Math.ceil(reportData.transactions.length / transactionsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
