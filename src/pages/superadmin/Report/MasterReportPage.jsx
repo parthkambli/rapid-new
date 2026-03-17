@@ -309,14 +309,14 @@ export default function MasterReportPage() {
               {/* Payouts Table */}
               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Payouts - Advocates & Experts (Adv: {reportData?.payouts?.advocates?.length || 0}, Exp: {reportData?.payouts?.experts?.length || 0})
+                  Payouts - Advocates, Experts & Insurance (Adv: {reportData?.payouts?.advocates?.length || 0}, Exp: {reportData?.payouts?.experts?.length || 0}, Ins: {reportData?.payouts?.insurance?.length || 0})
                 </h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Person</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Person/Company</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Role</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
@@ -341,7 +341,16 @@ export default function MasterReportPage() {
                           <td className="px-4 py-2 text-sm text-right font-medium text-red-600">-{formatCurrency(item.amount)}</td>
                         </tr>
                       ))}
-                      {(!reportData?.payouts?.advocates?.length && !reportData?.payouts?.experts?.length) && (
+                      {reportData?.payouts?.insurance?.map((item, index) => (
+                        <tr key={`ins-${index}`} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.person}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
+                          <td className="px-4 py-2 text-sm text-right font-medium text-red-600">-{formatCurrency(item.amount)}</td>
+                        </tr>
+                      ))}
+                      {(!reportData?.payouts?.advocates?.length && !reportData?.payouts?.experts?.length && !reportData?.payouts?.insurance?.length) && (
                         <tr>
                           <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No data available</td>
                         </tr>
