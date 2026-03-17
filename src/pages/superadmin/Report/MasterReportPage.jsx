@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import apiClient, { apiEndpoints } from '../../../services/apiClient';
 import { Calendar, Download, Printer } from 'lucide-react';
+import ReactApexCharts from 'react-apexcharts';
 
 export default function MasterReportPage() {
   const [activeTab, setActiveTab] = useState('owner-snapshot');
@@ -652,26 +653,138 @@ export default function MasterReportPage() {
                 </div>
               )}
 
-              {/* Quick Snapshot */}
-              {reportData?.quickSnapshot && (
-                <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Snapshot</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-3 bg-gray-50 rounded">
-                      <div className="text-sm text-gray-600">Salaries</div>
-                      <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.salaries)}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded">
-                      <div className="text-sm text-gray-600">Other Expenses</div>
-                      <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.otherExpenses)}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded">
-                      <div className="text-sm text-gray-600">Commissions</div>
-                      <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.commissions)}</div>
+              {/* Quick Snapshot and Cashflow Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Quick Snapshot */}
+                {reportData?.quickSnapshot && (
+                  <div className="bg-white rounded-lg shadow-sm p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Snapshot</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="text-sm text-gray-600">Salaries</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.salaries)}</div>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="text-sm text-gray-600">Other Expenses</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.otherExpenses)}</div>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="text-sm text-gray-600">Commissions</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.commissions)}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Cashflow (Daily) Chart */}
+                {reportData?.dailyCashflow && reportData.dailyCashflow.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Cashflow (Daily)</h3>
+                      {financeFilters.dateFrom && financeFilters.dateTo && (
+                        <div className="px-4 py-2 bg-[#E8F5E9] rounded-full text-sm text-[#398C89] font-medium">
+                          {formatDate(financeFilters.dateFrom)} → {formatDate(financeFilters.dateTo)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-64">
+                      <ReactApexCharts
+                        type="bar"
+                        height="100%"
+                        series={[
+                          {
+                            name: 'Cashflow',
+                            data: reportData.dailyCashflow.map(item => item.amount || 0)
+                          }
+                        ]}
+                        options={{
+                          chart: {
+                            toolbar: { show: false },
+                            animations: { enabled: true }
+                          },
+                          plotOptions: {
+                            bar: {
+                              horizontal: false,
+                              columnWidth: '50%',
+                              borderRadius: 4,
+                              distributed: true
+                            }
+                          },
+                          dataLabels: { enabled: false },
+                          stroke: { show: false },
+                          colors: reportData.dailyCashflow.map(item => item.amount >= 0 ? '#10B981' : '#EF4444'),
+                          xaxis: {
+                            categories: reportData.dailyCashflow.map(item =>
+                              new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                            ),
+                            labels: {
+                              style: { fontSize: '10px', colors: '#6B7280' },
+                              rotate: -45,
+                              rotateAlways: false
+                            },
+                            axisBorder: { show: true, color: '#E5E7EB' },
+                            axisTicks: { show: false }
+                          },
+                          yaxis: {
+                            labels: {
+                              formatter: (val) => {
+                                if (val >= 1000000) return (val/1000000).toFixed(1) + 'L';
+                                if (val >= 100000) return (val/100000).toFixed(1) + 'L';
+                                if (val >= 1000) return (val/1000).toFixed(0) + 'K';
+                                return val.toString();
+                              },
+                              style: { fontSize: '10px', colors: '#6B7280' }
+                            },
+                            opposite: false,
+                            tickAmount: 3
+                          },
+                          grid: {
+                            borderColor: '#F3F4F6',
+                            strokeDashArray: 4,
+                            yaxis: {
+                              lines: { show: true }
+                            }
+                          },
+                          tooltip: {
+                            theme: 'light',
+                            y: {
+                              formatter: (val) => formatCurrency(val),
+                              title: {
+                                formatter: () => ''
+                              }
+                            },
+                            x: {
+                              formatter: (val, opts) => {
+                                const date = reportData.dailyCashflow[opts.dataPointIndex]?.date;
+                                return date ? formatDate(date) : '';
+                              }
+                            }
+                          },
+                          legend: { show: false },
+                          states: {
+                            hover: {
+                              filter: {
+                                type: 'darken',
+                                value: 0.8
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded bg-green-500"></div>
+                        <span>Positive = Inflow</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded bg-red-500"></div>
+                        <span>Negative = Outflow</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Insurance by Company */}
               {reportData?.insuranceByCompany && reportData.insuranceByCompany.length > 0 && (
