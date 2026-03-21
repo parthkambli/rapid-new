@@ -1,11 +1,14 @@
 // src/pages/superadmin/Report/MasterReportPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import apiClient, { apiEndpoints } from '../../../services/apiClient';
 import { Calendar, Download, Printer } from 'lucide-react';
 import ReactApexCharts from 'react-apexcharts';
+import * as XLSX from 'xlsx';
+import { useReactToPrint } from 'react-to-print';
 
 export default function MasterReportPage() {
+  const printRef = useRef(null);
   const [activeTab, setActiveTab] = useState('owner-snapshot');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -123,8 +126,206 @@ export default function MasterReportPage() {
     return date.toLocaleDateString('en-GB');
   };
 
+  // ============ Excel Export Function ============
+  const handleExportToExcel = () => {
+    if (!reportData) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+    if (activeTab === 'owner-snapshot') {
+      // Sheet 1: Summary
+      if (reportData.summary) {
+        const summaryData = [
+          ['Owner Snapshot Summary'],
+          ['From Doctors (Inflow)', formatCurrency(reportData.summary.fromDoctors)],
+          ['To Advocates (Payout)', formatCurrency(reportData.summary.toAdvocates)],
+          ['To Experts (Payout)', formatCurrency(reportData.summary.toExperts)],
+          ['Net (Doctors - Payouts)', formatCurrency(reportData.summary.net)],
+          [],
+          ['Filters Applied:'],
+          ['Date From', ownerFilters.dateFrom || 'All'],
+          ['Date To', ownerFilters.dateTo || 'All'],
+          ['Payment Type', ownerFilters.paymentType],
+          ['Mode', ownerFilters.mode],
+          ['Search Name', ownerFilters.searchName || 'All']
+        ];
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+      }
+
+      // Sheet 2: Doctor Inflows (Only visible/paginated data)
+      if (reportData.doctorInflows && reportData.doctorInflows.length > 0) {
+        const visibleInflows = reportData.doctorInflows.slice(
+          (doctorInflowsPage - 1) * doctorInflowsRows,
+          doctorInflowsPage * doctorInflowsRows
+        );
+        const inflowsData = [
+          ['Doctor Inflows'],
+          ['Date', 'Doctor', 'Reason', 'Mode', 'Amount']
+        ];
+        visibleInflows.forEach(item => {
+          inflowsData.push([
+            formatDate(item.date),
+            item.doctor,
+            item.reason,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const inflowsWs = XLSX.utils.aoa_to_sheet(inflowsData);
+        XLSX.utils.book_append_sheet(wb, inflowsWs, 'Doctor Inflows');
+      }
+
+      // Sheet 3: Payouts (Only visible/paginated data)
+      if (reportData.payouts) {
+        const allPayouts = [
+          ...(reportData.payouts.advocates || []),
+          ...(reportData.payouts.experts || []),
+          ...(reportData.payouts.insurance || [])
+        ];
+        const visiblePayouts = allPayouts.slice(
+          (payoutsPage - 1) * payoutsRows,
+          payoutsPage * payoutsRows
+        );
+        const payoutsData = [
+          ['Payouts - Advocates, Experts & Insurance'],
+          ['Date', 'Person/Company', 'Role', 'Mode', 'Amount']
+        ];
+        visiblePayouts.forEach(item => {
+          payoutsData.push([
+            formatDate(item.date),
+            item.person,
+            item.role,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const payoutsWs = XLSX.utils.aoa_to_sheet(payoutsData);
+        XLSX.utils.book_append_sheet(wb, payoutsWs, 'Payouts');
+      }
+
+      // Sheet 4: All Items (Only visible/paginated data)
+      if (reportData.allItems && reportData.allItems.length > 0) {
+        const visibleAllItems = reportData.allItems.slice(
+          (allItemsPage - 1) * allItemsRows,
+          allItemsPage * allItemsRows
+        );
+        const allItemsData = [
+          ['All Items (Combined)'],
+          ['Date', 'Type', 'Name', 'Details', 'Mode', 'Amount']
+        ];
+        visibleAllItems.forEach(item => {
+          allItemsData.push([
+            formatDate(item.date),
+            item.type,
+            item.name,
+            item.details,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const allItemsWs = XLSX.utils.aoa_to_sheet(allItemsData);
+        XLSX.utils.book_append_sheet(wb, allItemsWs, 'All Items');
+      }
+    } else if (activeTab === 'finance-dashboard') {
+      // Sheet 1: Summary
+      if (reportData.summary) {
+        const summaryData = [
+          ['Finance Dashboard Summary'],
+          ['Total Revenue', formatCurrency(reportData.summary.revenue)],
+          ['Total Expenses', formatCurrency(reportData.summary.totalExpenses)],
+          ['Insurance Paid (Company)', formatCurrency(reportData.summary.insurancePaid)],
+          ['Net (Revenue - Expenses)', formatCurrency(reportData.summary.net)],
+          [],
+          ['Filters Applied:'],
+          ['Date From', financeFilters.dateFrom || 'All'],
+          ['Date To', financeFilters.dateTo || 'All'],
+          ['Category', financeFilters.category],
+          ['Company/Vendor', financeFilters.companyVendor || 'All'],
+          ['Payment Mode', financeFilters.paymentMode]
+        ];
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+      }
+
+      // Sheet 2: Insurance by Company (Only visible/paginated data)
+      if (reportData.insuranceByCompany && reportData.insuranceByCompany.length > 0) {
+        const visibleInsurance = reportData.insuranceByCompany.slice(
+          (insurancePage - 1) * insuranceRows,
+          insurancePage * insuranceRows
+        );
+        const insuranceData = [
+          ['Insurance by Company'],
+          ['Company', 'Amount Paid']
+        ];
+        visibleInsurance.forEach(item => {
+          insuranceData.push([item.company, item.amount]);
+        });
+        const insuranceWs = XLSX.utils.aoa_to_sheet(insuranceData);
+        XLSX.utils.book_append_sheet(wb, insuranceWs, 'Insurance by Company');
+      }
+
+      // Sheet 3: Salary by Role (Only visible/paginated data)
+      if (reportData.salaryByRole && reportData.salaryByRole.length > 0) {
+        const visibleSalary = reportData.salaryByRole.slice(
+          (salaryPage - 1) * salaryRows,
+          salaryPage * salaryRows
+        );
+        const salaryData = [
+          ['Salary by Role'],
+          ['Role', 'Total Salary']
+        ];
+        visibleSalary.forEach(item => {
+          salaryData.push([item.role, item.amount]);
+        });
+        const salaryWs = XLSX.utils.aoa_to_sheet(salaryData);
+        XLSX.utils.book_append_sheet(wb, salaryWs, 'Salary by Role');
+      }
+
+      // Sheet 4: Transactions (Only visible/paginated data)
+      if (reportData.transactions && reportData.transactions.length > 0) {
+        const visibleTransactions = reportData.transactions.slice(
+          (transactionsPage - 1) * transactionsRows,
+          transactionsPage * transactionsRows
+        );
+        const transactionsData = [
+          ['All Transactions'],
+          ['Date', 'Category', 'Company/Vendor', 'Details', 'Mode', 'Amount']
+        ];
+        visibleTransactions.forEach(item => {
+          transactionsData.push([
+            formatDate(item.date),
+            item.category,
+            item.companyVendor,
+            item.details,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const transactionsWs = XLSX.utils.aoa_to_sheet(transactionsData);
+        XLSX.utils.book_append_sheet(wb, transactionsWs, 'Transactions');
+      }
+    }
+
+    // Generate filename with tab name and timestamp
+    const filename = `MasterReport_${activeTab}_${timestamp}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    toast.success('Report exported to Excel successfully!');
+  };
+
+  // ============ Print Function ============
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `MasterReport_${activeTab}_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}`,
+    onAfterPrint: () => toast.success('Print dialog opened successfully!')
+  });
+
   return (
-    <div className="min-h-screen p-6 bg-gray-50 w-[79vw]">
+    <div ref={printRef} className="min-h-screen p-6 bg-gray-50 w-[79vw]">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
@@ -135,14 +336,20 @@ export default function MasterReportPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 flex items-center gap-2">
+            <button 
+              onClick={handleExportToExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 flex items-center gap-2"
+            >
               <Download className="w-4 h-4" />
               Export to Excel
             </button>
-            <button className="px-4 py-2 bg-gray-600 text-white rounded text-sm font-medium hover:bg-gray-700 flex items-center gap-2">
+            {/* <button 
+              onClick={handlePrint}
+              className="px-4 py-2 bg-gray-600 text-white rounded text-sm font-medium hover:bg-gray-700 flex items-center gap-2"
+            >
               <Printer className="w-4 h-4" />
               Print
-            </button>
+            </button> */}
           </div>
         </div>
 
