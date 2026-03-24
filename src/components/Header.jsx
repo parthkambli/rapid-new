@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import logo from '../../src/assets/Salesbill/Logo.png'
 
 const Navbar = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +10,8 @@ const Navbar = ({ toggleSidebar }) => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
         <div className="text-xl font-bold">
-          <span className="text-blue-600">Rap</span>ID
+          {/* <span className="text-blue-600">Rap</span>ID */}
+          <img src={logo} alt="" />
         </div>
 
         {/* Mobile Menu Button */}
