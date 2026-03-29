@@ -33,6 +33,22 @@ const EditSalesBill = () => {
     note: "",
   });
 
+  // Track if this is a new bill creation (vs editing existing bill)
+  const isEditing = !!id;
+  
+  // Store the original status from the fetched bill
+  const [originalStatus, setOriginalStatus] = useState("");
+  
+  // Store the original doctor ID to detect if doctor is changed
+  const [originalDoctorId, setOriginalDoctorId] = useState("");
+  
+  // Store the original doctor name to use in payload
+  const [originalDoctorName, setOriginalDoctorName] = useState("");
+
+  // Store the original type and oldSbNo to restore when coming back to original doctor
+  const [originalType, setOriginalType] = useState("");
+  const [originalOldSbNo, setOriginalOldSbNo] = useState("");
+
   // Fetch the sales bill data for editing
   useEffect(() => {
     const fetchSalesBill = async () => {
@@ -43,17 +59,20 @@ const EditSalesBill = () => {
         if (response.data.success) {
           const bill = response.data.data;
           const notesParts = bill.notes ? bill.notes.split(" - ") : [];
-const narrationText = notesParts[0]?.trim() || bill.notes || "";
-const internalNoteText = notesParts.length > 1
-  ? notesParts.slice(1).join(" - ").trim()
-  : "";
+          const narrationText = notesParts[0]?.trim() || bill.notes || "";
+          const internalNoteText = notesParts.length > 1
+            ? notesParts.slice(1).join(" - ").trim()
+            : "";
           const doctorId = bill.client?.entityId?._id || "";
-          
+
+          // Determine the type based on the bill's status
+          const billType = bill.status === 'renewal' || bill.type === 'renewal' ? "Renewal" : "New";
+
           // Map the sales bill data to form fields
           setFormData({
             sbNo: bill.billNumber || "",
             sbDate: bill.billDate ? new Date(bill.billDate).toISOString().split("T")[0] : today,
-            type: bill.status === 'renewal' ? "Renewal" : "New",
+            type: billType,
             oldSbNo: bill.renewalFrom || "",
             doctorId: doctorId,
             membershipType: bill.membershipType === 'monthly' ? 'Monthly' : bill.membershipType === 'yearly' ? 'Yearly' : 'One-time',
@@ -61,9 +80,24 @@ const internalNoteText = notesParts.length > 1
             particular: bill.items && bill.items.length > 0 ? bill.items[0].description || "" : "",
             amount: bill.items[0].amount?.toString() || "",
             expiry: bill.dueDate ? new Date(bill.dueDate).toISOString().split("T")[0] : "",
-           narration: narrationText,
-  note: internalNoteText,
+            narration: narrationText,
+            note: internalNoteText,
           });
+
+          // Store the original status to preserve it during update
+          setOriginalStatus(bill.status || "draft");
+          
+          // Store the original doctor ID to detect changes
+          setOriginalDoctorId(doctorId);
+          
+          // Store the original doctor name to use in payload if doctor is not changed
+          if (bill.client?.name) {
+            setOriginalDoctorName(bill.client.name);
+          }
+          
+          // Store the original type and oldSbNo to restore when coming back to original doctor
+          setOriginalType(billType);
+          setOriginalOldSbNo(bill.renewalFrom || "");
 
           // ✅ Auto-select doctor in react-select
           if (doctorId) {
@@ -226,12 +260,41 @@ const internalNoteText = notesParts.length > 1
     const doctorId = selectedOption.value;
     setSelectedDoctor(selectedOption.doctorData);
 
-    setFormData(prev => ({
-      ...prev,
-      doctorId: doctorId,
-      oldSbNo: "",
-      type: "New",
-    }));
+    // Check if doctor is actually changed (only then fetch previous bill)
+    const isDoctorChanged = isEditing && doctorId !== originalDoctorId;
+    
+    // Check if user came back to the original doctor after changing
+    const cameBackToOriginalDoctor = isEditing && doctorId === originalDoctorId;
+
+    // When editing with same doctor OR came back to original doctor, preserve/restore the original type and oldSbNo
+    if (cameBackToOriginalDoctor) {
+      // Restore original values when coming back to original doctor
+      setFormData(prev => ({
+        ...prev,
+        doctorId: doctorId,
+        type: originalType,
+        oldSbNo: originalOldSbNo,
+      }));
+      toast.info(`Restored original bill details`, { autoClose: 2000 });
+      return; // Don't check previous bill
+    }
+
+    if (isDoctorChanged) {
+      // Doctor changed to a different one - reset and fetch previous bill
+      setFormData(prev => ({
+        ...prev,
+        doctorId: doctorId,
+        oldSbNo: "",
+        type: "New",
+      }));
+    } else {
+      // Same doctor (first time, not changed yet)
+      setFormData(prev => ({
+        ...prev,
+        doctorId: doctorId,
+      }));
+      return; // Skip checking previous bill for same doctor in edit mode
+    }
 
     setFetchingPreviousBill(true);
 
@@ -250,13 +313,25 @@ const internalNoteText = notesParts.length > 1
 
       if (bills.length > 0) {
         const latestBill = bills[0];
-        setFormData(prev => ({
-          ...prev,
-          doctorId: doctorId,
-          oldSbNo: latestBill.billNumber || "",
-          type: "Renewal",
-        }));
-        toast.success(`Renewal from: ${latestBill.billNumber}`, { autoClose: 2000 });
+        // Make sure we're not picking the current bill as previous
+        if (latestBill.billNumber !== formData.sbNo) {
+          setFormData(prev => ({
+            ...prev,
+            doctorId: doctorId,
+            oldSbNo: latestBill.billNumber || "",
+            type: "Renewal",
+          }));
+          toast.success(`Renewal from: ${latestBill.billNumber}`, { autoClose: 2000 });
+        } else {
+          // Current bill is the latest, so it's effectively a "New" type for this doctor
+          setFormData(prev => ({
+            ...prev,
+            doctorId: doctorId,
+            oldSbNo: "",
+            type: "New",
+          }));
+          toast.info("No previous bill found (this is the latest)", { autoClose: 2000 });
+        }
       } else {
         setFormData(prev => ({
           ...prev,
@@ -322,7 +397,28 @@ const internalNoteText = notesParts.length > 1
     try {
       const amount = parseFloat(formData.amount);
       const years = parseInt(formData.membershipYear, 10) || 1;
-      const selectedDoctor = doctors.find(d => d._id === formData.doctorId);
+      
+      // Check if doctor is changed
+      const isDoctorChanged = isEditing && formData.doctorId !== originalDoctorId;
+      
+      // Determine doctor name to use in payload
+      let doctorName;
+      if (isEditing && !isDoctorChanged) {
+        // Same doctor - use original name from bill
+        doctorName = originalDoctorName;
+      } else {
+        // Doctor changed or new bill - get from selected options
+        const doctorFromList = doctors.find(d => d._id === formData.doctorId);
+        const doctorData = selectedDoctor?.doctorData || doctorFromList || selectedDoctor;
+        doctorName = doctorData?.fullName || doctorData?.label?.split(' - ')[0] || "Unknown Doctor";
+      }
+
+      // When editing:
+      // - If doctor is same OR came back to original: preserve original status
+      // - If doctor is changed: use the new type's status
+      const billStatus = isEditing && !isDoctorChanged
+        ? originalStatus
+        : (formData.type === "Renewal" ? "renewal" : "draft");
 
       const payload = {
         // Don't include billNumber in edit mode since it should remain unchanged
@@ -331,7 +427,7 @@ const internalNoteText = notesParts.length > 1
         dueDate: formData.expiry,
         client: {
           type: "doctor",
-          name: selectedDoctor?.fullName || "Unknown Doctor",
+          name: doctorName,
           entityId: formData.doctorId,
         },
         type: formData.type.toLowerCase(),                    // "new" | "renewal"
@@ -349,12 +445,9 @@ const internalNoteText = notesParts.length > 1
             amount: amount,
           },
         ],
-        // subTotal: amount,
-        // totalAmount: amount,
-        // outstandingAmount: amount,
         paymentTerms: "30_days",
         currency: "INR",
-        status: formData.type === "Renewal" ? "renewal" : "draft",
+        status: billStatus,
         notes: [formData.narration, formData.note].filter(Boolean).join(" - "),
       };
 
