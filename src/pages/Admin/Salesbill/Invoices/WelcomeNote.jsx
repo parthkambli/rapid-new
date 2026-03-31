@@ -374,8 +374,8 @@ const WelcomeLetter = () => {
   const letterDate = new Date(bill.billDate).toLocaleDateString('en-GB');
 
   return (
-    <div className="min-h-screen py-4 px-4 font-sans text-black">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen py-4 px-4 font-sans text-black ">
+      <div className="max-w-3xl mx-auto  ">
         <div className='shadow-lg border-2 border-black'>
 
           {/* Main Letter */}
@@ -383,7 +383,7 @@ const WelcomeLetter = () => {
 
             {/* Header */}
             <div className="flex justify-between items-start pb-3 border-b-4 border-red-700 mb-4">
-              <img src={Logo} alt="Logo" className="w-32 mt-4 print:w-[180px]" />
+              <img src={Logo} alt="Logo" className="w-42 mt-4 print:w-[180px]" />
               <div className="text-right text-xs leading-tight">
                 <img src={Top} alt="" className="w-full" />
               </div>
@@ -454,7 +454,7 @@ const WelcomeLetter = () => {
                   <img 
                     src={stamp} 
                     alt="Company Stamp" 
-                    className="w-24 h-24 opacity-95" 
+                    className="w-44 h-44 opacity-95 mt-12" 
                   />
                 </div>
 
@@ -463,7 +463,7 @@ const WelcomeLetter = () => {
                   <img 
                     src={signature} 
                     alt="Signature" 
-                    className="w-28 inline-block" 
+                    className="w-72 inline-block " 
                   />
                   <div className="mt-2 text-xs font-medium text-gray-700">
                     Authorised Signatory

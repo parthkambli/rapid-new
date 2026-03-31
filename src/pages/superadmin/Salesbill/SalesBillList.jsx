@@ -1124,421 +1124,421 @@
 
 
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
-import Table from '../../../components/mainComponents/Table';
-import { Link } from 'react-router-dom';
-import apiClient, { apiEndpoints } from '../../../services/apiClient';
-import { toast } from 'react-toastify';
+// import React, { useState, useEffect } from 'react';
+// import { useNavigate } from "react-router-dom";
+// import Table from '../../../components/mainComponents/Table';
+// import { Link } from 'react-router-dom';
+// import apiClient, { apiEndpoints } from '../../../services/apiClient';
+// import { toast } from 'react-toastify';
 
-const SalesBill = () => {
-  const [filters, setFilters] = useState({
-    searchName: '',
-    searchSBNo: '',
-    searchOldSBNo: '',
-    searchMembershipType: '',
-    searchMembershipYear: '',
-    fromDate: '',
-    toDate: ''
-  });
+// const SalesBill = () => {
+//   const [filters, setFilters] = useState({
+//     searchName: '',
+//     searchSBNo: '',
+//     searchOldSBNo: '',
+//     searchMembershipType: '',
+//     searchMembershipYear: '',
+//     fromDate: '',
+//     toDate: ''
+//   });
 
-  const [data, setData] = useState([]);             // all fetched records
-  const [filteredData, setFilteredData] = useState([]); // after filters
-  const [loading, setLoading] = useState(true);
+//   const [data, setData] = useState([]);             // all fetched records
+//   const [filteredData, setFilteredData] = useState([]); // after filters
+//   const [loading, setLoading] = useState(true);
 
-  // Client-side pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(15); // fixed for simplicity — can make dynamic later
+//   // Client-side pagination states
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [pageSize] = useState(15); // fixed for simplicity — can make dynamic later
 
-  const navigate = useNavigate();
+//   const navigate = useNavigate();
 
-  const calculateMembershipPeriod = (billDate, dueDate) => {
-    if (!billDate || !dueDate) return 'N/A';
-    try {
-      const start = new Date(billDate);
-      const end = new Date(dueDate);
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'N/A';
+//   const calculateMembershipPeriod = (billDate, dueDate) => {
+//     if (!billDate || !dueDate) return 'N/A';
+//     try {
+//       const start = new Date(billDate);
+//       const end = new Date(dueDate);
+//       if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'N/A';
 
-      const diffInMs = end.getTime() - start.getTime();
-      const msInYear = 1000 * 60 * 60 * 24 * 365.25;
-      const years = diffInMs / msInYear;
-      const roundedYears = Math.round(years);
+//       const diffInMs = end.getTime() - start.getTime();
+//       const msInYear = 1000 * 60 * 60 * 24 * 365.25;
+//       const years = diffInMs / msInYear;
+//       const roundedYears = Math.round(years);
 
-      if (roundedYears === 0) {
-        const months = Math.round(diffInMs / (1000 * 60 * 60 * 24 * 30.44));
-        return months > 0 ? `${months} Month${months > 1 ? 's' : ''}` : '< 1 Month';
-      }
-      return `${roundedYears} Year${roundedYears > 1 ? 's' : ''}`;
-    } catch (error) {
-      console.error('Error calculating membership period:', error);
-      return 'N/A';
-    }
-  };
+//       if (roundedYears === 0) {
+//         const months = Math.round(diffInMs / (1000 * 60 * 60 * 24 * 30.44));
+//         return months > 0 ? `${months} Month${months > 1 ? 's' : ''}` : '< 1 Month';
+//       }
+//       return `${roundedYears} Year${roundedYears > 1 ? 's' : ''}`;
+//     } catch (error) {
+//       console.error('Error calculating membership period:', error);
+//       return 'N/A';
+//     }
+//   };
 
-  const getYearFromDate = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? null : date.getFullYear();
-  };
+//   const getYearFromDate = (dateString) => {
+//     if (!dateString) return null;
+//     const date = new Date(dateString);
+//     return isNaN(date.getTime()) ? null : date.getFullYear();
+//   };
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
+//   const fetchData = async () => {
+//     try {
+//       setLoading(true);
 
-      // Fetch large batch — client will filter + paginate
-      const query = { limit: 100000 }; // adjust if 2000 is too much (try 1000)
+//       // Fetch large batch — client will filter + paginate
+//       const query = { limit: 100000 }; // adjust if 2000 is too much (try 1000)
 
-      const response = await apiClient.get(apiEndpoints.salesBills.list, { params: query });
+//       const response = await apiClient.get(apiEndpoints.salesBills.list, { params: query });
 
-      if (response.data.success) {
-        const bills = response.data.data || [];
+//       if (response.data.success) {
+//         const bills = response.data.data || [];
 
-        const transformed = bills.map((bill, index) => {
-          const membershipPeriod = calculateMembershipPeriod(bill.billDate, bill.dueDate);
-          const billYear = getYearFromDate(bill.billDate);
+//         const transformed = bills.map((bill, index) => {
+//           const membershipPeriod = calculateMembershipPeriod(bill.billDate, bill.dueDate);
+//           const billYear = getYearFromDate(bill.billDate);
 
-          const formatDate = (isoString) => {
-            if (!isoString) return '';
-            return isoString.split('T')[0].split('-').reverse().join('/');
-          };
+//           const formatDate = (isoString) => {
+//             if (!isoString) return '';
+//             return isoString.split('T')[0].split('-').reverse().join('/');
+//           };
 
-          const isMonthly = bill.membershipType === 'monthly';
-          const itemAmount = bill.items?.[0]?.amount || 0;
-          const displayAmount = isMonthly ? itemAmount : bill.totalAmount;
+//           const isMonthly = bill.membershipType === 'monthly';
+//           const itemAmount = bill.items?.[0]?.amount || 0;
+//           const displayAmount = isMonthly ? itemAmount : bill.totalAmount;
 
-          return {
-            id: bill.billId || bill._id,
-            sbNo: bill.billNumber || '',
-            oldSBNo: bill.renewalFrom || '',
-            sbDate: formatDate(bill.billDate),
-            sbType: bill.status === 'draft' ? 'New' : bill.status.charAt(0).toUpperCase() + bill.status.slice(1),
-            doctorName: bill.client?.name || '',
-            membership: bill.membershipType || 'N/A',
-            membershipPeriod,
-            amount: `₹${(displayAmount || 0).toLocaleString('en-IN')}`,
-            narration: bill.notes || '',
-            expiryDate: formatDate(bill.dueDate),
-            billYear,
-            _id: bill._id,
-            client: bill.client
-          };
-        });
+//           return {
+//             id: bill.billId || bill._id,
+//             sbNo: bill.billNumber || '',
+//             oldSBNo: bill.renewalFrom || '',
+//             sbDate: formatDate(bill.billDate),
+//             sbType: bill.status === 'draft' ? 'New' : bill.status.charAt(0).toUpperCase() + bill.status.slice(1),
+//             doctorName: bill.client?.name || '',
+//             membership: bill.membershipType || 'N/A',
+//             membershipPeriod,
+//             amount: `₹${(displayAmount || 0).toLocaleString('en-IN')}`,
+//             narration: bill.notes || '',
+//             expiryDate: formatDate(bill.dueDate),
+//             billYear,
+//             _id: bill._id,
+//             client: bill.client
+//           };
+//         });
 
-        setData(transformed);
-        setFilteredData(transformed); // initial state = all data
-      } else {
-        toast.error(response.data.message || 'Failed to fetch sales bills');
-        setData([]);
-        setFilteredData([]);
-      }
-    } catch (error) {
-      console.error('Error fetching sales bills:', error);
-      toast.error(error.response?.data?.message || 'Error fetching sales bills');
-      setData([]);
-      setFilteredData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+//         setData(transformed);
+//         setFilteredData(transformed); // initial state = all data
+//       } else {
+//         toast.error(response.data.message || 'Failed to fetch sales bills');
+//         setData([]);
+//         setFilteredData([]);
+//       }
+//     } catch (error) {
+//       console.error('Error fetching sales bills:', error);
+//       toast.error(error.response?.data?.message || 'Error fetching sales bills');
+//       setData([]);
+//       setFilteredData([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
-  // Fetch once on mount
-  useEffect(() => {
-    fetchData();
-  }, []);
+//   // Fetch once on mount
+//   useEffect(() => {
+//     fetchData();
+//   }, []);
 
-  // Apply client-side filters whenever filters change
-  useEffect(() => {
-    let result = [...data];
+//   // Apply client-side filters whenever filters change
+//   useEffect(() => {
+//     let result = [...data];
 
-    // Doctor Name (search)
-    if (filters.searchName.trim()) {
-      const term = filters.searchName.trim().toLowerCase();
-      result = result.filter(item => item.doctorName?.toLowerCase().includes(term));
-    }
+//     // Doctor Name (search)
+//     if (filters.searchName.trim()) {
+//       const term = filters.searchName.trim().toLowerCase();
+//       result = result.filter(item => item.doctorName?.toLowerCase().includes(term));
+//     }
 
-    // SB No
-    if (filters.searchSBNo.trim()) {
-      const term = filters.searchSBNo.trim().toLowerCase();
-      result = result.filter(item => item.sbNo?.toLowerCase().includes(term));
-    }
+//     // SB No
+//     if (filters.searchSBNo.trim()) {
+//       const term = filters.searchSBNo.trim().toLowerCase();
+//       result = result.filter(item => item.sbNo?.toLowerCase().includes(term));
+//     }
 
-    // Old SB No
-    if (filters.searchOldSBNo.trim()) {
-      const term = filters.searchOldSBNo.trim().toLowerCase();
-      result = result.filter(item => item.oldSBNo?.toLowerCase().includes(term));
-    }
+//     // Old SB No
+//     if (filters.searchOldSBNo.trim()) {
+//       const term = filters.searchOldSBNo.trim().toLowerCase();
+//       result = result.filter(item => item.oldSBNo?.toLowerCase().includes(term));
+//     }
 
-    // Membership Type
-    if (filters.searchMembershipType.trim()) {
-      const term = filters.searchMembershipType.trim().toLowerCase();
-      result = result.filter(item => item.membership?.toLowerCase().includes(term));
-    }
+//     // Membership Type
+//     if (filters.searchMembershipType.trim()) {
+//       const term = filters.searchMembershipType.trim().toLowerCase();
+//       result = result.filter(item => item.membership?.toLowerCase().includes(term));
+//     }
 
-    // Membership Year
-    if (filters.searchMembershipYear.trim()) {
-      const yearStr = filters.searchMembershipYear.trim();
-      result = result.filter(item => item.billYear?.toString() === yearStr);
-    }
+//     // Membership Year
+//     if (filters.searchMembershipYear.trim()) {
+//       const yearStr = filters.searchMembershipYear.trim();
+//       result = result.filter(item => item.billYear?.toString() === yearStr);
+//     }
 
-    // Date range (billDate)
-    if (filters.fromDate || filters.toDate) {
-      const from = filters.fromDate ? new Date(filters.fromDate) : null;
-      let to = filters.toDate ? new Date(filters.toDate) : null;
-      if (to) to.setHours(23, 59, 59, 999);
+//     // Date range (billDate)
+//     if (filters.fromDate || filters.toDate) {
+//       const from = filters.fromDate ? new Date(filters.fromDate) : null;
+//       let to = filters.toDate ? new Date(filters.toDate) : null;
+//       if (to) to.setHours(23, 59, 59, 999);
 
-      result = result.filter(item => {
-        if (!item.sbDate) return false;
-        // Convert DD/MM/YYYY back to Date for comparison
-        const [day, month, year] = item.sbDate.split('/').map(Number);
-        const billDate = new Date(year, month - 1, day);
-        return (!from || billDate >= from) && (!to || billDate <= to);
-      });
-    }
+//       result = result.filter(item => {
+//         if (!item.sbDate) return false;
+//         // Convert DD/MM/YYYY back to Date for comparison
+//         const [day, month, year] = item.sbDate.split('/').map(Number);
+//         const billDate = new Date(year, month - 1, day);
+//         return (!from || billDate >= from) && (!to || billDate <= to);
+//       });
+//     }
 
-    setFilteredData(result);
-    setCurrentPage(1); // reset to first page after filter
-  }, [filters, data]);
+//     setFilteredData(result);
+//     setCurrentPage(1); // reset to first page after filter
+//   }, [filters, data]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-  };
+//   const handleFilterChange = (e) => {
+//     const { name, value } = e.target;
+//     setFilters(prev => ({ ...prev, [name]: value }));
+//   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Filters are already applied live via useEffect
-  };
+//   const handleSearch = (e) => {
+//     e.preventDefault();
+//     // Filters are already applied live via useEffect
+//   };
 
-  const handleClearFilters = () => {
-    setFilters({
-      searchName: '',
-      searchSBNo: '',
-      searchOldSBNo: '',
-      searchMembershipType: '',
-      searchMembershipYear: '',
-      fromDate: '',
-      toDate: ''
-    });
-    setCurrentPage(1);
-    toast.success('All filters cleared');
-  };
+//   const handleClearFilters = () => {
+//     setFilters({
+//       searchName: '',
+//       searchSBNo: '',
+//       searchOldSBNo: '',
+//       searchMembershipType: '',
+//       searchMembershipYear: '',
+//       fromDate: '',
+//       toDate: ''
+//     });
+//     setCurrentPage(1);
+//     toast.success('All filters cleared');
+//   };
 
-  const deleteSalesBill = async (row) => {
-    if (!window.confirm(`Are you sure you want to delete sales bill ${row.sbNo}?`)) return;
+//   const deleteSalesBill = async (row) => {
+//     if (!window.confirm(`Are you sure you want to delete sales bill ${row.sbNo}?`)) return;
 
-    try {
-      const response = await apiClient.delete(apiEndpoints.salesBills.delete(row._id));
-      if (response.data.success) {
-        toast.success('Sales bill deleted successfully!');
-        fetchData(); // refresh full list
-      } else {
-        toast.error(response.data.message || 'Failed to delete');
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error deleting sales bill');
-    }
-  };
+//     try {
+//       const response = await apiClient.delete(apiEndpoints.salesBills.delete(row._id));
+//       if (response.data.success) {
+//         toast.success('Sales bill deleted successfully!');
+//         fetchData(); // refresh full list
+//       } else {
+//         toast.error(response.data.message || 'Failed to delete');
+//       }
+//     } catch (error) {
+//       toast.error(error.response?.data?.message || 'Error deleting sales bill');
+//     }
+//   };
 
-  const isRenewalNear = (expiryDateStr) => {
-    if (!expiryDateStr || expiryDateStr.trim() === '') return false;
+//   const isRenewalNear = (expiryDateStr) => {
+//     if (!expiryDateStr || expiryDateStr.trim() === '') return false;
 
-    const parts = expiryDateStr.split('/');
-    if (parts.length !== 3) return false;
+//     const parts = expiryDateStr.split('/');
+//     if (parts.length !== 3) return false;
 
-    const day   = Number(parts[0]);
-    const month = Number(parts[1]);
-    const year  = Number(parts[2]);
+//     const day   = Number(parts[0]);
+//     const month = Number(parts[1]);
+//     const year  = Number(parts[2]);
 
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
+//     if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
 
-    const expiry = new Date(year, month - 1, day, 23, 59, 59);
-    if (isNaN(expiry.getTime())) return false;
+//     const expiry = new Date(year, month - 1, day, 23, 59, 59);
+//     if (isNaN(expiry.getTime())) return false;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
 
-    const diffMs = expiry - today;
-    const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+//     const diffMs = expiry - today;
+//     const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-    return daysUntilExpiry <= 7;
-  };
+//     return daysUntilExpiry <= 7;
+//   };
 
-  const actions = [
-    { label: 'Edit', useDropdown: true, onClick: (row) => navigate(`/admin/edit-salesbill/${row._id}`) },
-    { label: 'Print', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/print/${row._id}`) },
-    {
-      label: 'SA',
-      useDropdown: true,
-      onClick: (row) => {
-        const membershipType = row.membership.toLowerCase();
-        const path = membershipType === 'monthly' ? `/admin/salesbill/sa/monthly/${row._id}` : `/admin/salesbill/sa/yearly/${row._id}`;
-        navigate(path);
-      }
-    },
-    {
-      label: 'SAWHF',
-      useDropdown: true,
-      onClick: (row) => {
-        const membershipType = row.membership.toLowerCase();
-        const path = `/admin/salesbill/sa-whf/${membershipType}/${row._id}`;
-        navigate(path);
-      }
-    },
-    { label: 'WN', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/WN/${row._id}`) },
-    {
-      label: 'Renewed',
-      useDropdown: true,
-      onClick: (row) => {
-        if (row.sbType !== 'Renewal') {
-          toast.warn('This action is only available for Renewal bills');
-          return;
-        }
-        navigate(`/admin/salesbill/renewed/${row._id}`);
-      }
-    },
-    {
-      label: 'Renewal letter',
-      useDropdown: true,
-      onClick: (row) => {
-        if (row.oldSBNo) {
-          toast.warn('Renewal letter is only available for the original (source) bill.');
-          return;
-        }
-        if (row.sbType === 'Renewal') {
-          toast.warn('This is a renewed bill. Letter is attached to the original.');
-          return;
-        }
-        if (!isRenewalNear(row.expiryDate)) {
-          toast.info(`Renewal letter is not yet available.\nExpiry: ${row.expiryDate}`);
-          return;
-        }
-        navigate(`/admin/salesbill/rwnl/${row._id}`);
-      }
-    },
-    { label: 'Membership Form', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/membership-form/${row._id}`) },
-    { label: 'Delete', useDropdown: false, onClick: deleteSalesBill, danger: true },
-  ];
+//   const actions = [
+//     { label: 'Edit', useDropdown: true, onClick: (row) => navigate(`/admin/edit-salesbill/${row._id}`) },
+//     { label: 'Print', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/print/${row._id}`) },
+//     {
+//       label: 'SA',
+//       useDropdown: true,
+//       onClick: (row) => {
+//         const membershipType = row.membership.toLowerCase();
+//         const path = membershipType === 'monthly' ? `/admin/salesbill/sa/monthly/${row._id}` : `/admin/salesbill/sa/yearly/${row._id}`;
+//         navigate(path);
+//       }
+//     },
+//     {
+//       label: 'SAWHF',
+//       useDropdown: true,
+//       onClick: (row) => {
+//         const membershipType = row.membership.toLowerCase();
+//         const path = `/admin/salesbill/sa-whf/${membershipType}/${row._id}`;
+//         navigate(path);
+//       }
+//     },
+//     { label: 'WN', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/WN/${row._id}`) },
+//     {
+//       label: 'Renewed',
+//       useDropdown: true,
+//       onClick: (row) => {
+//         if (row.sbType !== 'Renewal') {
+//           toast.warn('This action is only available for Renewal bills');
+//           return;
+//         }
+//         navigate(`/admin/salesbill/renewed/${row._id}`);
+//       }
+//     },
+//     {
+//       label: 'Renewal letter',
+//       useDropdown: true,
+//       onClick: (row) => {
+//         if (row.oldSBNo) {
+//           toast.warn('Renewal letter is only available for the original (source) bill.');
+//           return;
+//         }
+//         if (row.sbType === 'Renewal') {
+//           toast.warn('This is a renewed bill. Letter is attached to the original.');
+//           return;
+//         }
+//         if (!isRenewalNear(row.expiryDate)) {
+//           toast.info(`Renewal letter is not yet available.\nExpiry: ${row.expiryDate}`);
+//           return;
+//         }
+//         navigate(`/admin/salesbill/rwnl/${row._id}`);
+//       }
+//     },
+//     { label: 'Membership Form', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/membership-form/${row._id}`) },
+//     { label: 'Delete', useDropdown: false, onClick: deleteSalesBill, danger: true },
+//   ];
 
-  // Client-side pagination slice
-  const startIndex = (currentPage - 1) * pageSize;
-  const paginatedData = filteredData.slice(startIndex, startIndex + pageSize);
-  const totalPagesCalc = Math.ceil(filteredData.length / pageSize) || 1;
+//   // Client-side pagination slice
+//   const startIndex = (currentPage - 1) * pageSize;
+//   const paginatedData = filteredData.slice(startIndex, startIndex + pageSize);
+//   const totalPagesCalc = Math.ceil(filteredData.length / pageSize) || 1;
 
-  return (
-    <div className="md:w-[70vw] mx-auto px-2 sm:px-4 md:px-6 lg:px-4 min-h-screen py-4 lg:w-[80vw]">
-      <div className="mb-4 sm:mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-800">Sales Bill</h1>
-          <Link to="/admin/add-salesbill">
-            <button className="w-full sm:w-auto px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base">
-              Create Sale Bill
-            </button>
-          </Link>
-        </div>
+//   return (
+//     <div className="md:w-[70vw] mx-auto px-2 sm:px-4 md:px-6 lg:px-4 min-h-screen py-4 lg:w-[80vw]">
+//       <div className="mb-4 sm:mb-6">
+//         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
+//           <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-800">Sales Bill</h1>
+//           <Link to="/admin/add-salesbill">
+//             <button className="w-full sm:w-auto px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base">
+//               Create Sale Bill
+//             </button>
+//           </Link>
+//         </div>
 
-        <form onSubmit={handleSearch} className="mb-4 sm:mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <div className="flex flex-col">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search By Name</label>
-              <input name="searchName" value={filters.searchName} onChange={handleFilterChange} placeholder="Doctor name" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search SB No</label>
-              <input name="searchSBNo" value={filters.searchSBNo} onChange={handleFilterChange} placeholder="Bill number" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Old SB No</label>
-              <input name="searchOldSBNo" value={filters.searchOldSBNo} onChange={handleFilterChange} placeholder="Old bill number" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">From Date</label>
-              <input type="date" name="fromDate" value={filters.fromDate} onChange={handleFilterChange} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">To Date</label>
-              <input type="date" name="toDate" value={filters.toDate} onChange={handleFilterChange} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
-            </div>
-          </div>
+//         <form onSubmit={handleSearch} className="mb-4 sm:mb-6">
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-3 sm:mb-4">
+//             <div className="flex flex-col">
+//               <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search By Name</label>
+//               <input name="searchName" value={filters.searchName} onChange={handleFilterChange} placeholder="Doctor name" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
+//             </div>
+//             <div className="flex flex-col">
+//               <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search SB No</label>
+//               <input name="searchSBNo" value={filters.searchSBNo} onChange={handleFilterChange} placeholder="Bill number" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
+//             </div>
+//             <div className="flex flex-col">
+//               <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Old SB No</label>
+//               <input name="searchOldSBNo" value={filters.searchOldSBNo} onChange={handleFilterChange} placeholder="Old bill number" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
+//             </div>
+//             <div className="flex flex-col">
+//               <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">From Date</label>
+//               <input type="date" name="fromDate" value={filters.fromDate} onChange={handleFilterChange} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
+//             </div>
+//             <div className="flex flex-col">
+//               <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">To Date</label>
+//               <input type="date" name="toDate" value={filters.toDate} onChange={handleFilterChange} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
+//             </div>
+//           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-            <div className="flex flex-col">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Membership Type</label>
-              <input name="searchMembershipType" value={filters.searchMembershipType} onChange={handleFilterChange} placeholder="Membership type" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Membership Year</label>
-              <input type="text" name="searchMembershipYear" value={filters.searchMembershipYear} onChange={handleFilterChange} placeholder="e.g., 2025" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
-            </div>
-            <div className="flex items-end">
-              <button type="submit" disabled={loading} className="w-full px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 transition-colors font-medium text-xs sm:text-sm flex items-center justify-center">
-                {loading ? 'Searching...' : 'Search'}
-              </button>
-            </div>
-          </div>
+//           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+//             <div className="flex flex-col">
+//               <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Membership Type</label>
+//               <input name="searchMembershipType" value={filters.searchMembershipType} onChange={handleFilterChange} placeholder="Membership type" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
+//             </div>
+//             <div className="flex flex-col">
+//               <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Membership Year</label>
+//               <input type="text" name="searchMembershipYear" value={filters.searchMembershipYear} onChange={handleFilterChange} placeholder="e.g., 2025" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm" />
+//             </div>
+//             <div className="flex items-end">
+//               <button type="submit" disabled={loading} className="w-full px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 transition-colors font-medium text-xs sm:text-sm flex items-center justify-center">
+//                 {loading ? 'Searching...' : 'Search'}
+//               </button>
+//             </div>
+//           </div>
 
-          {/* Clear Filters */}
-          {Object.values(filters).some(v => v.trim() !== '') && (
-            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                disabled={loading}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-red-300 font-medium text-sm transition-colors"
-              >
-                Clear All Filters
-              </button>
-            </div>
-          )}
-        </form>
-      </div>
+//           {/* Clear Filters */}
+//           {Object.values(filters).some(v => v.trim() !== '') && (
+//             <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+//               <button
+//                 type="button"
+//                 onClick={handleClearFilters}
+//                 disabled={loading}
+//                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-red-300 font-medium text-sm transition-colors"
+//               >
+//                 Clear All Filters
+//               </button>
+//             </div>
+//           )}
+//         </form>
+//       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
-          <p className="mt-4 text-gray-600">Loading sales bills...</p>
-        </div>
-      ) : filteredData.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border">
-          <h3 className="text-lg font-medium text-gray-900">No sales bills found</h3>
-          <p className="mt-2 text-gray-500">
-            Try adjusting your search filters
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow border overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table
-              data={paginatedData}
-              actions={actions}
-              headers={[
-                "Sr No.",
-                "SB No",
-                "Old SB No",
-                "SB Date",
-                "SB Type",
-                "Doctor Name",
-                "Membership",
-                "Membership Period",
-                "Amount",
-                "Narration",
-                "Expiry Date"
-              ]}
-              excludeColumns={['id', 'billYear', '_id', 'client']}
-              pagination={{
-                currentPage,
-                totalPages: totalPagesCalc,
-                totalCount: filteredData.length,
-                onPageChange: setCurrentPage
-              }}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+//       {loading ? (
+//         <div className="flex flex-col items-center justify-center h-64">
+//           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
+//           <p className="mt-4 text-gray-600">Loading sales bills...</p>
+//         </div>
+//       ) : filteredData.length === 0 ? (
+//         <div className="text-center py-12 bg-white rounded-lg border">
+//           <h3 className="text-lg font-medium text-gray-900">No sales bills found</h3>
+//           <p className="mt-2 text-gray-500">
+//             Try adjusting your search filters
+//           </p>
+//         </div>
+//       ) : (
+//         <div className="bg-white rounded-lg shadow border overflow-hidden">
+//           <div className="overflow-x-auto">
+//             <Table
+//               data={paginatedData}
+//               actions={actions}
+//               headers={[
+//                 "Sr No.",
+//                 "SB No",
+//                 "Old SB No",
+//                 "SB Date",
+//                 "SB Type",
+//                 "Doctor Name",
+//                 "Membership",
+//                 "Membership Period",
+//                 "Amount",
+//                 "Narration",
+//                 "Expiry Date"
+//               ]}
+//               excludeColumns={['id', 'billYear', '_id', 'client']}
+//               pagination={{
+//                 currentPage,
+//                 totalPages: totalPagesCalc,
+//                 totalCount: filteredData.length,
+//                 onPageChange: setCurrentPage
+//               }}
+//             />
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
 
-export default SalesBill;
+// export default SalesBill;
 
 
 
@@ -2464,3 +2464,494 @@ export default SalesBill;
 // };
 
 // export default SalesBill;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import Table from '../../../components/mainComponents/Table';
+import { Link } from 'react-router-dom';
+import apiClient, { apiEndpoints } from '../../../services/apiClient';
+import { toast } from 'react-toastify';
+
+const SalesBill = () => {
+  const navigate = useNavigate();
+
+  const [data, setData] = useState([]);                    // raw page from server
+  const [displayedData, setDisplayedData] = useState([]);  // after client-side filters
+  const [loading, setLoading] = useState(false);
+
+  // Pagination — server-controlled
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Filters
+  const [filters, setFilters] = useState({
+    searchName: '',
+    searchSBNo: '',
+    searchOldSBNo: '',
+    searchMembershipType: '',
+    searchMembershipYear: '',
+    fromDate: '',
+    toDate: ''
+  });
+
+  const calculateMembershipPeriod = (billDate, dueDate) => {
+    if (!billDate || !dueDate) return 'N/A';
+    try {
+      const start = new Date(billDate);
+      const end = new Date(dueDate);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'N/A';
+
+      const diffInMs = end.getTime() - start.getTime();
+      const msInYear = 1000 * 60 * 60 * 24 * 365.25;
+      const years = diffInMs / msInYear;
+      const roundedYears = Math.round(years);
+
+      if (roundedYears === 0) {
+        const months = Math.round(diffInMs / (1000 * 60 * 60 * 24 * 30.44));
+        return months > 0 ? `${months} Month${months > 1 ? 's' : ''}` : '< 1 Month';
+      }
+      return `${roundedYears} Year${roundedYears > 1 ? 's' : ''}`;
+    } catch (error) {
+      console.error('Error calculating membership period:', error);
+      return 'N/A';
+    }
+  };
+
+  const getYearFromDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date.getFullYear();
+  };
+
+  const fetchSalesBills = async (page = currentPage, limit = pageSize) => {
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        limit,
+      };
+
+      // Safe server-side filters (avoid oldBillNumber to prevent crash)
+      if (filters.searchName.trim())        params.search          = filters.searchName.trim();
+      if (filters.searchSBNo.trim())        params.billNumber      = filters.searchSBNo.trim();
+      // oldBillNumber intentionally NOT sent — handled client-side below
+      if (filters.searchMembershipType.trim()) params.membershipType = filters.searchMembershipType.trim();
+      if (filters.fromDate)                 params.dateFrom         = filters.fromDate;
+      if (filters.toDate)                   params.dateTo           = filters.toDate;
+
+      console.log("Fetching sales bills with params:", params);
+
+      const response = await apiClient.get(apiEndpoints.salesBills.list, { params });
+
+      if (response.data.success) {
+        const bills = response.data.data || [];
+
+        const transformed = bills.map((bill, index) => {
+          const membershipPeriod = calculateMembershipPeriod(bill.billDate, bill.dueDate);
+          const billYear = getYearFromDate(bill.billDate);
+
+          const formatDate = (isoString) => {
+            if (!isoString) return '';
+            return isoString.split('T')[0].split('-').reverse().join('/');
+          };
+
+          const isMonthly = bill.membershipType === 'monthly';
+          const itemAmount = bill.items?.[0]?.amount || 0;
+          const displayAmount = isMonthly ? itemAmount : bill.totalAmount;
+
+          return {
+            id: bill.billId || bill._id,
+            srNo: (page - 1) * limit + index + 1,
+            sbNo: bill.billNumber || '',
+            oldSBNo: bill.renewalFrom || '',
+            sbDate: formatDate(bill.billDate),
+            sbType: bill.status === 'draft' ? 'New' : bill.status.charAt(0).toUpperCase() + bill.status.slice(1),
+            doctorName: bill.client?.name || '',
+            membership: bill.membershipType || 'N/A',
+            membershipPeriod,
+            amount: `₹${(displayAmount || 0).toLocaleString('en-IN')}`,
+            narration: bill.notes || '',
+            expiryDate: formatDate(bill.dueDate),
+            billYear,
+            _id: bill._id,
+            client: bill.client,
+            // keep original renewalFrom for client-side filtering
+            renewalFrom: bill.renewalFrom || ''
+          };
+        });
+
+        setData(transformed);
+
+        // Server pagination
+        if (response.data.pagination) {
+          setTotalItems(response.data.pagination.total || 0);
+          setTotalPages(response.data.pagination.pages || 1);
+        } else {
+          setTotalItems(transformed.length);
+          setTotalPages(1);
+        }
+      } else {
+        toast.error(response.data.message || 'Failed to fetch sales bills');
+        setData([]);
+        setTotalItems(0);
+        setTotalPages(1);
+      }
+    } catch (error) {
+      console.error('Error fetching sales bills:', error);
+      toast.error(error.response?.data?.message || 'Error fetching sales bills');
+      setData([]);
+      setTotalItems(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Apply client-side filters (Old SB No + Membership Year)
+  useEffect(() => {
+    let result = [...data];
+
+    // Client-side: Old SB No (renewalFrom)
+    if (filters.searchOldSBNo.trim()) {
+      const term = filters.searchOldSBNo.trim().toLowerCase();
+      result = result.filter(item => 
+        item.renewalFrom?.toLowerCase().includes(term)
+      );
+    }
+
+    // Client-side: Membership Year
+    if (filters.searchMembershipYear.trim()) {
+      const yearStr = filters.searchMembershipYear.trim();
+      result = result.filter(item => 
+        item.billYear?.toString() === yearStr
+      );
+    }
+
+    setDisplayedData(result);
+  }, [data, filters.searchOldSBNo, filters.searchMembershipYear]);
+
+  // Initial fetch + refetch on page/size change
+  useEffect(() => {
+    fetchSalesBills(currentPage, pageSize);
+  }, [currentPage, pageSize]);
+
+  // Refetch when server-side filters change
+  useEffect(() => {
+    setCurrentPage(1); // reset page when filters change
+    fetchSalesBills(1, pageSize);
+  }, [filters.searchName, filters.searchSBNo, filters.searchMembershipType, filters.fromDate, filters.toDate]);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      searchName: '',
+      searchSBNo: '',
+      searchOldSBNo: '',
+      searchMembershipType: '',
+      searchMembershipYear: '',
+      fromDate: '',
+      toDate: ''
+    });
+    setCurrentPage(1);
+    toast.success('All filters cleared');
+  };
+
+  const deleteSalesBill = async (row) => {
+    if (!window.confirm(`Are you sure you want to delete sales bill ${row.sbNo}?`)) return;
+
+    try {
+      const response = await apiClient.delete(apiEndpoints.salesBills.delete(row._id));
+      if (response.data.success) {
+        toast.success('Sales bill deleted successfully!');
+        fetchSalesBills(currentPage, pageSize);
+      } else {
+        toast.error(response.data.message || 'Failed to delete');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error deleting sales bill');
+    }
+  };
+
+  const isRenewalNear = (expiryDateStr) => {
+    if (!expiryDateStr || expiryDateStr.trim() === '') return false;
+
+    const parts = expiryDateStr.split('/');
+    if (parts.length !== 3) return false;
+
+    const day   = Number(parts[0]);
+    const month = Number(parts[1]);
+    const year  = Number(parts[2]);
+
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
+
+    const expiry = new Date(year, month - 1, day, 23, 59, 59);
+    if (isNaN(expiry.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffMs = expiry - today;
+    const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    return daysUntilExpiry <= 7;
+  };
+
+  const actions = [
+    { label: 'Edit', useDropdown: true, onClick: (row) => navigate(`/admin/edit-salesbill/${row._id}`) },
+    { label: 'Print', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/print/${row._id}`) },
+    {
+      label: 'SA',
+      useDropdown: true,
+      onClick: (row) => {
+        const membershipType = row.membership.toLowerCase();
+        const path = membershipType === 'monthly' ? `/admin/salesbill/sa/monthly/${row._id}` : `/admin/salesbill/sa/yearly/${row._id}`;
+        navigate(path);
+      }
+    },
+    {
+      label: 'SAWHF',
+      useDropdown: true,
+      onClick: (row) => {
+        const membershipType = row.membership.toLowerCase();
+        const path = `/admin/salesbill/sa-whf/${membershipType}/${row._id}`;
+        navigate(path);
+      }
+    },
+    { label: 'WN', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/WN/${row._id}`) },
+    {
+      label: 'Renewed',
+      useDropdown: true,
+      onClick: (row) => {
+        if (row.sbType !== 'Renewal') {
+          toast.warn('This action is only available for Renewal bills');
+          return;
+        }
+        navigate(`/admin/salesbill/renewed/${row._id}`);
+      }
+    },
+    {
+      label: 'Renewal letter',
+      useDropdown: true,
+      onClick: (row) => {
+        if (row.oldSBNo) {
+          toast.warn('Renewal letter is only available for the original (source) bill.');
+          return;
+        }
+        if (row.sbType === 'Renewal') {
+          toast.warn('This is a renewed bill. Letter is attached to the original.');
+          return;
+        }
+        if (!isRenewalNear(row.expiryDate)) {
+          toast.info(`Renewal letter is not yet available.\nExpiry: ${row.expiryDate}`);
+          return;
+        }
+        navigate(`/admin/salesbill/rwnl/${row._id}`);
+      }
+    },
+    { label: 'Membership Form', useDropdown: true, onClick: (row) => navigate(`/admin/salesbill/membership-form/${row._id}`) },
+    { label: 'Delete', useDropdown: false, onClick: deleteSalesBill, danger: true },
+  ];
+
+  return (
+    <div className="md:w-[70vw] mx-auto px-2 sm:px-4 md:px-6 lg:px-4 min-h-screen py-4 lg:w-[80vw]">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-800">Sales Bill</h1>
+          <Link to="/admin/add-salesbill">
+            <button className="w-full sm:w-auto px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base">
+              Create Sale Bill
+            </button>
+          </Link>
+        </div>
+
+        <form onSubmit={handleSearch} className="mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="flex flex-col">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search By Name</label>
+              <input
+                name="searchName"
+                value={filters.searchName}
+                onChange={handleFilterChange}
+                placeholder="Doctor name"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search SB No</label>
+              <input
+                name="searchSBNo"
+                value={filters.searchSBNo}
+                onChange={handleFilterChange}
+                placeholder="Bill number"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Old SB No</label>
+              <input
+                name="searchOldSBNo"
+                value={filters.searchOldSBNo}
+                onChange={handleFilterChange}
+                placeholder="Old bill number"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">From Date</label>
+              <input
+                type="date"
+                name="fromDate"
+                value={filters.fromDate}
+                onChange={handleFilterChange}
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">To Date</label>
+              <input
+                type="date"
+                name="toDate"
+                value={filters.toDate}
+                onChange={handleFilterChange}
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+            <div className="flex flex-col">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Membership Type</label>
+              <input
+                name="searchMembershipType"
+                value={filters.searchMembershipType}
+                onChange={handleFilterChange}
+                placeholder="Membership type"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Search Membership Year</label>
+              <input
+                type="text"
+                name="searchMembershipYear"
+                value={filters.searchMembershipYear}
+                onChange={handleFilterChange}
+                placeholder="e.g., 2025"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 transition-colors font-medium text-xs sm:text-sm flex items-center justify-center"
+              >
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+          </div>
+
+          {Object.values(filters).some(v => v.trim() !== '') && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                disabled={loading}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-red-300 font-medium text-sm transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
+          <p className="mt-4 text-gray-600">Loading sales bills...</p>
+        </div>
+      ) : displayedData.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg border">
+          <h3 className="text-lg font-medium text-gray-900">No sales bills found</h3>
+          <p className="mt-2 text-gray-500">
+            Try adjusting your search filters
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow border overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table
+              data={displayedData}
+              actions={actions}
+              headers={[
+                "Sr No.",
+                "SB No",
+                "Old SB No",
+                "SB Date",
+                "SB Type",
+                "Doctor Name",
+                "Membership",
+                "Membership Period",
+                "Amount",
+                "Narration",
+                "Expiry Date"
+              ]}
+              excludeColumns={['id', 'billYear', '_id', 'client', 'renewalFrom']}
+              pagination={true}
+              serverPagination={true}
+              totalServerItems={totalItems}
+              currentServerPage={currentPage}
+              defaultPageSize={pageSize}
+              onPageChange={(newPage) => setCurrentPage(newPage)}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              showSrNo={false} // manual calculation
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SalesBill;

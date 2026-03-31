@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import NotificationBell from '../common/NotificationBell';
+import logo from '../../../src/assets/Logo.png'
 
 const Navbar = ({ toggleSidebar, onLogout, user }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +49,8 @@ const Navbar = ({ toggleSidebar, onLogout, user }) => {
 
         {/* Logo */}
         <div className="text-xl font-bold md:ml-6">
-          <span className="text-blue-600">RAP</span>ID
+        <img src={logo} alt=""  className='w-28' />
+          {/* <span className="text-blue-600">RAP</span>ID */}
         </div>
 
         {/* Profile and Notification Section */}

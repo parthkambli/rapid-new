@@ -279,14 +279,27 @@ const CreateReceipt = () => {
           country: "India",
         };
       } else {
-        // Fallback address logic
-        addressObj = {
-          address: doctor.address?.full || doctor.address || doctor.hospitalAddress?.address || "",
-          city: doctor.city || doctor.hospitalAddress?.city || doctor.address?.city || "",
-          state: doctor.state || doctor.hospitalAddress?.state || doctor.address?.state || "",
-          pinCode: doctor.pinCode || doctor.hospitalAddress?.pinCode || doctor.address?.pinCode || "",
-          country: "India",
-        };
+        // Fallback address logic - Handle both object and string addresses
+        // Check if doctor.address is an object with nested address field
+        if (doctor.address && typeof doctor.address === 'object' && doctor.address.address) {
+          // Address is an object like {address: '...', city: '...', state: '...', pinCode: '...'}
+          addressObj = {
+            address: doctor.address.address || '',
+            city: doctor.address.city || doctor.city || '',
+            state: doctor.address.state || doctor.state || '',
+            pinCode: doctor.address.pinCode || doctor.pinCode || '',
+            country: doctor.address.country || doctor.country || 'India',
+          };
+        } else {
+          // Address is a string or has .full property
+          addressObj = {
+            address: doctor.address?.full || doctor.address || doctor.hospitalAddress?.address || "",
+            city: doctor.city || doctor.hospitalAddress?.city || doctor.address?.city || "",
+            state: doctor.state || doctor.hospitalAddress?.state || doctor.address?.state || "",
+            pinCode: doctor.pinCode || doctor.hospitalAddress?.pinCode || doctor.address?.pinCode || "",
+            country: "India",
+          };
+        }
       }
 
       // Update form data and bill details

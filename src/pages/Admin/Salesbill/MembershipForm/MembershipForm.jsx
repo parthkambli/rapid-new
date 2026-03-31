@@ -639,244 +639,219 @@ const MembershipForm = () => {
 
       {/* A4 Container */}
       <div className="font-[Times New Roman] text-[12px] leading-[1.42] print:text-black bg-white min-h-screen">
-        <style jsx global>{`
-          @media print {
-            @page {
-              size: A4 portrait;
-              margin: 10mm 12mm 12mm 12mm;
-            }
+   <style jsx global>{`
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 12mm 12mm;
+    }
 
-            body {
-              margin: 0;
-              padding: 0;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
+    body {
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
 
-            .print-hidden {
-              display: none !important;
-            }
+    .print-hidden {
+      display: none !important;
+    }
 
-            /* Prevent page breaks inside these elements */
-            .avoid-break {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
+    /* ========== FIXED PRINT STYLES ========== */
+    /* Keep major sections together */
+    .avoid-break,
+    .section-start,
+    .payment-section,
+    .declaration-section,
+    .signature-section,
+    .footer-section {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
 
-            /* Force page break before */
-            .page-break-before {
-              page-break-before: always !important;
-              break-before: page !important;
-            }
+    /* Prevent section titles from being separated from content */
+    .section-title {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
 
-            /* Prevent orphans and widows */
-            p, div {
-              orphans: 3;
-              widows: 3;
-            }
+    /* Keep signature grid together */
+    .signature-grid {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
 
-            /* Keep together related content */
-            .keep-together {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
+    /* Keep footer with previous content */
+    .footer-section {
+      page-break-before: avoid !important;
+      break-before: avoid !important;
+    }
 
-            /* Grid rows should try to stay together */
-            .grid-compact > div {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
+    /* Orphan/widow control */
+    p, div, .grid-compact > div {
+      orphans: 3 !important;
+      widows: 3 !important;
+    }
 
-            /* Allow breaking in long grids if absolutely necessary */
-            .grid-compact.allow-break-if-needed {
-              page-break-inside: auto !important;
-              break-inside: auto !important;
-            }
+    /* Allow grid to break if needed but keep items together */
+    .grid-compact {
+      page-break-inside: auto !important;
+      break-inside: auto !important;
+    }
+    .grid-compact > div {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
 
-            /* Signature section must stay together */
-            .signature-section {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-              min-height: 4cm;
-            }
+    /* Horizontal dividers */
+    hr.divider {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+      margin: 0.6cm 0 !important;
+    }
+  }
 
-            /* Declaration should ideally be on new page if content is long */
-            .declaration-section {
-              page-break-before: auto !important;
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
+  /* Screen + Print Styles */
+  .a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 15px auto;
+    padding: 0 12mm;
+    background: white;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12px;
+    line-height: 1.42;
+    color: #000;
+  }
 
-            /* If only 1-2 lines fit, push to next page */
-            .section-start {
-              page-break-after: avoid !important;
-              break-after: avoid !important;
-            }
+  @media print {
+    .a4-page {
+      margin: 0;
+      box-shadow: none;
+      min-height: auto;
+    }
+  }
 
-            /* Prevent breaking after section titles */
-            .section-title {
-              page-break-after: avoid !important;
-              break-after: avoid !important;
-            }
+  .avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-            /* Horizontal dividers */
-            hr.divider {
-              page-break-after: avoid !important;
-              break-after: avoid !important;
-              margin: 0.6cm 0 !important;
-            }
-          }
+  .section-start {
+    margin-top: 0.6cm;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-          /* Screen + Print Styles */
-          .a4-page {
-            width: 210mm;
-            min-height: 297mm;
-            margin: 15px auto;
-            padding: 0 12mm;
-            background: white;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 12px;
-            line-height: 1.42;
-            color: #000;
-          }
+  .section-title {
+    font-size: 13px;
+    font-weight: bold;
+    background: #f5f5f5;
+    padding: 5px 8px;
+    margin-bottom: 0.3cm;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
 
-          @media print {
-            .a4-page {
-              margin: 0;
-              box-shadow: none;
-              min-height: auto;
-            }
-          }
+  @media print {
+    .section-title {
+      background: #f5f5f5 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
 
-          .avoid-break {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
+  .grid-compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1cm;
+    row-gap: 0.28cm;
+  }
 
-          .section-start {
-            margin-top: 0.6cm;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
+  .grid-compact > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-          .section-title {
-            font-size: 13px;
-            font-weight: bold;
-            background: #f5f5f5;
-            padding: 5px 8px;
-            margin-bottom: 0.3cm;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-          }
+  .underline-dotted-thick {
+    text-decoration: underline dotted;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2.5px;
+    display: inline-block;
+    min-width: 130px;
+  }
 
-          @media print {
-            .section-title {
-              background: #f5f5f5 !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          }
+  .long-underline {
+    min-width: 300px;
+  }
 
-          .grid-compact {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            column-gap: 1cm;
-            row-gap: 0.28cm;
-          }
+  .signature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.8cm;
+    margin-top: 1.6cm;
+    text-align: center;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-          /* Individual grid items stay together */
-          .grid-compact > div {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
+  .sig-line {
+    border-bottom: 1px solid #000;
+    margin: 0.4cm 0 0.2cm;
+  }
 
-          .underline-dotted-thick {
-            text-decoration: underline dotted;
-            text-decoration-thickness: 2px;
-            text-underline-offset: 2.5px;
-            display: inline-block;
-            min-width: 130px;
-          }
+  hr.divider {
+    border: none;
+    border-top: 1px solid #000;
+    margin: 0.6cm 0;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
 
-          .long-underline {
-            min-width: 300px;
-          }
+  .long-text-field {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
 
-          .signature-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.8cm;
-            margin-top: 1.6cm;
-            text-align: center;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
+  .payment-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-          .sig-line {
-            border-bottom: 1px solid #000;
-            margin: 0.4cm 0 0.2cm;
-          }
+  .hospital-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-          hr.divider {
-            border: none;
-            border-top: 1px solid #000;
-            margin: 0.6cm 0;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-          }
+  .authorized-person-section {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
 
-          /* Long text fields should wrap naturally */
-          .long-text-field {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            hyphens: auto;
-          }
+  .dept-list-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-          /* Keep payment details together */
-          .payment-section {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
+  .declaration-section p:first-of-type {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
 
-          /* Hospital details sections */
-          .hospital-section {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
+  .executive-line {
+    margin-top: 1.5cm;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+  }
 
-          /* Authorized person can break if very long */
-          .authorized-person-section {
-            page-break-inside: auto !important;
-            break-inside: auto !important;
-          }
-
-          /* Department list items */
-          .dept-list-item {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-
-          /* Prevent page break right after declaration heading */
-          .declaration-section p:first-of-type {
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-          }
-
-          /* Executive name line should stay with signatures */
-          .executive-line {
-            margin-top: 1.5cm;
-            page-break-before: avoid !important;
-            break-before: avoid !important;
-          }
-
-          /* Footer should stay together */
-          .footer-section {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            margin-top: 1cm;
-          }
-        `}</style>
+  .footer-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-top: 1cm;
+  }
+`}</style>
 
         <div className="a4-page">
           <Header />

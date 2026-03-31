@@ -200,8 +200,228 @@
 
 
 
+// import React, { useEffect, useState } from 'react';
+// import { useParams,useNavigate } from 'react-router-dom';
+// import apiClient from '../../../../services/apiClient';
+// import { apiEndpoints } from '../../../../services/apiClient';
+
+// import Top from '../../../../assets/Salesbill/WNright.png';
+// import Logo from '../../../../assets/Salesbill/Logo.png';
+// import stamp from '../../../../assets/Salesbill/stamp.png';
+// import signature from '../../../../assets/Salesbill/signature.png';
+// import bottom from '../../../../assets/Salesbill/footer.png';
+
+// const RenewalLetterExact = () => {
+//   const { id } = useParams();
+//   const [data, setData] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//     const navigate = useNavigate();
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         const res = await apiClient.get(apiEndpoints.salesBills.getRenewalExpiry(id));
+//         if (res.data.success) {
+//           setData(res.data.letterData);
+//         }
+//       } catch (err) {
+//         console.error(err);
+//         alert("Failed to load data");
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     if (id) fetchData();
+//   }, [id]);
+
+//   if (loading) return <div className="text-center py-20 text-xl">Loading Renewal Letter...</div>;
+//   if (!data) return <div className="text-center py-20 text-red-600">Data not found</div>;
+
+//   const formatDate = (dateString) => {
+//     const date = new Date(dateString);
+//     const day = String(date.getDate()).padStart(2, '0');
+//     const month = String(date.getMonth() + 1).padStart(2, '0');
+//     const year = date.getFullYear();
+//     return `${day}-${month}-${year}`;  // ← Dash wala DD-MM-YYYY
+//   };
+
+//   const { to, dates } = data;
+
+//   return (
+//     <div className="min-h-screen bg-gray-100 py-4 px-4 font-sans text-black">
+//       <div className="max-w-3xl mx-auto">
+//         <div className='shadow-lg border-2 border-black print:mt-[3mm] print:border-0 print:shadow-none'>
+
+//           <div className="bg-white pl-6 pr-6 print:pl-4 print:pr-4 print:min-h-[calc(100vh-1cm)] print:flex print:flex-col">
+
+//             {/* Header */}
+            // <div className="flex justify-between items-start pb-3 border-b-4 border-red-700 mb-4">
+            //   <img src={Logo} alt="Logo" className="w-32 mt-4" />
+            //   <div className="text-right text-xs leading-tight">
+            //     <img src={Top} alt="" className='w-full' />
+            //   </div>
+            // </div>
+
+//             {/* Date */}
+//             <div className="text-right mb-6 font-bold text-xs">
+//               DATE: <span className="ml-2">{new Date().toLocaleDateString('en-IN')}</span>
+//             </div>
+
+//             {/* To Address - API se */}
+//             <div className="mb-6 text-xs leading-relaxed">
+//               <strong>To</strong><br />
+//               Dr. {to.doctors}<br />
+//               {to.hospitalName}<br />
+//               {to.addressLine1}<br />
+//               {to.addressLine2}<br />
+//               Pin Code - {to.pinCode}<br />
+//               Contact No. - {to.contactNo}
+//             </div>
+
+//             {/* Welcome Again! */}
+//             <div className="text-center text-lg font-bold my-6">
+//               Welcome Again!
+//             </div>
+
+//             {/* Body - Static Content - Main content area that should grow */}
+//             <div className="text-justify text-xs leading-5 flex-grow">
+//               <p>Dear Doctor,</p>
+
+//               <p className="mt-4">
+//                 We are delighted to inform you that your membership with Rapid Medicolegal Services India Ltd. has been successfully renewed. Thank you for placing your trust in our services and continuing to be a valued member.
+//               </p>
+
+//               <p className="mt-4">
+//                 Your renewed membership is now active from{' '}
+//                 <strong>{formatDate(dates.validFrom)}</strong> to{' '}
+//                 <strong>{formatDate(dates.validTill)}</strong>.
+//                 We remain committed to providing you with reliable, expert medicolegal and risk management support whenever you need it.
+//               </p>
+
+//               <p className="mt-4">
+//                 Your continued association inspires us to maintain the highest standards of service and ensure your complete satisfaction. Our team remains your primary point of contact for any questions or assistance.
+//               </p>
+
+//               <p className="mt-4">
+//                 Thank you once again for staying with Rapid Medicolegal Services India Ltd.
+//               </p>
+
+//               <p className="mt-6 font-bold text-green-700 text-sm">Stay with us, stay secure.</p>
+//             </div>
+
+//             {/* Signature - Will be pushed to bottom */}
+//             <div className="flex justify-end items-end mt-12 space-x-8 print:mt-auto">
+//               <img src={stamp} alt="Stamp" className="w-28 h-28 opacity-95 mr-16 mb-2" />
+//               <div>
+//                 <img src={signature} alt="Signature" className="w-28" />
+//                 <p className="text-center mt-2 text-xs font-medium">Authorised Signatory</p>
+//                 <p className="font-bold text-xs mt-1">Rapid Medicolegal Services India Ltd.</p>
+//               </div>
+//             </div>
+
+//             {/* Footer - Will be at the bottom */}
+//             <div className="mt-12 pt-6 border-t border-gray-400 print:mt-8">
+//               <img src={bottom} alt="Footer" className="w-full mt-4 print:mt-4" />
+//             </div>
+            
+//           </div>
+//         </div>
+
+//         {/* Print Button */}
+//         <div className="text-center mt-6 print:hidden">
+//           <button
+//             onClick={() => window.print()}
+//             className="px-10 py-3 bg-red-700 hover:bg-red-800 text-white font-bold text-lg rounded"
+//           >
+//             Print / Save as PDF
+//           </button>
+//             <button
+//           onClick={() => navigate(-1)}
+//           className="ml-4 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+//         >
+//           Back
+//         </button>
+//         </div>
+
+//       </div>
+
+//       <style jsx>{`
+//         @media print {
+//           body, .min-h-screen { 
+//             background: white !important; 
+//             margin: 0;
+//             padding: 0;
+//             height: auto;
+//           }
+//           button { display: none !important; }
+//           .shadow-lg { 
+//             box-shadow: none !important;
+//             height: auto !important;
+//             margin: 0 !important;
+//           }
+//           @page { 
+//             size: A4;
+//             margin: 0.3cm;
+//           }
+//           .max-w-3xl {
+//             max-width: 100% !important;
+//             margin: 0 !important;
+//             padding: 0 !important;
+//             width: 100% !important;
+//           }
+//           .py-4 {
+//             padding-top: 0 !important;
+//             padding-bottom: 0 !important;
+//           }
+//           /* Ensure content doesn't overflow to next page */
+//           .bg-white {
+//             page-break-inside: avoid;
+//             page-break-after: avoid;
+//             break-inside: avoid;
+//           }
+//           /* Prevent footer from being cut */
+//           .print\\:min-h-\\[calc\\(100vh-1cm\\)\\] {
+//             min-height: calc(100vh - 0.6cm) !important;
+//           }
+//         }
+//       `}</style>
+//     </div>
+//   );
+// };
+
+// export default RenewalLetterExact;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useState } from 'react';
-import { useParams,useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../../../../services/apiClient';
 import { apiEndpoints } from '../../../../services/apiClient';
 
@@ -215,7 +435,7 @@ const RenewalLetterExact = () => {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -243,7 +463,7 @@ const RenewalLetterExact = () => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
-    return `${day}-${month}-${year}`;  // ← Dash wala DD-MM-YYYY
+    return `${day}-${month}-${year}`;
   };
 
   const { to, dates } = data;
@@ -251,24 +471,29 @@ const RenewalLetterExact = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-4 px-4 font-sans text-black">
       <div className="max-w-3xl mx-auto">
-        <div className='shadow-lg border-2 border-black print:mt-[3mm] print:border-0 print:shadow-none'>
+        <div className="shadow-lg border-2 border-black print:mt-[3mm] print:border-0 print:shadow-none">
 
-          <div className="bg-white pl-6 pr-6 print:pl-4 print:pr-4 print:min-h-[calc(100vh-1cm)] print:flex print:flex-col">
+          <div className="bg-white pl-6 pr-6 print:pl-4 print:pr-4 print:flex print:flex-col">
 
             {/* Header */}
-            <div className="flex justify-between items-start pb-3 border-b-4 border-red-700 mb-4">
+            {/* <div className="flex justify-between items-start pb-3 border-b-4 border-red-700 mb-4">
               <img src={Logo} alt="Logo" className="w-32 mt-4" />
+              <div className="text-right text-xs leading-tight">
+                <img src={Top} alt="" className="w-full" />
+              </div>
+            </div> */}
+ <div className="flex justify-between items-start pb-3 border-b-4 border-red-700 mb-4">
+              <img src={Logo} alt="Logo" className="w-52 mt-4" />
               <div className="text-right text-xs leading-tight">
                 <img src={Top} alt="" className='w-full' />
               </div>
             </div>
-
             {/* Date */}
             <div className="text-right mb-6 font-bold text-xs">
               DATE: <span className="ml-2">{new Date().toLocaleDateString('en-IN')}</span>
             </div>
 
-            {/* To Address - API se */}
+            {/* To Address */}
             <div className="mb-6 text-xs leading-relaxed">
               <strong>To</strong><br />
               Dr. {to.doctors}<br />
@@ -284,7 +509,7 @@ const RenewalLetterExact = () => {
               Welcome Again!
             </div>
 
-            {/* Body - Static Content - Main content area that should grow */}
+            {/* Body */}
             <div className="text-justify text-xs leading-5 flex-grow">
               <p>Dear Doctor,</p>
 
@@ -310,17 +535,17 @@ const RenewalLetterExact = () => {
               <p className="mt-6 font-bold text-green-700 text-sm">Stay with us, stay secure.</p>
             </div>
 
-            {/* Signature - Will be pushed to bottom */}
-            <div className="flex justify-end items-end mt-12 space-x-8 print:mt-auto">
-              <img src={stamp} alt="Stamp" className="w-28 h-28 opacity-95 mr-16 mb-2" />
+            {/* Signature */}
+            <div className="flex justify-end items-end mt-0 space-x-8 print:mt-8">
+              <img src={stamp} alt="Stamp" className="w-44 h-44 opacity-95 mr-16 mb-12" />
               <div>
-                <img src={signature} alt="Signature" className="w-28" />
+                <img src={signature} alt="Signature" className="w-70" />
                 <p className="text-center mt-2 text-xs font-medium">Authorised Signatory</p>
                 <p className="font-bold text-xs mt-1">Rapid Medicolegal Services India Ltd.</p>
               </div>
             </div>
 
-            {/* Footer - Will be at the bottom */}
+            {/* Footer */}
             <div className="mt-12 pt-6 border-t border-gray-400 print:mt-8">
               <img src={bottom} alt="Footer" className="w-full mt-4 print:mt-4" />
             </div>
@@ -336,18 +561,18 @@ const RenewalLetterExact = () => {
           >
             Print / Save as PDF
           </button>
-            <button
-          onClick={() => navigate(-1)}
-          className="ml-4 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-        >
-          Back
-        </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="ml-4 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+          >
+            Back
+          </button>
         </div>
-
       </div>
 
       <style jsx>{`
         @media print {
+          /* Reset page margins and background */
           body, .min-h-screen { 
             background: white !important; 
             margin: 0;
@@ -374,15 +599,66 @@ const RenewalLetterExact = () => {
             padding-top: 0 !important;
             padding-bottom: 0 !important;
           }
-          /* Ensure content doesn't overflow to next page */
           .bg-white {
             page-break-inside: avoid;
-            page-break-after: avoid;
             break-inside: avoid;
           }
-          /* Prevent footer from being cut */
-          .print\\:min-h-\\[calc\\(100vh-1cm\\)\\] {
-            min-height: calc(100vh - 0.6cm) !important;
+          .print\\:flex-col {
+            min-height: auto !important;
+          }
+
+          /* ========== ENLARGE TEXT FOR PRINT ========== */
+          /* Base text */
+          .text-xs, .leading-5, .leading-relaxed, .text-sm, p, div, span, strong, .font-bold {
+            font-size: 12pt !important;
+            line-height: 1.5 !important;
+          }
+          /* Address and to section */
+          .mb-6.text-xs, .text-xs.leading-relaxed {
+            font-size: 12pt !important;
+          }
+          /* Date */
+          .text-right.mb-6.font-bold.text-xs {
+            font-size: 12pt !important;
+          }
+          /* Welcome Again heading */
+          .text-center.text-lg.font-bold {
+            font-size: 18pt !important;
+          }
+          /* Body paragraphs */
+          .text-justify.text-xs.leading-5 p {
+            font-size: 12pt !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+          /* "Stay with us" line */
+          .text-green-700.text-sm {
+            font-size: 14pt !important;
+          }
+          /* Signature text */
+          .text-center.mt-2.text-xs.font-medium,
+          .font-bold.text-xs.mt-1 {
+            font-size: 10pt !important;
+          }
+          /* Reduce margins to fit one page */
+          .mt-12 {
+            margin-top: 1rem !important;
+          }
+          .mb-6 {
+            margin-bottom: 0.5rem !important;
+          }
+          .my-6 {
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+          .mt-4 {
+            margin-top: 0.5rem !important;
+          }
+          .pt-6 {
+            padding-top: 0.5rem !important;
+          }
+          .mt-6 {
+            margin-top: 0.5rem !important;
           }
         }
       `}</style>

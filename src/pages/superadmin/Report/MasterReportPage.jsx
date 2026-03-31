@@ -1,2241 +1,382 @@
-// // src/pages/Admin/Report/MasterReportPage.jsx
-// import React, { useState, useEffect } from 'react';
-// import { toast } from 'react-toastify';
-// import apiClient, { apiEndpoiCnts } from '../../../services/apiClient';
-// import { Calendar, Download, Printer } from 'lucide-react';
-
-// export default function MasterReportPage() {
-//   const [activeTab, setActiveTab] = useState('owner-snapshot');
-//   const [loading, setLoading] = useState(false);
-//   const [reportData, setReportData] = useState(null);
-
-//   // Owner Snapshot filters
-//   const [ownerFilters, setOwnerFilters] = useState({
-//     dateFrom: '',
-//     dateTo: '',
-//     paymentType: 'All',
-//     mode: 'All',
-//     searchName: ''
-//   });
-
-//   // Finance Dashboard filters
-//   const [financeFilters, setFinanceFilters] = useState({
-//     dateFrom: '',
-//     dateTo: '',
-//     category: 'All',
-//     companyVendor: 'All',
-//     paymentMode: 'All'
-//   });
-
-//   const fetchMasterReport = async (tab = activeTab) => {
-//     setLoading(true);
-//     try {
-//       const params = { tab };
-
-//       if (tab === 'owner-snapshot') {
-//         if (ownerFilters.dateFrom) params.dateFrom = ownerFilters.dateFrom;
-//         if (ownerFilters.dateTo) params.dateTo = ownerFilters.dateTo;
-//         if (ownerFilters.paymentType !== 'All') params.paymentType = ownerFilters.paymentType;
-//         if (ownerFilters.mode !== 'All') params.mode = ownerFilters.mode;
-//         if (ownerFilters.searchName) params.searchName = ownerFilters.searchName;
-//       } else if (tab === 'finance-dashboard') {
-//         if (financeFilters.dateFrom) params.dateFrom = financeFilters.dateFrom;
-//         if (financeFilters.dateTo) params.dateTo = financeFilters.dateTo;
-//         if (financeFilters.category !== 'All') params.category = financeFilters.category;
-//         if (financeFilters.companyVendor !== 'All') params.companyVendor = financeFilters.companyVendor;
-//         if (financeFilters.paymentMode !== 'All') params.paymentMode = financeFilters.paymentMode;
-//       }
-
-//       const response = await apiClient.get(apiEndpoints.reports.master, { params });
-//       if (response.data.success) {
-//         setReportData(response.data.data);
-//       } else {
-//         toast.error('Failed to fetch master report');
-//       }
-//     } catch (error) {
-//       console.error('Error fetching master report:', error);
-//       toast.error('Failed to fetch master report');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchMasterReport();
-//   }, [activeTab]);
-
-//   const handleOwnerFilterChange = (field, value) => {
-//     setOwnerFilters(prev => ({ ...prev, [field]: value }));
-//   };
-
-//   const handleFinanceFilterChange = (field, value) => {
-//     setFinanceFilters(prev => ({ ...prev, [field]: value }));
-//   };
-
-//   const handleResetOwner = () => {
-//     setOwnerFilters({
-//       dateFrom: '',
-//       dateTo: '',
-//       paymentType: 'All',
-//       mode: 'All',
-//       searchName: ''
-//     });
-//   };
-
-//   const handleResetFinance = () => {
-//     setFinanceFilters({
-//       dateFrom: '',
-//       dateTo: '',
-//       category: 'All',
-//       companyVendor: 'All',
-//       paymentMode: 'All'
-//     });
-//   };
-
-//   const formatCurrency = (amount) => {
-//     return new Intl.NumberFormat('en-IN', {
-//       style: 'currency',
-//       currency: 'INR',
-//       maximumFractionDigits: 0
-//     }).format(amount || 0);
-//   };
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return '';
-//     const date = new Date(dateString);
-//     return date.toLocaleDateString('en-GB');
-//   };
-
-//   return (
-//     <div className="min-h-screen p-6 bg-gray-50 max-w-[79vw]">
-//       {/* Header */}
-//       <div className="mb-6">
-//         <div className="flex items-center justify-between mb-2">
-//           <div>
-//             <h1 className="text-2xl font-bold text-gray-900">Master Reports</h1>
-//             <p className="text-sm text-gray-600 mt-1">
-//               Combined view - Doctor inflows, payouts (Advocates & Experts), and Finance (budgets & payments)
-//             </p>
-//           </div>
-//           <div className="flex gap-2">
-//             <button className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 flex items-center gap-2">
-//               <Download className="w-4 h-4" />
-//               Export to Excel
-//             </button>
-//             <button className="px-4 py-2 bg-gray-600 text-white rounded text-sm font-medium hover:bg-gray-700 flex items-center gap-2">
-//               <Printer className="w-4 h-4" />
-//               Print
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Tabs */}
-//         <div className="flex gap-2 border-b border-gray-300">
-//           <button
-//             onClick={() => {
-//               setActiveTab('owner-snapshot');
-//               fetchMasterReport('owner-snapshot');
-//             }}
-//             className={`px-6 py-3 font-medium text-sm ${
-//               activeTab === 'owner-snapshot'
-//                 ? 'bg-[#398C89] text-white border-b-2 border-[#398C89]'
-//                 : 'text-gray-600 hover:text-gray-900'
-//             }`}
-//           >
-//             Owner Snapshot
-//           </button>
-//           <button
-//             onClick={() => {
-//               setActiveTab('finance-dashboard');
-//               fetchMasterReport('finance-dashboard');
-//             }}
-//             className={`px-6 py-3 font-medium text-sm ${
-//               activeTab === 'finance-dashboard'
-//                 ? 'bg-[#398C89] text-white border-b-2 border-[#398C89]'
-//                 : 'text-gray-600 hover:text-gray-900'
-//             }`}
-//           >
-//             Finance Dashboard
-//           </button>
-//         </div>
-//       </div>
-
-//       {loading ? (
-//         <div className="flex items-center justify-center p-12">
-//           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#398C89]"></div>
-//           <span className="ml-3 text-gray-600">Loading...</span>
-//         </div>
-//       ) : (
-//         <>
-//           {/* Owner Snapshot Tab */}
-//           {activeTab === 'owner-snapshot' && (
-//             <div>
-//               {/* Filters */}
-//               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-//                 <div className="grid grid-cols-5 gap-4">
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">From</label>
-//                     <div className="relative">
-//                       <input
-//                         type="date"
-//                         value={ownerFilters.dateFrom}
-//                         onChange={(e) => handleOwnerFilterChange('dateFrom', e.target.value)}
-//                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                       />
-//                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600 pointer-events-none" />
-//                     </div>
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">To</label>
-//                     <div className="relative">
-//                       <input
-//                         type="date"
-//                         value={ownerFilters.dateTo}
-//                         onChange={(e) => handleOwnerFilterChange('dateTo', e.target.value)}
-//                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                       />
-//                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600 pointer-events-none" />
-//                     </div>
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">Payment Type</label>
-//                     <select
-//                       value={ownerFilters.paymentType}
-//                       onChange={(e) => handleOwnerFilterChange('paymentType', e.target.value)}
-//                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                     >
-//                       <option>All</option>
-//                       <option>Member</option>
-//                       <option>Policy Payment</option>
-//                       <option>Case Fees</option>
-//                     </select>
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">Mode</label>
-//                     <select
-//                       value={ownerFilters.mode}
-//                       onChange={(e) => handleOwnerFilterChange('mode', e.target.value)}
-//                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                     >
-//                       <option>All</option>
-//                       <option>Bank</option>
-//                       <option>UPI</option>
-//                       <option>Cash</option>
-//                       <option>NEFT</option>
-//                       <option>Card</option>
-//                     </select>
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">Doctor/Advocate/Expert</label>
-//                     <input
-//                       type="text"
-//                       placeholder="Search name"
-//                       value={ownerFilters.searchName}
-//                       onChange={(e) => handleOwnerFilterChange('searchName', e.target.value)}
-//                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                     />
-//                   </div>
-//                 </div>
-//                 <div className="flex gap-2 mt-4">
-//                   <button
-//                     onClick={() => fetchMasterReport('owner-snapshot')}
-//                     className="px-4 py-2 bg-[#398C89] text-white rounded text-sm font-medium hover:bg-[#2d6f6c]"
-//                   >
-//                     Apply
-//                   </button>
-//                   <button
-//                     onClick={handleResetOwner}
-//                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300"
-//                   >
-//                     Reset
-//                   </button>
-//                 </div>
-//               </div>
-
-//               {/* Summary Cards */}
-//               {reportData?.summary && (
-//                 <div className="grid grid-cols-4 gap-4 mb-6">
-//                   <div className="bg-[#E8F5E9] rounded-lg p-4">
-//                     <div className="text-sm text-gray-600 mb-1">From Doctors (Inflow)</div>
-//                     <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.fromDoctors)}</div>
-//                   </div>
-//                   <div className="bg-[#E8F5E9] rounded-lg p-4">
-//                     <div className="text-sm text-gray-600 mb-1">To Advocates (Payout)</div>
-//                     <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.toAdvocates)}</div>
-//                   </div>
-//                   <div className="bg-[#E8F5E9] rounded-lg p-4">
-//                     <div className="text-sm text-gray-600 mb-1">To Experts (Payout)</div>
-//                     <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.toExperts)}</div>
-//                   </div>
-//                   <div className={`rounded-lg p-4 ${reportData.summary.net >= 0 ? 'bg-[#E8F5E9]' : 'bg-[#FFEBEE]'}`}>
-//                     <div className="text-sm text-gray-600 mb-1">Net (Doctors - Payouts)</div>
-//                     <div className={`text-2xl font-bold ${reportData.summary.net >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-//                       {formatCurrency(reportData.summary.net)}
-//                     </div>
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Doctor Inflows Table */}
-//               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   Doctor Inflows ({reportData?.doctorInflows?.length || 0})
-//                 </h3>
-//                 <div className="overflow-x-auto">
-//                   <table className="w-full">
-//                     <thead className="bg-gray-50">
-//                       <tr>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Doctor</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Reason</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
-//                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
-//                       </tr>
-//                     </thead>
-//                     <tbody className="divide-y divide-gray-200">
-//                       {reportData?.doctorInflows?.map((item, index) => (
-//                         <tr key={index} className="hover:bg-gray-50">
-//                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.doctor}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.reason}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
-//                           <td className="px-4 py-2 text-sm text-right font-medium text-green-600">+{formatCurrency(item.amount)}</td>
-//                         </tr>
-//                       ))}
-//                       {(!reportData?.doctorInflows || reportData.doctorInflows.length === 0) && (
-//                         <tr>
-//                           <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No data available</td>
-//                         </tr>
-//                       )}
-//                     </tbody>
-//                   </table>
-//                 </div>
-//               </div>
-
-//               {/* Payouts Table */}
-//               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   Payouts Advocates & Experts (Adv: {reportData?.payouts?.advocates?.length || 0} Exp: {reportData?.payouts?.experts?.length || 0})
-//                 </h3>
-//                 <div className="overflow-x-auto">
-//                   <table className="w-full">
-//                     <thead className="bg-gray-50">
-//                       <tr>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Person</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Role</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
-//                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
-//                       </tr>
-//                     </thead>
-//                     <tbody className="divide-y divide-gray-200">
-//                       {reportData?.payouts?.advocates?.map((item, index) => (
-//                         <tr key={`adv-${index}`} className="hover:bg-gray-50">
-//                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.person}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
-//                           <td className="px-4 py-2 text-sm text-right font-medium text-red-600">-{formatCurrency(item.amount)}</td>
-//                         </tr>
-//                       ))}
-//                       {reportData?.payouts?.experts?.map((item, index) => (
-//                         <tr key={`exp-${index}`} className="hover:bg-gray-50">
-//                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.person}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
-//                           <td className="px-4 py-2 text-sm text-right font-medium text-red-600">-{formatCurrency(item.amount)}</td>
-//                         </tr>
-//                       ))}
-//                       {(!reportData?.payouts?.advocates?.length && !reportData?.payouts?.experts?.length) && (
-//                         <tr>
-//                           <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No data available</td>
-//                         </tr>
-//                       )}
-//                     </tbody>
-//                   </table>
-//                 </div>
-//               </div>
-
-//               {/* All Items Table */}
-//               <div className="bg-white rounded-lg shadow-sm p-4">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   All Items (Filtered) ({reportData?.allItems?.length || 0} items)
-//                 </h3>
-//                 <div className="overflow-x-auto">
-//                   <table className="w-full">
-//                     <thead className="bg-gray-50">
-//                       <tr>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Type</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Name</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Details</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
-//                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
-//                       </tr>
-//                     </thead>
-//                     <tbody className="divide-y divide-gray-200">
-//                       {reportData?.allItems?.map((item, index) => (
-//                         <tr key={index} className="hover:bg-gray-50">
-//                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.type}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.name}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.details}</td>
-//                           <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
-//                           <td className={`px-4 py-2 text-sm text-right font-medium ${item.isInflow ? 'text-green-600' : 'text-red-600'}`}>
-//                             {item.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(item.amount))}
-//                           </td>
-//                         </tr>
-//                       ))}
-//                       {(!reportData?.allItems || reportData.allItems.length === 0) && (
-//                         <tr>
-//                           <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No data available</td>
-//                         </tr>
-//                       )}
-//                     </tbody>
-//                   </table>
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Finance Dashboard Tab */}
-//           {activeTab === 'finance-dashboard' && (
-//             <div>
-//               {/* Filters */}
-//               <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-//                 <div className="grid grid-cols-5 gap-4">
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">From</label>
-//                     <div className="relative">
-//                       <input
-//                         type="date"
-//                         value={financeFilters.dateFrom}
-//                         onChange={(e) => handleFinanceFilterChange('dateFrom', e.target.value)}
-//                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                       />
-//                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600 pointer-events-none" />
-//                     </div>
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">To</label>
-//                     <div className="relative">
-//                       <input
-//                         type="date"
-//                         value={financeFilters.dateTo}
-//                         onChange={(e) => handleFinanceFilterChange('dateTo', e.target.value)}
-//                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                       />
-//                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600 pointer-events-none" />
-//                     </div>
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">Category</label>
-//                     <select
-//                       value={financeFilters.category}
-//                       onChange={(e) => handleFinanceFilterChange('category', e.target.value)}
-//                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                     >
-//                       <option>All</option>
-//                       <option>Revenue</option>
-//                       <option>Salary</option>
-//                       <option>Office Expense</option>
-//                       <option>Marketing</option>
-//                       <option>Insurance Payment</option>
-//                       <option>Commission</option>
-//                       <option>Refund</option>
-//                     </select>
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">Company/Vendor</label>
-//                     <input
-//                       type="text"
-//                       placeholder="ICICI, Rent,..."
-//                       value={financeFilters.companyVendor}
-//                       onChange={(e) => handleFinanceFilterChange('companyVendor', e.target.value)}
-//                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                     />
-//                   </div>
-//                   <div>
-//                     <label className="block text-xs text-gray-600 mb-1">Payment Mode</label>
-//                     <select
-//                       value={financeFilters.paymentMode}
-//                       onChange={(e) => handleFinanceFilterChange('paymentMode', e.target.value)}
-//                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-//                     >
-//                       <option>All</option>
-//                       <option>Bank</option>
-//                       <option>UPI</option>
-//                       <option>Cash</option>
-//                       <option>NEFT</option>
-//                       <option>Card</option>
-//                     </select>
-//                   </div>
-//                 </div>
-//                 <div className="flex gap-2 mt-4">
-//                   <button
-//                     onClick={() => fetchMasterReport('finance-dashboard')}
-//                     className="px-4 py-2 bg-[#398C89] text-white rounded text-sm font-medium hover:bg-[#2d6f6c]"
-//                   >
-//                     Apply
-//                   </button>
-//                   <button
-//                     onClick={handleResetFinance}
-//                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300"
-//                   >
-//                     Reset
-//                   </button>
-//                 </div>
-//               </div>
-
-//               {/* Summary Cards */}
-//               {reportData?.summary && (
-//                 <div className="grid grid-cols-4 gap-4 mb-6">
-//                   <div className="bg-[#E8F5E9] rounded-lg p-4">
-//                     <div className="text-sm text-gray-600 mb-1">Revenue</div>
-//                     <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.revenue)}</div>
-//                   </div>
-//                   <div className="bg-[#E8F5E9] rounded-lg p-4">
-//                     <div className="text-sm text-gray-600 mb-1">Total Expenses</div>
-//                     <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.totalExpenses)}</div>
-//                   </div>
-//                   <div className="bg-[#E8F5E9] rounded-lg p-4">
-//                     <div className="text-sm text-gray-600 mb-1">Insurance Paid</div>
-//                     <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.insurancePaid)}</div>
-//                   </div>
-//                   <div className={`rounded-lg p-4 ${reportData.summary.net >= 0 ? 'bg-[#E8F5E9]' : 'bg-[#FFEBEE]'}`}>
-//                     <div className="text-sm text-gray-600 mb-1">Net (Rev - Exp)</div>
-//                     <div className={`text-2xl font-bold ${reportData.summary.net >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-//                       {formatCurrency(reportData.summary.net)}
-//                     </div>
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Quick Snapshot */}
-//               {reportData?.quickSnapshot && (
-//                 <div className="grid grid-cols-3 gap-4 mb-6">
-//                   <div className="bg-white rounded-lg shadow-sm p-4">
-//                     <div className="text-sm text-gray-600 mb-1">Salaries</div>
-//                     <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.salaries)}</div>
-//                   </div>
-//                   <div className="bg-white rounded-lg shadow-sm p-4">
-//                     <div className="text-sm text-gray-600 mb-1">Other Expenses</div>
-//                     <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.otherExpenses)}</div>
-//                   </div>
-//                   <div className="bg-white rounded-lg shadow-sm p-4">
-//                     <div className="text-sm text-gray-600 mb-1">Commissions</div>
-//                     <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.commissions)}</div>
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Insurance Payments by Company */}
-//               {reportData?.insuranceByCompany && reportData.insuranceByCompany.length > 0 && (
-//                 <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-//                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Insurance Payments by Company</h3>
-//                   <div className="overflow-x-auto">
-//                     <table className="w-full">
-//                       <thead className="bg-gray-50">
-//                         <tr>
-//                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Company</th>
-//                           <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
-//                         </tr>
-//                       </thead>
-//                       <tbody className="divide-y divide-gray-200">
-//                         {reportData.insuranceByCompany.map((item, index) => (
-//                           <tr key={index} className="hover:bg-gray-50">
-//                             <td className="px-4 py-2 text-sm text-gray-700">{item.company}</td>
-//                             <td className="px-4 py-2 text-sm text-right font-medium text-gray-900">{formatCurrency(item.amount)}</td>
-//                           </tr>
-//                         ))}
-//                       </tbody>
-//                     </table>
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Salary by Role */}
-//               {reportData?.salaryByRole && reportData.salaryByRole.length > 0 && (
-//                 <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-//                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Salary by Role</h3>
-//                   <div className="overflow-x-auto">
-//                     <table className="w-full">
-//                       <thead className="bg-gray-50">
-//                         <tr>
-//                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Role</th>
-//                           <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
-//                         </tr>
-//                       </thead>
-//                       <tbody className="divide-y divide-gray-200">
-//                         {reportData.salaryByRole.map((item, index) => (
-//                           <tr key={index} className="hover:bg-gray-50">
-//                             <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
-//                             <td className="px-4 py-2 text-sm text-right font-medium text-gray-900">{formatCurrency(item.amount)}</td>
-//                           </tr>
-//                         ))}
-//                       </tbody>
-//                     </table>
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Transactions Table */}
-//               <div className="bg-white rounded-lg shadow-sm p-4">
-//                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-//                   Transactions ({reportData?.transactions?.length || 0} Items)
-//                 </h3>
-//                 <div className="overflow-x-auto">
-//                   <table className="w-full">
-//                     <thead className="bg-gray-50">
-//                       <tr>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Category</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Company / Vendor</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Details</th>
-//                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
-//                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
-//                       </tr>
-//                     </thead>
-//                     <tbody className="divide-y divide-gray-200">
-//                       {reportData?.transactions?.map((item, index) => {
-//                         const categoryColors = {
-//                           'Revenue': 'bg-green-100 text-green-800',
-//                           'Salary': 'bg-blue-100 text-blue-800',
-//                           'Insurance Payment': 'bg-indigo-100 text-indigo-800',
-//                           'Marketing': 'bg-orange-100 text-orange-800',
-//                           'Office Expense': 'bg-gray-100 text-gray-800',
-//                           'Commission': 'bg-yellow-100 text-yellow-800',
-//                           'Refund': 'bg-purple-100 text-purple-800'
-//                         };
-//                         const categoryColor = categoryColors[item.category] || 'bg-gray-100 text-gray-800';
-
-//                         return (
-//                           <tr key={index} className="hover:bg-gray-50">
-//                             <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
-//                             <td className="px-4 py-2 text-sm">
-//                               <span className={`px-2 py-1 rounded text-xs font-medium ${categoryColor}`}>
-//                                 {item.category}
-//                               </span>
-//                             </td>
-//                             <td className="px-4 py-2 text-sm text-gray-700">{item.companyVendor}</td>
-//                             <td className="px-4 py-2 text-sm text-gray-700">{item.details}</td>
-//                             <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
-//                             <td className={`px-4 py-2 text-sm text-right font-medium ${item.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
-//                               {item.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(item.amount))}
-//                             </td>
-//                           </tr>
-//                         );
-//                       })}
-//                       {(!reportData?.transactions || reportData.transactions.length === 0) && (
-//                         <tr>
-//                           <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No data available</td>
-//                         </tr>
-//                       )}
-//                     </tbody>
-//                   </table>
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-//         </>
-//       )}
-//     </div>
-//   );
-// }
-
-// src/pages/Admin/Report/MasterReportPage.jsx
-// import React, { useState, useEffect } from "react";
-// import { toast } from "react-toastify";
-// import {
-//   Calendar,
-//   Download,
-//   Printer,
-//   TrendingUp,
-//   TrendingDown,
-//   ArrowRightLeft,
-// } from "lucide-react";
-
-// const dummyDoctorInflows = [
-//   {
-//     date: "2025-09-01",
-//     doctor: "Dr. Amit Sharma",
-//     reason: "Membership Renewal",
-//     mode: "Bank",
-//     amount: 15000,
-//   },
-//   {
-//     date: "2025-09-02",
-//     doctor: "Dr. Nisha Rao",
-//     reason: "Policy Premium (Rapid)",
-//     mode: "UPI",
-//     amount: 12000,
-//   },
-//   {
-//     date: "2025-09-05",
-//     doctor: "Dr. Kavita Joshi",
-//     reason: "Case Fees",
-//     mode: "NEFT",
-//     amount: 18000,
-//   },
-//   {
-//     date: "2025-09-10",
-//     doctor: "Dr. Rahul Verma",
-//     reason: "Membership New",
-//     mode: "Cash",
-//     amount: 14000,
-//   },
-//   {
-//     date: "2025-09-14",
-//     doctor: "Dr. Priya Mehta",
-//     reason: "Policy Premium (Care)",
-//     mode: "Bank",
-//     amount: 16000,
-//   },
-//   {
-//     date: "2025-09-19",
-//     doctor: "Dr. Sameer Patil",
-//     reason: "Case Fees",
-//     mode: "UPI",
-//     amount: 11000,
-//   },
-//   {
-//     date: "2025-09-27",
-//     doctor: "Dr. Kavita Joshi",
-//     reason: "Add-on cover",
-//     mode: "UPI",
-//     amount: 6000,
-//   },
-//   {
-//     date: "2025-09-29",
-//     doctor: "Dr. Nisha Rao",
-//     reason: "Case Fees",
-//     mode: "Bank",
-//     amount: 9000,
-//   },
-// ];
-
-// const dummyAdvocatePayouts = [
-//   {
-//     date: "2025-09-07",
-//     person: "Adv. Priya Sharma",
-//     role: "Advocate",
-//     mode: "Bank",
-//     amount: 10000,
-//     details: "Case 21A drafting",
-//   },
-//   {
-//     date: "2025-09-12",
-//     person: "Adv. Sameer Patel",
-//     role: "Advocate",
-//     mode: "NEFT",
-//     amount: 7000,
-//     details: "Hearing appearance",
-//   },
-//   {
-//     date: "2025-09-22",
-//     person: "Adv. Rahul Verma",
-//     role: "Advocate",
-//     mode: "Bank",
-//     amount: 9000,
-//     details: "Final summary prep",
-//   },
-// ];
-
-// const dummyExpertPayouts = [
-//   {
-//     date: "2025-09-08",
-//     person: "Dr. V. Kulkarni",
-//     role: "Expert",
-//     mode: "UPI",
-//     amount: 8000,
-//     details: "Ortho opinion",
-//   },
-//   {
-//     date: "2025-09-17",
-//     person: "Dr. A. Deshpande",
-//     role: "Expert",
-//     mode: "Bank",
-//     amount: 9500,
-//     details: "Neuro affidavit",
-//   },
-//   {
-//     date: "2025-09-24",
-//     person: "Dr. M. Shah",
-//     role: "Expert",
-//     mode: "NEFT",
-//     amount: 12000,
-//     details: "Forensic review",
-//   },
-// ];
-
-// const dummyFinanceTransactions = [
-//   {
-//     date: "2025-09-01",
-//     category: "Revenue",
-//     companyVendor: "Memberships",
-//     details: "New/renewals (day 1)",
-//     mode: "Bank",
-//     amount: 120000,
-//   },
-//   {
-//     date: "2025-09-01",
-//     category: "Salary",
-//     companyVendor: "Payroll",
-//     details: "Telecallers",
-//     mode: "Bank",
-//     amount: -90000,
-//   },
-//   {
-//     date: "2025-09-01",
-//     category: "Salary",
-//     companyVendor: "Payroll",
-//     details: "Sales Team",
-//     mode: "Bank",
-//     amount: -140000,
-//   },
-//   {
-//     date: "2025-09-01",
-//     category: "Salary",
-//     companyVendor: "Payroll",
-//     details: "Admin & Ops",
-//     mode: "Bank",
-//     amount: -80000,
-//   },
-//   {
-//     date: "2025-09-03",
-//     category: "Insurance Payment",
-//     companyVendor: "ICICI Lombard",
-//     details: "Doctor PI bulk",
-//     mode: "NEFT",
-//     amount: -150000,
-//   },
-//   {
-//     date: "2025-09-04",
-//     category: "Marketing",
-//     companyVendor: "Facebook Ads",
-//     details: "Lead gen",
-//     mode: "Card",
-//     amount: -30000,
-//   },
-//   {
-//     date: "2025-09-05",
-//     category: "Revenue",
-//     companyVendor: "Case Services",
-//     details: "Advisory fees",
-//     mode: "UPI",
-//     amount: 45000,
-//   },
-//   {
-//     date: "2025-09-06",
-//     category: "Office Expense",
-//     companyVendor: "Rent",
-//     details: "September rent",
-//     mode: "Bank",
-//     amount: -60000,
-//   },
-//   {
-//     date: "2025-09-08",
-//     category: "Insurance Payment",
-//     companyVendor: "CareShield Insurance",
-//     details: "Hospital E&O",
-//     mode: "Bank",
-//     amount: -70000,
-//   },
-//   {
-//     date: "2025-09-10",
-//     category: "Office Expense",
-//     companyVendor: "Utilities",
-//     details: "Power + Internet",
-//     mode: "UPI",
-//     amount: -12000,
-//   },
-//   {
-//     date: "2025-09-12",
-//     category: "Revenue",
-//     companyVendor: "Memberships",
-//     details: "Batch renewal",
-//     mode: "NEFT",
-//     amount: 90000,
-//   },
-//   {
-//     date: "2025-09-14",
-//     category: "Commission",
-//     companyVendor: "Channel Partner",
-//     details: "Policy referrals",
-//     mode: "NEFT",
-//     amount: -25000,
-//   },
-//   {
-//     date: "2025-09-18",
-//     category: "Marketing",
-//     companyVendor: "Google Ads",
-//     details: "Search",
-//     mode: "Card",
-//     amount: -22000,
-//   },
-//   {
-//     date: "2025-09-20",
-//     category: "Revenue",
-//     companyVendor: "Workshops",
-//     details: "Medico-legal training",
-//     mode: "Bank",
-//     amount: 25000,
-//   },
-//   {
-//     date: "2025-09-22",
-//     category: "Insurance Payment",
-//     companyVendor: "ICICI Lombard",
-//     details: "Top-up covers",
-//     mode: "Bank",
-//     amount: -50000,
-//   },
-//   {
-//     date: "2025-09-25",
-//     category: "Refund",
-//     companyVendor: "Dr. X",
-//     details: "Membership refund",
-//     mode: "Bank",
-//     amount: -8000,
-//   },
-// ];
-
-// function computeReportData(tab, filters) {
-//   if (tab === "owner-snapshot") {
-//     const filteredInflows = dummyDoctorInflows.filter((item) => {
-//       const itemDate = new Date(item.date);
-//       const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-//       const to = filters.dateTo ? new Date(filters.dateTo) : null;
-//       const dateOk = (!from || itemDate >= from) && (!to || itemDate <= to);
-//       const modeOk = filters.mode === "All" || item.mode === filters.mode;
-//       const nameOk =
-//         !filters.searchName ||
-//         item.doctor.toLowerCase().includes(filters.searchName.toLowerCase());
-//       let typeOk = true;
-//       if (filters.paymentType !== "All") {
-//         if (filters.paymentType === "Member")
-//           typeOk = item.reason.includes("Membership");
-//         else if (filters.paymentType === "Policy Payment")
-//           typeOk =
-//             item.reason.includes("Policy") || item.reason === "Add-on cover";
-//         else if (filters.paymentType === "Case Fees")
-//           typeOk = item.reason === "Case Fees";
-//       }
-//       return dateOk && modeOk && nameOk && typeOk;
-//     });
-
-//     const filterPayouts = (items) =>
-//       items.filter((item) => {
-//         const itemDate = new Date(item.date);
-//         const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-//         const to = filters.dateTo ? new Date(filters.dateTo) : null;
-//         const dateOk = (!from || itemDate >= from) && (!to || itemDate <= to);
-//         const modeOk = filters.mode === "All" || item.mode === filters.mode;
-//         const nameOk =
-//           !filters.searchName ||
-//           item.person.toLowerCase().includes(filters.searchName.toLowerCase());
-//         return dateOk && modeOk && nameOk;
-//       });
-
-//     const filteredAdv = filterPayouts(dummyAdvocatePayouts);
-//     const filteredExp = filterPayouts(dummyExpertPayouts);
-
-//     const allItems = [
-//       ...filteredInflows.map((i) => ({
-//         date: i.date,
-//         type: "Doctor Inflow",
-//         name: i.doctor,
-//         details: i.reason,
-//         mode: i.mode,
-//         amount: i.amount,
-//       })),
-//       ...filteredAdv.map((a) => ({
-//         date: a.date,
-//         type: "Advocate Payout",
-//         name: a.person,
-//         details: a.details,
-//         mode: a.mode,
-//         amount: -a.amount,
-//       })),
-//       ...filteredExp.map((e) => ({
-//         date: e.date,
-//         type: "Expert Payout",
-//         name: e.person,
-//         details: e.details,
-//         mode: e.mode,
-//         amount: -e.amount,
-//       })),
-//     ].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-//     const sum = (arr, key) => arr.reduce((s, i) => s + (i[key] || 0), 0);
-
-//     const summary = {
-//       fromDoctors: sum(filteredInflows, "amount"),
-//       toAdvocates: sum(filteredAdv, "amount"),
-//       toExperts: sum(filteredExp, "amount"),
-//       net:
-//         sum(filteredInflows, "amount") -
-//         sum(filteredAdv, "amount") -
-//         sum(filteredExp, "amount"),
-//     };
-
-//     return {
-//       summary,
-//       doctorInflows: filteredInflows,
-//       payouts: { advocates: filteredAdv, experts: filteredExp },
-//       allItems,
-//     };
-//   } else if (tab === "finance-dashboard") {
-//     const filtered = dummyFinanceTransactions.filter((t) => {
-//       const itemDate = new Date(t.date);
-//       const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-//       const to = filters.dateTo ? new Date(filters.dateTo) : null;
-//       const dateOk = (!from || itemDate >= from) && (!to || itemDate <= to);
-//       const catOk =
-//         filters.category === "All" || t.category === filters.category;
-//       const vendorOk =
-//         !filters.companyVendor ||
-//         t.companyVendor
-//           .toLowerCase()
-//           .includes(filters.companyVendor.toLowerCase());
-//       const modeOk =
-//         filters.paymentMode === "All" || t.mode === filters.paymentMode;
-//       return dateOk && catOk && vendorOk && modeOk;
-//     });
-
-//     const summary = {
-//       revenue: filtered.reduce((s, t) => s + (t.amount > 0 ? t.amount : 0), 0),
-//       totalExpenses: filtered.reduce(
-//         (s, t) => s + (t.amount < 0 ? -t.amount : 0),
-//         0,
-//       ),
-//       insurancePaid: filtered.reduce(
-//         (s, t) =>
-//           s +
-//           (t.category === "Insurance Payment" && t.amount < 0 ? -t.amount : 0),
-//         0,
-//       ),
-//       net: filtered.reduce((s, t) => s + t.amount, 0),
-//     };
-
-//     const quickSnapshot = {
-//       salaries: filtered.reduce(
-//         (s, t) => s + (t.category === "Salary" ? -t.amount : 0),
-//         0,
-//       ),
-//       otherExpenses: filtered.reduce(
-//         (s, t) =>
-//           s +
-//           (t.category === "Office Expense" ||
-//           t.category === "Marketing" ||
-//           t.category === "Refund"
-//             ? -t.amount
-//             : 0),
-//         0,
-//       ),
-//       commissions: filtered.reduce(
-//         (s, t) => s + (t.category === "Commission" ? -t.amount : 0),
-//         0,
-//       ),
-//     };
-
-//     const insMap = {};
-//     filtered.forEach((t) => {
-//       if (t.category === "Insurance Payment" && t.amount < 0) {
-//         insMap[t.companyVendor] = (insMap[t.companyVendor] || 0) + -t.amount;
-//       }
-//     });
-//     const insuranceByCompany = Object.entries(insMap).map(
-//       ([company, amount]) => ({ company, amount }),
-//     );
-
-//     const salMap = {};
-//     filtered.forEach((t) => {
-//       if (t.category === "Salary") {
-//         const role = t.details;
-//         salMap[role] = (salMap[role] || 0) + -t.amount;
-//       }
-//     });
-//     const salaryByRole = Object.entries(salMap).map(([role, amount]) => ({
-//       role,
-//       amount,
-//     }));
-
-//     const dailyMap = {};
-//     filtered.forEach((t) => {
-//       dailyMap[t.date] = (dailyMap[t.date] || 0) + t.amount;
-//     });
-
-//     return {
-//       summary,
-//       quickSnapshot,
-//       insuranceByCompany,
-//       salaryByRole,
-//       transactions: filtered.sort(
-//         (a, b) => new Date(a.date) - new Date(b.date),
-//       ),
-//       dailyCashflow: dailyMap,
-//     };
-//   }
-// }
-
-// export default function MasterReportPage() {
-//   const [activeTab, setActiveTab] = useState("owner-snapshot");
-//   const [loading, setLoading] = useState(false);
-//   const [reportData, setReportData] = useState(null);
-
-//   const [ownerFilters, setOwnerFilters] = useState({
-//     dateFrom: "",
-//     dateTo: "",
-//     paymentType: "All",
-//     mode: "All",
-//     searchName: "",
-//   });
-
-//   const [financeFilters, setFinanceFilters] = useState({
-//     dateFrom: "",
-//     dateTo: "",
-//     category: "All",
-//     companyVendor: "",
-//     paymentMode: "All",
-//   });
-
-//   const updateReportData = (tab = activeTab) => {
-//     setLoading(true);
-//     try {
-//       const filters = tab === "owner-snapshot" ? ownerFilters : financeFilters;
-//       const data = computeReportData(tab, filters);
-//       setReportData(data);
-//     } catch (error) {
-//       console.error("Error computing report data:", error);
-//       toast.error("Failed to compute master report");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     updateReportData();
-//   }, [activeTab]);
-
-//   const handleOwnerFilterChange = (field, value) => {
-//     setOwnerFilters((prev) => ({ ...prev, [field]: value }));
-//   };
-
-//   const handleFinanceFilterChange = (field, value) => {
-//     setFinanceFilters((prev) => ({ ...prev, [field]: value }));
-//   };
-
-//   const handleResetOwner = () => {
-//     setOwnerFilters({
-//       dateFrom: "",
-//       dateTo: "",
-//       paymentType: "All",
-//       mode: "All",
-//       searchName: "",
-//     });
-//   };
-
-//   const handleResetFinance = () => {
-//     setFinanceFilters({
-//       dateFrom: "",
-//       dateTo: "",
-//       category: "All",
-//       companyVendor: "",
-//       paymentMode: "All",
-//     });
-//   };
-
-//   const formatCurrency = (amount) => {
-//     return new Intl.NumberFormat("en-IN", {
-//       style: "currency",
-//       currency: "INR",
-//       maximumFractionDigits: 0,
-//     }).format(Math.abs(amount || 0));
-//   };
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return "";
-//     return new Date(dateString).toLocaleDateString("en-GB");
-//   };
-
-//   const isPositive = (value) => (value || 0) >= 0;
-
-//   return (
-//     <div className="min-h-screen bg-gray-50 p-6">
-//       <div className="mb-8">
-//         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-//           <div>
-//             <h1 className="text-3xl font-bold text-gray-900">Master Reports</h1>
-//             <p className="text-gray-600 mt-1">
-//               Combined view — Doctor inflows, payouts (Advocates & Experts), and
-//               Finance (budgets & payments)
-//             </p>
-//           </div>
-//           <div className="flex gap-3">
-//             <button className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium shadow transition-all">
-//               <Download size={16} /> Export Excel
-//             </button>
-//             <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-sm font-medium shadow transition-all">
-//               <Printer size={16} /> Print
-//             </button>
-//           </div>
-//         </div>
-
-//         <div className="flex border-b border-gray-200">
-//           <button
-//             onClick={() => {
-//               setActiveTab("owner-snapshot");
-//               updateReportData("owner-snapshot");
-//             }}
-//             className={`px-8 py-3.5 font-medium transition-all ${
-//               activeTab === "owner-snapshot"
-//                 ? "border-b-2 border-teal-600 text-teal-700 font-semibold bg-teal-50/30"
-//                 : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-//             }`}
-//           >
-//             Owner Snapshot
-//           </button>
-//           <button
-//             onClick={() => {
-//               setActiveTab("finance-dashboard");
-//               updateReportData("finance-dashboard");
-//             }}
-//             className={`px-8 py-3.5 font-medium transition-all ${
-//               activeTab === "finance-dashboard"
-//                 ? "border-b-2 border-teal-600 text-teal-700 font-semibold bg-teal-50/30"
-//                 : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-//             }`}
-//           >
-//             Finance Dashboard
-//           </button>
-//         </div>
-//       </div>
-
-//       {loading ? (
-//         <div className="flex justify-center items-center py-32">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-//           <span className="ml-5 text-gray-700 font-medium text-lg">
-//             Loading report data...
-//           </span>
-//         </div>
-//       ) : activeTab === "owner-snapshot" ? (
-//         <div className="space-y-8">
-//           {/* Filters */}
-//           <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
-//             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-//               <div>
-//                 <label className="block text-sm text-gray-600 font-medium mb-1.5">
-//                   From
-//                 </label>
-//                 <div className="relative">
-//                   <input
-//                     type="date"
-//                     value={ownerFilters.dateFrom}
-//                     onChange={(e) =>
-//                       handleOwnerFilterChange("dateFrom", e.target.value)
-//                     }
-//                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-//                   />
-//                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" />
-//                 </div>
-//               </div>
-
-//               <div>
-//                 <label className="block text-sm text-gray-600 font-medium mb-1.5">
-//                   To
-//                 </label>
-//                 <div className="relative">
-//                   <input
-//                     type="date"
-//                     value={ownerFilters.dateTo}
-//                     onChange={(e) =>
-//                       handleOwnerFilterChange("dateTo", e.target.value)
-//                     }
-//                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-//                   />
-//                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" />
-//                 </div>
-//               </div>
-
-//               <div>
-//                 <label className="block text-sm text-gray-600 font-medium mb-1.5">
-//                   Payment Type
-//                 </label>
-//                 <select
-//                   value={ownerFilters.paymentType}
-//                   onChange={(e) =>
-//                     handleOwnerFilterChange("paymentType", e.target.value)
-//                   }
-//                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-//                 >
-//                   <option>All</option>
-//                   <option>Member</option>
-//                   <option>Policy Payment</option>
-//                   <option>Case Fees</option>
-//                 </select>
-//               </div>
-
-//               <div>
-//                 <label className="block text-sm text-gray-600 font-medium mb-1.5">
-//                   Mode
-//                 </label>
-//                 <select
-//                   value={ownerFilters.mode}
-//                   onChange={(e) =>
-//                     handleOwnerFilterChange("mode", e.target.value)
-//                   }
-//                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-//                 >
-//                   <option>All</option>
-//                   <option>Bank</option>
-//                   <option>UPI</option>
-//                   <option>Cash</option>
-//                   <option>NEFT</option>
-//                   <option>Card</option>
-//                 </select>
-//               </div>
-
-//               <div>
-//                 <label className="block text-sm text-gray-600 font-medium mb-1.5">
-//                   Doctor/Advocate/Expert
-//                 </label>
-//                 <input
-//                   type="text"
-//                   placeholder="Search name"
-//                   value={ownerFilters.searchName}
-//                   onChange={(e) =>
-//                     handleOwnerFilterChange("searchName", e.target.value)
-//                   }
-//                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-//                 />
-//               </div>
-//             </div>
-
-//             <div className="flex gap-4 mt-6">
-//               <button
-//                 onClick={() => updateReportData("owner-snapshot")}
-//                 className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium shadow-sm transition-all"
-//               >
-//                 Apply
-//               </button>
-//               <button
-//                 onClick={handleResetOwner}
-//                 className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium border border-gray-300 transition-all"
-//               >
-//                 Reset
-//               </button>
-//             </div>
-//           </div>
-
-//           {/* Summary Cards */}
-//           {reportData?.summary && (
-//             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-//               <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-//                 <div className="flex items-center justify-between mb-3">
-//                   <span className="text-sm font-medium text-gray-600">
-//                     Doctor Inflows
-//                   </span>
-//                   <TrendingUp size={20} className="text-green-600" />
-//                 </div>
-//                 <div className="text-3xl font-bold text-gray-900">
-//                   {formatCurrency(reportData.summary.fromDoctors)}
-//                 </div>
-//               </div>
-
-//               <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-//                 <div className="flex items-center justify-between mb-3">
-//                   <span className="text-sm font-medium text-gray-600">
-//                     Advocate Payouts
-//                   </span>
-//                   <TrendingDown size={20} className="text-red-600" />
-//                 </div>
-//                 <div className="text-3xl font-bold text-gray-900">
-//                   {formatCurrency(reportData.summary.toAdvocates)}
-//                 </div>
-//               </div>
-
-//               <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-//                 <div className="flex items-center justify-between mb-3">
-//                   <span className="text-sm font-medium text-gray-600">
-//                     Expert Payouts
-//                   </span>
-//                   <TrendingDown size={20} className="text-red-600" />
-//                 </div>
-//                 <div className="text-3xl font-bold text-gray-900">
-//                   {formatCurrency(reportData.summary.toExperts)}
-//                 </div>
-//               </div>
-
-//               <div
-//                 className={`rounded-xl shadow border p-6 hover:shadow-md transition-shadow ${
-//                   isPositive(reportData.summary.net)
-//                     ? "bg-green-50 border-green-200"
-//                     : "bg-red-50 border-red-200"
-//                 }`}
-//               >
-//                 <div className="flex items-center justify-between mb-3">
-//                   <span className="text-sm font-medium text-gray-700">
-//                     Net (Doctors – Payouts)
-//                   </span>
-//                   <ArrowRightLeft
-//                     size={20}
-//                     className={
-//                       isPositive(reportData.summary.net)
-//                         ? "text-green-600"
-//                         : "text-red-600"
-//                     }
-//                   />
-//                 </div>
-//                 <div
-//                   className={`text-3xl font-extrabold ${
-//                     isPositive(reportData.summary.net)
-//                       ? "text-green-700"
-//                       : "text-red-700"
-//                   }`}
-//                 >
-//                   {isPositive(reportData.summary.net) ? "+" : "-"}
-//                   {formatCurrency(reportData.summary.net)}
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Side-by-side Tables */}
-//           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//             {/* Doctor Inflows */}
-//             <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden flex flex-col">
-//               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-//                 <h3 className="text-lg font-semibold text-gray-900">
-//                   Doctor Inflows{" "}
-//                   <span className="text-sm font-normal text-gray-500 ml-2">
-//                     ({reportData?.doctorInflows?.length || 0})
-//                   </span>
-//                 </h3>
-//               </div>
-//               <div className="overflow-auto flex-1">
-//                 <table className="w-full min-w-[480px] border-collapse">
-//                   <thead>
-//                     <tr className="bg-[#ddfff5] border-b border-gray-300">
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Date
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Doctor
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Reason
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Mode
-//                       </th>
-//                       <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Amount
-//                       </th>
-//                     </tr>
-//                   </thead>
-//                   <tbody className="divide-y divide-gray-100">
-//                     {reportData?.doctorInflows?.map((item, index) => (
-//                       <tr
-//                         key={index}
-//                         className="hover:bg-gray-50 transition-colors"
-//                       >
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {formatDate(item.date)}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-//                           {item.doctor}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {item.reason}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {item.mode}
-//                         </td>
-//                         <td className="px-6 py-4 text-right font-medium text-green-600">
-//                           +{formatCurrency(item.amount)}
-//                         </td>
-//                       </tr>
-//                     ))}
-//                     {(!reportData?.doctorInflows ||
-//                       reportData.doctorInflows.length === 0) && (
-//                       <tr>
-//                         <td
-//                           colSpan="5"
-//                           className="px-6 py-16 text-center text-gray-500 italic"
-//                         >
-//                           No inflows found in selected period
-//                         </td>
-//                       </tr>
-//                     )}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             </div>
-
-//             {/* Payouts */}
-//             <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden flex flex-col">
-//               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-//                 <h3 className="text-lg font-semibold text-gray-900">
-//                   Payouts{" "}
-//                   <span className="text-sm font-normal text-gray-500 ml-2">
-//                     (Adv: {reportData?.payouts?.advocates?.length || 0} | Exp:{" "}
-//                     {reportData?.payouts?.experts?.length || 0})
-//                   </span>
-//                 </h3>
-//               </div>
-//               <div className="overflow-auto flex-1">
-//                 <table className="w-full min-w-[480px] border-collapse">
-//                   <thead>
-//                     <tr className="bg-[#ddfff5] border-b border-gray-300">
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Date
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Person
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Role
-//                       </th>
-//                       <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Mode
-//                       </th>
-//                       <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-//                         Amount
-//                       </th>
-//                     </tr>
-//                   </thead>
-//                   <tbody className="divide-y divide-gray-100">
-//                     {reportData?.payouts?.advocates?.map((item, index) => (
-//                       <tr
-//                         key={`adv-${index}`}
-//                         className="hover:bg-gray-50 transition-colors"
-//                       >
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {formatDate(item.date)}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-//                           {item.person}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {item.role}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {item.mode}
-//                         </td>
-//                         <td className="px-6 py-4 text-right font-medium text-red-600">
-//                           -{formatCurrency(item.amount)}
-//                         </td>
-//                       </tr>
-//                     ))}
-//                     {reportData?.payouts?.experts?.map((item, index) => (
-//                       <tr
-//                         key={`exp-${index}`}
-//                         className="hover:bg-gray-50 transition-colors"
-//                       >
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {formatDate(item.date)}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-//                           {item.person}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {item.role}
-//                         </td>
-//                         <td className="px-6 py-4 text-sm text-gray-700">
-//                           {item.mode}
-//                         </td>
-//                         <td className="px-6 py-4 text-right font-medium text-red-600">
-//                           -{formatCurrency(item.amount)}
-//                         </td>
-//                       </tr>
-//                     ))}
-//                     {!reportData?.payouts?.advocates?.length &&
-//                       !reportData?.payouts?.experts?.length && (
-//                         <tr>
-//                           <td
-//                             colSpan="5"
-//                             className="px-6 py-16 text-center text-gray-500 italic"
-//                           >
-//                             No payouts found in selected period
-//                           </td>
-//                         </tr>
-//                       )}
-//                   </tbody>
-//                 </table>
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* All Items */}
-//           <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-//             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-//               <h3 className="text-lg font-semibold text-gray-900">
-//                 All Items (Filtered){" "}
-//                 <span className="text-sm font-normal text-gray-500 ml-2">
-//                   ({reportData?.allItems?.length || 0} items)
-//                 </span>
-//               </h3>
-//             </div>
-//             <div className="overflow-x-auto">
-//               <table className="w-full min-w-[900px] border-collapse">
-//                 <thead>
-//                   <tr className="bg-[#ddfff5] border-b border-gray-300">
-//                     <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                       Date
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                       Type
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                       Name
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                       Details
-//                     </th>
-//                     <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-//                       Mode
-//                     </th>
-//                     <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-//                       Amount
-//                     </th>
-//                   </tr>
-//                 </thead>
-//                 <tbody className="divide-y divide-gray-100">
-//                   {reportData?.allItems?.map((item, index) => (
-//                     <tr
-//                       key={index}
-//                       className="hover:bg-gray-50 transition-colors"
-//                     >
-//                       <td className="px-6 py-4 text-sm text-gray-700">
-//                         {formatDate(item.date)}
-//                       </td>
-//                       <td className="px-6 py-4 text-sm text-gray-700">
-//                         {item.type}
-//                       </td>
-//                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-//                         {item.name}
-//                       </td>
-//                       <td className="px-6 py-4 text-sm text-gray-700">
-//                         {item.details}
-//                       </td>
-//                       <td className="px-6 py-4 text-sm text-gray-700">
-//                         {item.mode}
-//                       </td>
-//                       <td
-//                         className={`px-6 py-4 text-right font-medium ${
-//                           item.amount >= 0 ? "text-green-600" : "text-red-600"
-//                         }`}
-//                       >
-//                         {item.amount >= 0 ? "+" : ""}
-//                         {formatCurrency(item.amount)}
-//                       </td>
-//                     </tr>
-//                   ))}
-//                   {(!reportData?.allItems ||
-//                     reportData.allItems.length === 0) && (
-//                     <tr>
-//                       <td
-//                         colSpan="6"
-//                         className="px-6 py-16 text-center text-gray-500 italic"
-//                       >
-//                         No transactions match the selected filters
-//                       </td>
-//                     </tr>
-//                   )}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </div>
-//         </div>
-//       ) : (
-//         <div>
-//           <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
-//             <p className="text-center text-gray-500 py-10">
-//               Finance Dashboard view (placeholder)
-//             </p>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-// src/pages/Admin/Report/MasterReportPage.jsx
-
-
-
-import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-import {
-  Calendar,
-  Download,
-  Printer,
-  TrendingUp,
-  TrendingDown,
-  ArrowRightLeft,
-} from "lucide-react";
-
-const dummyDoctorInflows = [
-  {
-    date: "2025-09-01",
-    doctor: "Dr. Amit Sharma",
-    reason: "Membership Renewal",
-    mode: "Bank",
-    amount: 15000,
-  },
-  {
-    date: "2025-09-02",
-    doctor: "Dr. Nisha Rao",
-    reason: "Policy Premium (Rapid)",
-    mode: "UPI",
-    amount: 12000,
-  },
-  {
-    date: "2025-09-05",
-    doctor: "Dr. Kavita Joshi",
-    reason: "Case Fees",
-    mode: "NEFT",
-    amount: 18000,
-  },
-  {
-    date: "2025-09-10",
-    doctor: "Dr. Rahul Verma",
-    reason: "Membership New",
-    mode: "Cash",
-    amount: 14000,
-  },
-  {
-    date: "2025-09-14",
-    doctor: "Dr. Priya Mehta",
-    reason: "Policy Premium (Care)",
-    mode: "Bank",
-    amount: 16000,
-  },
-  {
-    date: "2025-09-19",
-    doctor: "Dr. Sameer Patil",
-    reason: "Case Fees",
-    mode: "UPI",
-    amount: 11000,
-  },
-  {
-    date: "2025-09-27",
-    doctor: "Dr. Kavita Joshi",
-    reason: "Add-on cover",
-    mode: "UPI",
-    amount: 6000,
-  },
-  {
-    date: "2025-09-29",
-    doctor: "Dr. Nisha Rao",
-    reason: "Case Fees",
-    mode: "Bank",
-    amount: 9000,
-  },
-];
-
-const dummyAdvocatePayouts = [
-  {
-    date: "2025-09-07",
-    person: "Adv. Priya Sharma",
-    role: "Advocate",
-    mode: "Bank",
-    amount: 10000,
-    details: "Case 21A drafting",
-  },
-  {
-    date: "2025-09-12",
-    person: "Adv. Sameer Patel",
-    role: "Advocate",
-    mode: "NEFT",
-    amount: 7000,
-    details: "Hearing appearance",
-  },
-  {
-    date: "2025-09-22",
-    person: "Adv. Rahul Verma",
-    role: "Advocate",
-    mode: "Bank",
-    amount: 9000,
-    details: "Final summary prep",
-  },
-];
-
-const dummyExpertPayouts = [
-  {
-    date: "2025-09-08",
-    person: "Dr. V. Kulkarni",
-    role: "Expert",
-    mode: "UPI",
-    amount: 8000,
-    details: "Ortho opinion",
-  },
-  {
-    date: "2025-09-17",
-    person: "Dr. A. Deshpande",
-    role: "Expert",
-    mode: "Bank",
-    amount: 9500,
-    details: "Neuro affidavit",
-  },
-  {
-    date: "2025-09-24",
-    person: "Dr. M. Shah",
-    role: "Expert",
-    mode: "NEFT",
-    amount: 12000,
-    details: "Forensic review",
-  },
-];
-
-const dummyFinanceTransactions = [
-  {
-    date: "2025-09-01",
-    category: "Revenue",
-    companyVendor: "Memberships",
-    details: "New/renewals (day 1)",
-    mode: "Bank",
-    amount: 120000,
-  },
-  {
-    date: "2025-09-01",
-    category: "Salary",
-    companyVendor: "Payroll",
-    details: "Telecallers",
-    mode: "Bank",
-    amount: -90000,
-  },
-  {
-    date: "2025-09-01",
-    category: "Salary",
-    companyVendor: "Payroll",
-    details: "Sales Team",
-    mode: "Bank",
-    amount: -140000,
-  },
-  {
-    date: "2025-09-01",
-    category: "Salary",
-    companyVendor: "Payroll",
-    details: "Admin & Ops",
-    mode: "Bank",
-    amount: -80000,
-  },
-  {
-    date: "2025-09-03",
-    category: "Insurance Payment",
-    companyVendor: "ICICI Lombard",
-    details: "Doctor PI bulk",
-    mode: "NEFT",
-    amount: -150000,
-  },
-  {
-    date: "2025-09-04",
-    category: "Marketing",
-    companyVendor: "Facebook Ads",
-    details: "Lead gen",
-    mode: "Card",
-    amount: -30000,
-  },
-  {
-    date: "2025-09-05",
-    category: "Revenue",
-    companyVendor: "Case Services",
-    details: "Advisory fees",
-    mode: "UPI",
-    amount: 45000,
-  },
-  {
-    date: "2025-09-06",
-    category: "Office Expense",
-    companyVendor: "Rent",
-    details: "September rent",
-    mode: "Bank",
-    amount: -60000,
-  },
-  {
-    date: "2025-09-08",
-    category: "Insurance Payment",
-    companyVendor: "CareShield Insurance",
-    details: "Hospital E&O",
-    mode: "Bank",
-    amount: -70000,
-  },
-  {
-    date: "2025-09-10",
-    category: "Office Expense",
-    companyVendor: "Utilities",
-    details: "Power + Internet",
-    mode: "UPI",
-    amount: -12000,
-  },
-  {
-    date: "2025-09-12",
-    category: "Revenue",
-    companyVendor: "Memberships",
-    details: "Batch renewal",
-    mode: "NEFT",
-    amount: 90000,
-  },
-  {
-    date: "2025-09-14",
-    category: "Commission",
-    companyVendor: "Channel Partner",
-    details: "Policy referrals",
-    mode: "NEFT",
-    amount: -25000,
-  },
-  {
-    date: "2025-09-18",
-    category: "Marketing",
-    companyVendor: "Google Ads",
-    details: "Search",
-    mode: "Card",
-    amount: -22000,
-  },
-  {
-    date: "2025-09-20",
-    category: "Revenue",
-    companyVendor: "Workshops",
-    details: "Medico-legal training",
-    mode: "Bank",
-    amount: 25000,
-  },
-  {
-    date: "2025-09-22",
-    category: "Insurance Payment",
-    companyVendor: "ICICI Lombard",
-    details: "Top-up covers",
-    mode: "Bank",
-    amount: -50000,
-  },
-  {
-    date: "2025-09-25",
-    category: "Refund",
-    companyVendor: "Dr. X",
-    details: "Membership refund",
-    mode: "Bank",
-    amount: -8000,
-  },
-];
-
-function computeReportData(tab, filters) {
-  if (tab === "owner-snapshot") {
-    const filteredInflows = dummyDoctorInflows.filter((item) => {
-      const itemDate = new Date(item.date);
-      const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-      const to = filters.dateTo ? new Date(filters.dateTo) : null;
-      const dateOk = (!from || itemDate >= from) && (!to || itemDate <= to);
-      const modeOk = filters.mode === "All" || item.mode === filters.mode;
-      const nameOk =
-        !filters.searchName ||
-        item.doctor.toLowerCase().includes(filters.searchName.toLowerCase());
-      let typeOk = true;
-      if (filters.paymentType !== "All") {
-        if (filters.paymentType === "Member")
-          typeOk = item.reason.includes("Membership");
-        else if (filters.paymentType === "Policy Payment")
-          typeOk =
-            item.reason.includes("Policy") || item.reason === "Add-on cover";
-        else if (filters.paymentType === "Case Fees")
-          typeOk = item.reason === "Case Fees";
-      }
-      return dateOk && modeOk && nameOk && typeOk;
-    });
-
-    const filterPayouts = (items) =>
-      items.filter((item) => {
-        const itemDate = new Date(item.date);
-        const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-        const to = filters.dateTo ? new Date(filters.dateTo) : null;
-        const dateOk = (!from || itemDate >= from) && (!to || itemDate <= to);
-        const modeOk = filters.mode === "All" || item.mode === filters.mode;
-        const nameOk =
-          !filters.searchName ||
-          item.person.toLowerCase().includes(filters.searchName.toLowerCase());
-        return dateOk && modeOk && nameOk;
-      });
-
-    const filteredAdv = filterPayouts(dummyAdvocatePayouts);
-    const filteredExp = filterPayouts(dummyExpertPayouts);
-
-    const allItems = [
-      ...filteredInflows.map((i) => ({
-        date: i.date,
-        type: "Doctor Inflow",
-        name: i.doctor,
-        details: i.reason,
-        mode: i.mode,
-        amount: i.amount,
-      })),
-      ...filteredAdv.map((a) => ({
-        date: a.date,
-        type: "Advocate Payout",
-        name: a.person,
-        details: a.details,
-        mode: a.mode,
-        amount: -a.amount,
-      })),
-      ...filteredExp.map((e) => ({
-        date: e.date,
-        type: "Expert Payout",
-        name: e.person,
-        details: e.details,
-        mode: e.mode,
-        amount: -e.amount,
-      })),
-    ].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    const sum = (arr, key) => arr.reduce((s, i) => s + (i[key] || 0), 0);
-
-    const summary = {
-      fromDoctors: sum(filteredInflows, "amount"),
-      toAdvocates: sum(filteredAdv, "amount"),
-      toExperts: sum(filteredExp, "amount"),
-      net:
-        sum(filteredInflows, "amount") -
-        sum(filteredAdv, "amount") -
-        sum(filteredExp, "amount"),
-    };
-
-    return {
-      summary,
-      doctorInflows: filteredInflows,
-      payouts: { advocates: filteredAdv, experts: filteredExp },
-      allItems,
-    };
-  } else if (tab === "finance-dashboard") {
-    const filtered = dummyFinanceTransactions.filter((t) => {
-      const itemDate = new Date(t.date);
-      const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-      const to = filters.dateTo ? new Date(filters.dateTo) : null;
-      const dateOk = (!from || itemDate >= from) && (!to || itemDate <= to);
-      const catOk =
-        filters.category === "All" || t.category === filters.category;
-      const vendorOk =
-        !filters.companyVendor ||
-        t.companyVendor
-          .toLowerCase()
-          .includes(filters.companyVendor.toLowerCase());
-      const modeOk =
-        filters.paymentMode === "All" || t.mode === filters.paymentMode;
-      return dateOk && catOk && vendorOk && modeOk;
-    });
-
-    const summary = {
-      revenue: filtered.reduce((s, t) => s + (t.amount > 0 ? t.amount : 0), 0),
-      totalExpenses: filtered.reduce(
-        (s, t) => s + (t.amount < 0 ? -t.amount : 0),
-        0,
-      ),
-      insurancePaid: filtered.reduce(
-        (s, t) =>
-          s +
-          (t.category === "Insurance Payment" && t.amount < 0 ? -t.amount : 0),
-        0,
-      ),
-      net: filtered.reduce((s, t) => s + t.amount, 0),
-    };
-
-    const quickSnapshot = {
-      salaries: filtered.reduce(
-        (s, t) => s + (t.category === "Salary" ? -t.amount : 0),
-        0,
-      ),
-      otherExpenses: filtered.reduce(
-        (s, t) =>
-          s +
-          (t.category === "Office Expense" ||
-          t.category === "Marketing" ||
-          t.category === "Refund"
-            ? -t.amount
-            : 0),
-        0,
-      ),
-      commissions: filtered.reduce(
-        (s, t) => s + (t.category === "Commission" ? -t.amount : 0),
-        0,
-      ),
-    };
-
-    const insMap = {};
-    filtered.forEach((t) => {
-      if (t.category === "Insurance Payment" && t.amount < 0) {
-        insMap[t.companyVendor] = (insMap[t.companyVendor] || 0) + -t.amount;
-      }
-    });
-    const insuranceByCompany = Object.entries(insMap).map(
-      ([company, amount]) => ({ company, amount }),
-    );
-
-    const salMap = {};
-    filtered.forEach((t) => {
-      if (t.category === "Salary") {
-        const role = t.details;
-        salMap[role] = (salMap[role] || 0) + -t.amount;
-      }
-    });
-    const salaryByRole = Object.entries(salMap).map(([role, amount]) => ({
-      role,
-      amount,
-    }));
-
-    const dailyMap = {};
-    filtered.forEach((t) => {
-      dailyMap[t.date] = (dailyMap[t.date] || 0) + t.amount;
-    });
-
-    return {
-      summary,
-      quickSnapshot,
-      insuranceByCompany,
-      salaryByRole,
-      transactions: filtered.sort(
-        (a, b) => new Date(a.date) - new Date(b.date),
-      ),
-      dailyCashflow: dailyMap,
-    };
-  }
-}
+// src/pages/superadmin/Report/MasterReportPage.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-toastify';
+import apiClient, { apiEndpoints } from '../../../services/apiClient';
+import { Calendar, Download, Printer } from 'lucide-react';
+import ReactApexCharts from 'react-apexcharts';
+import * as XLSX from 'xlsx';
+import { useReactToPrint } from 'react-to-print';
 
 export default function MasterReportPage() {
-  const [activeTab, setActiveTab] = useState("owner-snapshot");
+  const printRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('owner-snapshot');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
 
+  // Owner Snapshot filters
   const [ownerFilters, setOwnerFilters] = useState({
-    dateFrom: "",
-    dateTo: "",
-    paymentType: "All",
-    mode: "All",
-    searchName: "",
+    dateFrom: '',
+    dateTo: '',
+    paymentType: 'All',
+    mode: 'All',
+    searchName: ''
   });
 
+  // Finance Dashboard filters
   const [financeFilters, setFinanceFilters] = useState({
-    dateFrom: "",
-    dateTo: "",
-    category: "All",
-    companyVendor: "",
-    paymentMode: "All",
+    dateFrom: '',
+    dateTo: '',
+    category: 'All',
+    companyVendor: 'All',
+    paymentMode: 'All'
   });
 
-  const updateReportData = (tab = activeTab) => {
+  // Pagination states for Owner Snapshot tables
+  const [doctorInflowsPage, setDoctorInflowsPage] = useState(1);
+  const [doctorInflowsRows, setDoctorInflowsRows] = useState(10);
+  const [payoutsPage, setPayoutsPage] = useState(1);
+  const [payoutsRows, setPayoutsRows] = useState(10);
+  const [allItemsPage, setAllItemsPage] = useState(1);
+  const [allItemsRows, setAllItemsRows] = useState(10);
+
+  // Pagination states for Finance Dashboard tables
+  const [insurancePage, setInsurancePage] = useState(1);
+  const [insuranceRows, setInsuranceRows] = useState(10);
+  const [salaryPage, setSalaryPage] = useState(1);
+  const [salaryRows, setSalaryRows] = useState(10);
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const [transactionsRows, setTransactionsRows] = useState(10);
+
+  const fetchMasterReport = async (tab = activeTab) => {
     setLoading(true);
     try {
-      const filters = tab === "owner-snapshot" ? ownerFilters : financeFilters;
-      const data = computeReportData(tab, filters);
-      setReportData(data);
+      const params = { tab };
+
+      if (tab === 'owner-snapshot') {
+        if (ownerFilters.dateFrom) params.dateFrom = ownerFilters.dateFrom;
+        if (ownerFilters.dateTo) params.dateTo = ownerFilters.dateTo;
+        if (ownerFilters.paymentType !== 'All') params.paymentType = ownerFilters.paymentType;
+        if (ownerFilters.mode !== 'All') params.mode = ownerFilters.mode;
+        if (ownerFilters.searchName) params.searchName = ownerFilters.searchName;
+      } else if (tab === 'finance-dashboard') {
+        if (financeFilters.dateFrom) params.dateFrom = financeFilters.dateFrom;
+        if (financeFilters.dateTo) params.dateTo = financeFilters.dateTo;
+        if (financeFilters.category !== 'All') params.category = financeFilters.category;
+        if (financeFilters.companyVendor !== 'All') params.companyVendor = financeFilters.companyVendor;
+        if (financeFilters.paymentMode !== 'All') params.paymentMode = financeFilters.paymentMode;
+      }
+
+      const response = await apiClient.get(apiEndpoints.reports.master, { params });
+      if (response.data.success) {
+        setReportData(response.data.data);
+      } else {
+        toast.error('Failed to fetch master report');
+      }
     } catch (error) {
-      console.error("Error computing report data:", error);
-      toast.error("Failed to compute master report");
+      console.error('Error fetching master report:', error);
+      toast.error('Failed to fetch master report');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    updateReportData();
+    fetchMasterReport();
   }, [activeTab]);
 
   const handleOwnerFilterChange = (field, value) => {
-    setOwnerFilters((prev) => ({ ...prev, [field]: value }));
+    setOwnerFilters(prev => ({ ...prev, [field]: value }));
   };
 
   const handleFinanceFilterChange = (field, value) => {
-    setFinanceFilters((prev) => ({ ...prev, [field]: value }));
+    setFinanceFilters(prev => ({ ...prev, [field]: value }));
   };
 
   const handleResetOwner = () => {
     setOwnerFilters({
-      dateFrom: "",
-      dateTo: "",
-      paymentType: "All",
-      mode: "All",
-      searchName: "",
+      dateFrom: '',
+      dateTo: '',
+      paymentType: 'All',
+      mode: 'All',
+      searchName: ''
     });
   };
 
   const handleResetFinance = () => {
     setFinanceFilters({
-      dateFrom: "",
-      dateTo: "",
-      category: "All",
-      companyVendor: "",
-      paymentMode: "All",
+      dateFrom: '',
+      dateTo: '',
+      category: 'All',
+      companyVendor: 'All',
+      paymentMode: 'All'
     });
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(Math.abs(amount || 0));
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount || 0);
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-GB");
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB');
   };
 
-  const isPositive = (value) => (value || 0) >= 0;
+  // ============ Excel Export Function ============
+  const handleExportToExcel = () => {
+    if (!reportData) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+    if (activeTab === 'owner-snapshot') {
+      // Sheet 1: Summary
+      if (reportData.summary) {
+        const summaryData = [
+          ['Owner Snapshot Summary'],
+          ['From Doctors (Inflow)', formatCurrency(reportData.summary.fromDoctors)],
+          ['To Advocates (Payout)', formatCurrency(reportData.summary.toAdvocates)],
+          ['To Experts (Payout)', formatCurrency(reportData.summary.toExperts)],
+          ['Net (Doctors - Payouts)', formatCurrency(reportData.summary.net)],
+          [],
+          ['Filters Applied:'],
+          ['Date From', ownerFilters.dateFrom || 'All'],
+          ['Date To', ownerFilters.dateTo || 'All'],
+          ['Payment Type', ownerFilters.paymentType],
+          ['Mode', ownerFilters.mode],
+          ['Search Name', ownerFilters.searchName || 'All']
+        ];
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+      }
+
+      // Sheet 2: Doctor Inflows (Only visible/paginated data)
+      if (reportData.doctorInflows && reportData.doctorInflows.length > 0) {
+        const visibleInflows = reportData.doctorInflows.slice(
+          (doctorInflowsPage - 1) * doctorInflowsRows,
+          doctorInflowsPage * doctorInflowsRows
+        );
+        const inflowsData = [
+          ['Doctor Inflows'],
+          ['Date', 'Doctor', 'Reason', 'Mode', 'Amount']
+        ];
+        visibleInflows.forEach(item => {
+          inflowsData.push([
+            formatDate(item.date),
+            item.doctor,
+            item.reason,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const inflowsWs = XLSX.utils.aoa_to_sheet(inflowsData);
+        XLSX.utils.book_append_sheet(wb, inflowsWs, 'Doctor Inflows');
+      }
+
+      // Sheet 3: Payouts (Only visible/paginated data)
+      if (reportData.payouts) {
+        const allPayouts = [
+          ...(reportData.payouts.advocates || []),
+          ...(reportData.payouts.experts || []),
+          ...(reportData.payouts.insurance || [])
+        ];
+        const visiblePayouts = allPayouts.slice(
+          (payoutsPage - 1) * payoutsRows,
+          payoutsPage * payoutsRows
+        );
+        const payoutsData = [
+          ['Payouts - Advocates, Experts & Insurance'],
+          ['Date', 'Person/Company', 'Role', 'Mode', 'Amount']
+        ];
+        visiblePayouts.forEach(item => {
+          payoutsData.push([
+            formatDate(item.date),
+            item.person,
+            item.role,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const payoutsWs = XLSX.utils.aoa_to_sheet(payoutsData);
+        XLSX.utils.book_append_sheet(wb, payoutsWs, 'Payouts');
+      }
+
+      // Sheet 4: All Items (Only visible/paginated data)
+      if (reportData.allItems && reportData.allItems.length > 0) {
+        const visibleAllItems = reportData.allItems.slice(
+          (allItemsPage - 1) * allItemsRows,
+          allItemsPage * allItemsRows
+        );
+        const allItemsData = [
+          ['All Items (Combined)'],
+          ['Date', 'Type', 'Name', 'Details', 'Mode', 'Amount']
+        ];
+        visibleAllItems.forEach(item => {
+          allItemsData.push([
+            formatDate(item.date),
+            item.type,
+            item.name,
+            item.details,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const allItemsWs = XLSX.utils.aoa_to_sheet(allItemsData);
+        XLSX.utils.book_append_sheet(wb, allItemsWs, 'All Items');
+      }
+    } else if (activeTab === 'finance-dashboard') {
+      // Sheet 1: Summary
+      if (reportData.summary) {
+        const summaryData = [
+          ['Finance Dashboard Summary'],
+          ['Total Revenue', formatCurrency(reportData.summary.revenue)],
+          ['Total Expenses', formatCurrency(reportData.summary.totalExpenses)],
+          ['Insurance Paid (Company)', formatCurrency(reportData.summary.insurancePaid)],
+          ['Net (Revenue - Expenses)', formatCurrency(reportData.summary.net)],
+          [],
+          ['Filters Applied:'],
+          ['Date From', financeFilters.dateFrom || 'All'],
+          ['Date To', financeFilters.dateTo || 'All'],
+          ['Category', financeFilters.category],
+          ['Company/Vendor', financeFilters.companyVendor || 'All'],
+          ['Payment Mode', financeFilters.paymentMode]
+        ];
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+      }
+
+      // Sheet 2: Insurance by Company (Only visible/paginated data)
+      if (reportData.insuranceByCompany && reportData.insuranceByCompany.length > 0) {
+        const visibleInsurance = reportData.insuranceByCompany.slice(
+          (insurancePage - 1) * insuranceRows,
+          insurancePage * insuranceRows
+        );
+        const insuranceData = [
+          ['Insurance by Company'],
+          ['Company', 'Amount Paid']
+        ];
+        visibleInsurance.forEach(item => {
+          insuranceData.push([item.company, item.amount]);
+        });
+        const insuranceWs = XLSX.utils.aoa_to_sheet(insuranceData);
+        XLSX.utils.book_append_sheet(wb, insuranceWs, 'Insurance by Company');
+      }
+
+      // Sheet 3: Salary by Role (Only visible/paginated data)
+      if (reportData.salaryByRole && reportData.salaryByRole.length > 0) {
+        const visibleSalary = reportData.salaryByRole.slice(
+          (salaryPage - 1) * salaryRows,
+          salaryPage * salaryRows
+        );
+        const salaryData = [
+          ['Salary by Role'],
+          ['Role', 'Total Salary']
+        ];
+        visibleSalary.forEach(item => {
+          salaryData.push([item.role, item.amount]);
+        });
+        const salaryWs = XLSX.utils.aoa_to_sheet(salaryData);
+        XLSX.utils.book_append_sheet(wb, salaryWs, 'Salary by Role');
+      }
+
+      // Sheet 4: Transactions (Only visible/paginated data)
+      if (reportData.transactions && reportData.transactions.length > 0) {
+        const visibleTransactions = reportData.transactions.slice(
+          (transactionsPage - 1) * transactionsRows,
+          transactionsPage * transactionsRows
+        );
+        const transactionsData = [
+          ['All Transactions'],
+          ['Date', 'Category', 'Company/Vendor', 'Details', 'Mode', 'Amount']
+        ];
+        visibleTransactions.forEach(item => {
+          transactionsData.push([
+            formatDate(item.date),
+            item.category,
+            item.companyVendor,
+            item.details,
+            item.mode,
+            item.amount
+          ]);
+        });
+        const transactionsWs = XLSX.utils.aoa_to_sheet(transactionsData);
+        XLSX.utils.book_append_sheet(wb, transactionsWs, 'Transactions');
+      }
+    }
+
+    // Generate filename with tab name and timestamp
+    const filename = `MasterReport_${activeTab}_${timestamp}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    toast.success('Report exported to Excel successfully!');
+  };
+
+  // ============ Print Function ============
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `MasterReport_${activeTab}_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}`,
+    onAfterPrint: () => toast.success('Print dialog opened successfully!')
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div ref={printRef} className="min-h-screen p-6 bg-gray-50 w-[79vw]">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Master Reports</h1>
-            <p className="text-gray-600 mt-1">
-              Combined view — Doctor inflows, payouts (Advocates & Experts), and
-              Finance (budgets & payments)
+            <h1 className="text-2xl font-bold text-gray-900">Master Reports</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Combined view - Doctor inflows, payouts (Advocates & Experts), and Finance (budgets & payments)
             </p>
           </div>
-          <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium shadow transition-all">
-              <Download size={16} /> Export Excel
+          <div className="flex gap-2">
+            <button 
+              onClick={handleExportToExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export to Excel
             </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-sm font-medium shadow transition-all">
-              <Printer size={16} /> Print
-            </button>
+            {/* <button 
+              onClick={handlePrint}
+              className="px-4 py-2 bg-gray-600 text-white rounded text-sm font-medium hover:bg-gray-700 flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </button> */}
           </div>
         </div>
 
-        <div className="flex border-b border-gray-200">
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-gray-300">
           <button
             onClick={() => {
-              setActiveTab("owner-snapshot");
-              updateReportData("owner-snapshot");
+              setActiveTab('owner-snapshot');
+              fetchMasterReport('owner-snapshot');
             }}
-            className={`px-8 py-3.5 font-medium transition-all ${
-              activeTab === "owner-snapshot"
-                ? "border-b-2 border-teal-600 text-teal-700 font-semibold bg-teal-50/30"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            className={`px-6 py-3 font-medium text-sm ${
+              activeTab === 'owner-snapshot'
+                ? 'bg-[#398C89] text-white border-b-2 border-[#398C89]'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Owner Snapshot
           </button>
           <button
             onClick={() => {
-              setActiveTab("finance-dashboard");
-              updateReportData("finance-dashboard");
+              setActiveTab('finance-dashboard');
+              fetchMasterReport('finance-dashboard');
             }}
-            className={`px-8 py-3.5 font-medium transition-all ${
-              activeTab === "finance-dashboard"
-                ? "border-b-2 border-teal-600 text-teal-700 font-semibold bg-teal-50/30"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            className={`px-6 py-3 font-medium text-sm ${
+              activeTab === 'finance-dashboard'
+                ? 'bg-[#398C89] text-white border-b-2 border-[#398C89]'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Finance Dashboard
@@ -2244,910 +385,843 @@ export default function MasterReportPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-32">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-          <span className="ml-5 text-gray-700 font-medium text-lg">
-            Loading report data...
-          </span>
-        </div>
-      ) : activeTab === "owner-snapshot" ? (
-        <div className="space-y-8">
-          {/* Filters */}
-          <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  From
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={ownerFilters.dateFrom}
-                    onChange={(e) =>
-                      handleOwnerFilterChange("dateFrom", e.target.value)
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  />
-                  {/* <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" /> */}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  To
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={ownerFilters.dateTo}
-                    onChange={(e) =>
-                      handleOwnerFilterChange("dateTo", e.target.value)
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  />
-                  {/* <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" /> */}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  Payment Type
-                </label>
-                <select
-                  value={ownerFilters.paymentType}
-                  onChange={(e) =>
-                    handleOwnerFilterChange("paymentType", e.target.value)
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                >
-                  <option>All</option>
-                  <option>Member</option>
-                  <option>Policy Payment</option>
-                  <option>Case Fees</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  Mode
-                </label>
-                <select
-                  value={ownerFilters.mode}
-                  onChange={(e) =>
-                    handleOwnerFilterChange("mode", e.target.value)
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                >
-                  <option>All</option>
-                  <option>Bank</option>
-                  <option>UPI</option>
-                  <option>Cash</option>
-                  <option>NEFT</option>
-                  <option>Card</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  Doctor/Advocate/Expert
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search name"
-                  value={ownerFilters.searchName}
-                  onChange={(e) =>
-                    handleOwnerFilterChange("searchName", e.target.value)
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => updateReportData("owner-snapshot")}
-                className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium shadow-sm transition-all"
-              >
-                Apply
-              </button>
-              <button
-                onClick={handleResetOwner}
-                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium border border-gray-300 transition-all"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-
-          {/* Summary Cards */}
-          {reportData?.summary && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">
-                    Doctor Inflows
-                  </span>
-                  <TrendingUp size={20} className="text-green-600" />
-                </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(reportData.summary.fromDoctors)}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">
-                    Advocate Payouts
-                  </span>
-                  <TrendingDown size={20} className="text-red-600" />
-                </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(reportData.summary.toAdvocates)}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">
-                    Expert Payouts
-                  </span>
-                  <TrendingDown size={20} className="text-red-600" />
-                </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(reportData.summary.toExperts)}
-                </div>
-              </div>
-
-              <div
-                className={`rounded-xl shadow border p-6 hover:shadow-md transition-shadow ${
-                  isPositive(reportData.summary.net)
-                    ? "bg-green-50 border-green-200"
-                    : "bg-red-50 border-red-200"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">
-                    Net (Doctors – Payouts)
-                  </span>
-                  <ArrowRightLeft
-                    size={20}
-                    className={
-                      isPositive(reportData.summary.net)
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }
-                  />
-                </div>
-                <div
-                  className={`text-3xl font-extrabold ${
-                    isPositive(reportData.summary.net)
-                      ? "text-green-700"
-                      : "text-red-700"
-                  }`}
-                >
-                  {isPositive(reportData.summary.net) ? "+" : "-"}
-                  {formatCurrency(reportData.summary.net)}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Side-by-side Tables */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Doctor Inflows */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden flex flex-col">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Doctor Inflows{" "}
-                  <span className="text-sm font-normal text-gray-500 ml-2">
-                    ({reportData?.doctorInflows?.length || 0})
-                  </span>
-                </h3>
-              </div>
-              <div className="overflow-auto flex-1">
-                <table className="w-full min-w-[480px] border-collapse">
-                  <thead>
-                    <tr className="bg-[#ddfff5] border-b border-gray-300">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Doctor
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Reason
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Mode
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Amount
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {reportData?.doctorInflows?.map((item, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {formatDate(item.date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {item.doctor}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {item.reason}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {item.mode}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-green-600">
-                          +{formatCurrency(item.amount)}
-                        </td>
-                      </tr>
-                    ))}
-                    {(!reportData?.doctorInflows ||
-                      reportData.doctorInflows.length === 0) && (
-                      <tr>
-                        <td
-                          colSpan="5"
-                          className="px-6 py-16 text-center text-gray-500 italic"
-                        >
-                          No inflows found in selected period
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Payouts */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden flex flex-col">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Payouts{" "}
-                  <span className="text-sm font-normal text-gray-500 ml-2">
-                    (Adv: {reportData?.payouts?.advocates?.length || 0} | Exp:{" "}
-                    {reportData?.payouts?.experts?.length || 0})
-                  </span>
-                </h3>
-              </div>
-              <div className="overflow-auto flex-1">
-                <table className="w-full min-w-[480px] border-collapse">
-                  <thead>
-                    <tr className="bg-[#ddfff5] border-b border-gray-300">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Person
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Role
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Mode
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Amount
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {reportData?.payouts?.advocates?.map((item, index) => (
-                      <tr
-                        key={`adv-${index}`}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {formatDate(item.date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {item.person}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {item.role}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {item.mode}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-red-600">
-                          -{formatCurrency(item.amount)}
-                        </td>
-                      </tr>
-                    ))}
-                    {reportData?.payouts?.experts?.map((item, index) => (
-                      <tr
-                        key={`exp-${index}`}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {formatDate(item.date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {item.person}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {item.role}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {item.mode}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-red-600">
-                          -{formatCurrency(item.amount)}
-                        </td>
-                      </tr>
-                    ))}
-                    {!reportData?.payouts?.advocates?.length &&
-                      !reportData?.payouts?.experts?.length && (
-                        <tr>
-                          <td
-                            colSpan="5"
-                            className="px-6 py-16 text-center text-gray-500 italic"
-                          >
-                            No payouts found in selected period
-                          </td>
-                        </tr>
-                      )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* All Items */}
-          <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-900">
-                All Items (Filtered){" "}
-                <span className="text-sm font-normal text-gray-500 ml-2">
-                  ({reportData?.allItems?.length || 0} items)
-                </span>
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] border-collapse">
-                <thead>
-                  <tr className="bg-[#ddfff5] border-b border-gray-300">
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Details
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Mode
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {reportData?.allItems?.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {formatDate(item.date)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {item.type}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {item.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {item.details}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {item.mode}
-                      </td>
-                      <td
-                        className={`px-6 py-4 text-right font-medium ${
-                          item.amount >= 0 ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {item.amount >= 0 ? "+" : ""}
-                        {formatCurrency(item.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                  {(!reportData?.allItems ||
-                    reportData.allItems.length === 0) && (
-                    <tr>
-                      <td
-                        colSpan="6"
-                        className="px-6 py-16 text-center text-gray-500 italic"
-                      >
-                        No transactions match the selected filters
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <div className="flex items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#398C89]"></div>
+          <span className="ml-3 text-gray-600">Loading...</span>
         </div>
       ) : (
-        <div className="space-y-8">
-          {/* Filters */}
-          <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  From
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={financeFilters.dateFrom}
-                    onChange={(e) =>
-                      setFinanceFilters((prev) => ({
-                        ...prev,
-                        dateFrom: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  />
-                  {/* <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" /> */}
+        <>
+          {/* Owner Snapshot Tab */}
+          {activeTab === 'owner-snapshot' && (
+            <div>
+              {/* Filters */}
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div className="grid grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">From</label>
+                    <input
+                      type="date"
+                      value={ownerFilters.dateFrom}
+                      onChange={(e) => handleOwnerFilterChange('dateFrom', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">To</label>
+                    <input
+                      type="date"
+                      value={ownerFilters.dateTo}
+                      onChange={(e) => handleOwnerFilterChange('dateTo', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Payment Type</label>
+                    <select
+                      value={ownerFilters.paymentType}
+                      onChange={(e) => handleOwnerFilterChange('paymentType', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    >
+                      <option>All</option>
+                      <option>Member</option>
+                      <option>Policy Payment</option>
+                      <option>Case Fees</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Mode</label>
+                    <select
+                      value={ownerFilters.mode}
+                      onChange={(e) => handleOwnerFilterChange('mode', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    >
+                      <option>All</option>
+                      <option>Bank</option>
+                      <option>UPI</option>
+                      <option>Cash</option>
+                      <option>NEFT</option>
+                      <option>Card</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Doctor/Advocate/Expert</label>
+                    <input
+                      type="text"
+                      placeholder="Search name"
+                      value={ownerFilters.searchName}
+                      onChange={(e) => handleOwnerFilterChange('searchName', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => fetchMasterReport('owner-snapshot')}
+                    className="px-4 py-2 bg-[#398C89] text-white rounded text-sm font-medium hover:bg-[#2d6f6c]"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={handleResetOwner}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300"
+                  >
+                    Reset
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  To
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={financeFilters.dateTo}
-                    onChange={(e) =>
-                      setFinanceFilters((prev) => ({
-                        ...prev,
-                        dateTo: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  />
-                  {/* <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" /> */}
+              {/* Summary Cards */}
+              {reportData?.summary && (
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="bg-[#E8F5E9] rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">From Doctors (Inflow)</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.fromDoctors)}</div>
+                  </div>
+                  <div className="bg-[#E8F5E9] rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">To Advocates (Payout)</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.toAdvocates)}</div>
+                  </div>
+                  <div className="bg-[#E8F5E9] rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">To Experts (Payout)</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.toExperts)}</div>
+                  </div>
+                  <div className={`rounded-lg p-4 ${reportData.summary.net >= 0 ? 'bg-[#E8F5E9]' : 'bg-[#FFEBEE]'}`}>
+                    <div className="text-sm text-gray-600 mb-1">Net (Doctors - Payouts)</div>
+                    <div className={`text-2xl font-bold ${reportData.summary.net >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                      {formatCurrency(reportData.summary.net)}
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* Doctor Inflows Table */}
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Doctor Inflows ({reportData?.doctorInflows?.length || 0})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={doctorInflowsRows}
+                      onChange={(e) => {
+                        setDoctorInflowsRows(Number(e.target.value));
+                        setDoctorInflowsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Doctor</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Reason</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {reportData?.doctorInflows
+                        ?.slice((doctorInflowsPage - 1) * doctorInflowsRows, doctorInflowsPage * doctorInflowsRows)
+                        .map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.doctor}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.reason}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
+                          <td className="px-4 py-2 text-sm text-right font-medium text-green-600">+{formatCurrency(item.amount)}</td>
+                        </tr>
+                      ))}
+                      {(!reportData?.doctorInflows || reportData.doctorInflows.length === 0) && (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No data available</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {reportData?.doctorInflows && reportData.doctorInflows.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((doctorInflowsPage - 1) * doctorInflowsRows + 1, reportData.doctorInflows.length)} to {Math.min(doctorInflowsPage * doctorInflowsRows, reportData.doctorInflows.length)} of {reportData.doctorInflows.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setDoctorInflowsPage(prev => Math.max(1, prev - 1))}
+                        disabled={doctorInflowsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {doctorInflowsPage} of {Math.ceil(reportData.doctorInflows.length / doctorInflowsRows)}
+                      </span>
+                      <button
+                        onClick={() => setDoctorInflowsPage(prev => Math.min(Math.ceil(reportData.doctorInflows.length / doctorInflowsRows), prev + 1))}
+                        disabled={doctorInflowsPage >= Math.ceil(reportData.doctorInflows.length / doctorInflowsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  Category
-                </label>
-                <select
-                  value={financeFilters.category}
-                  onChange={(e) =>
-                    setFinanceFilters((prev) => ({
-                      ...prev,
-                      category: e.target.value,
-                    }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                >
-                  <option>All</option>
-                  <option>Revenue</option>
-                  <option>Salary</option>
-                  <option>Office Expense</option>
-                  <option>Marketing</option>
-                  <option>Insurance Payment</option>
-                  <option>Commission</option>
-                  <option>Refund</option>
-                </select>
+              {/* Payouts Table */}
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Payouts - Advocates, Experts & Insurance (Adv: {reportData?.payouts?.advocates?.length || 0}, Exp: {reportData?.payouts?.experts?.length || 0}, Ins: {reportData?.payouts?.insurance?.length || 0})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={payoutsRows}
+                      onChange={(e) => {
+                        setPayoutsRows(Number(e.target.value));
+                        setPayoutsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Person/Company</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Role</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {[
+                        ...(reportData?.payouts?.advocates || []),
+                        ...(reportData?.payouts?.experts || []),
+                        ...(reportData?.payouts?.insurance || [])
+                      ]
+                        .slice((payoutsPage - 1) * payoutsRows, payoutsPage * payoutsRows)
+                        .map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.person}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
+                          <td className="px-4 py-2 text-sm text-right font-medium text-red-600">-{formatCurrency(item.amount)}</td>
+                        </tr>
+                      ))}
+                      {(!reportData?.payouts?.advocates?.length && !reportData?.payouts?.experts?.length && !reportData?.payouts?.insurance?.length) && (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No data available</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {reportData?.payouts && (reportData.payouts.advocates?.length || reportData.payouts.experts?.length || reportData.payouts.insurance?.length) > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((payoutsPage - 1) * payoutsRows + 1, (reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0))} to {Math.min(payoutsPage * payoutsRows, (reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0))} of {(reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setPayoutsPage(prev => Math.max(1, prev - 1))}
+                        disabled={payoutsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {payoutsPage} of {Math.ceil(((reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)) / payoutsRows)}
+                      </span>
+                      <button
+                        onClick={() => setPayoutsPage(prev => Math.min(Math.ceil(((reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)) / payoutsRows), prev + 1))}
+                        disabled={payoutsPage >= Math.ceil(((reportData.payouts.advocates?.length || 0) + (reportData.payouts.experts?.length || 0) + (reportData.payouts.insurance?.length || 0)) / payoutsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  Company/Vendor
-                </label>
-                <input
-                  type="text"
-                  placeholder="ICICI, Rent, ..."
-                  value={financeFilters.companyVendor}
-                  onChange={(e) =>
-                    setFinanceFilters((prev) => ({
-                      ...prev,
-                      companyVendor: e.target.value,
-                    }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 font-medium mb-1.5">
-                  Payment Mode
-                </label>
-                <select
-                  value={financeFilters.paymentMode}
-                  onChange={(e) =>
-                    setFinanceFilters((prev) => ({
-                      ...prev,
-                      paymentMode: e.target.value,
-                    }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                >
-                  <option>All</option>
-                  <option>Bank</option>
-                  <option>UPI</option>
-                  <option>Cash</option>
-                  <option>NEFT</option>
-                  <option>Card</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={() => updateReportData("finance-dashboard")}
-                className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium shadow-sm transition-all"
-              >
-                Apply
-              </button>
-              <button
-                onClick={handleResetFinance}
-                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium border border-gray-300 transition-all"
-              >
-                Reset
-              </button>
-              {/* <button
-                onClick={() => toast.info("Exported CSV")}
-                className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium shadow-sm transition-all"
-              >
-                Export CSV
-              </button> */}
-            </div>
-          </div>
-
-          {/* Summary Cards */}
-          {reportData?.summary && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">
-                    Revenue
-                  </span>
-                  <TrendingUp size={20} className="text-green-600" />
+              {/* All Items Table */}
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    All Items (Combined) ({reportData?.allItems?.length || 0} items)
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={allItemsRows}
+                      onChange={(e) => {
+                        setAllItemsRows(Number(e.target.value));
+                        setAllItemsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(reportData.summary.revenue)}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Type</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Name</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Details</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {reportData?.allItems
+                        ?.slice((allItemsPage - 1) * allItemsRows, allItemsPage * allItemsRows)
+                        .map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.type}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.name}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.details}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
+                          <td className={`px-4 py-2 text-sm text-right font-medium ${item.isInflow ? 'text-green-600' : 'text-red-600'}`}>
+                            {item.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(item.amount))}
+                          </td>
+                        </tr>
+                      ))}
+                      {(!reportData?.allItems || reportData.allItems.length === 0) && (
+                        <tr>
+                          <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No data available</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">
-                    Total Expenses
-                  </span>
-                  <TrendingDown size={20} className="text-red-600" />
-                </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(reportData.summary.totalExpenses)}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">
-                    Insurance Paid
-                  </span>
-                  <TrendingDown size={20} className="text-red-600" />
-                </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(reportData.summary.insurancePaid)}
-                </div>
-              </div>
-
-              <div
-                className={`rounded-xl shadow border p-6 hover:shadow-md transition-shadow ${
-                  isPositive(reportData.summary.net)
-                    ? "bg-green-50 border-green-200"
-                    : "bg-red-50 border-red-200"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">
-                    Net (Rev - Exp)
-                  </span>
-                  <ArrowRightLeft
-                    size={20}
-                    className={
-                      isPositive(reportData.summary.net)
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }
-                  />
-                </div>
-                <div
-                  className={`text-3xl font-extrabold ${
-                    isPositive(reportData.summary.net)
-                      ? "text-green-700"
-                      : "text-red-700"
-                  }`}
-                >
-                  {isPositive(reportData.summary.net) ? "+" : "-"}
-                  {formatCurrency(reportData.summary.net)}
-                </div>
+                {reportData?.allItems && reportData.allItems.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((allItemsPage - 1) * allItemsRows + 1, reportData.allItems.length)} to {Math.min(allItemsPage * allItemsRows, reportData.allItems.length)} of {reportData.allItems.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setAllItemsPage(prev => Math.max(1, prev - 1))}
+                        disabled={allItemsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {allItemsPage} of {Math.ceil(reportData.allItems.length / allItemsRows)}
+                      </span>
+                      <button
+                        onClick={() => setAllItemsPage(prev => Math.min(Math.ceil(reportData.allItems.length / allItemsRows), prev + 1))}
+                        disabled={allItemsPage >= Math.ceil(reportData.allItems.length / allItemsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Cashflow (Daily) + Quick Snapshot - side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Cashflow (Daily) */}
-            {reportData?.dailyCashflow && (
-              <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Cashflow (Daily)
-                  </h3>
-                  <span className="text-sm text-gray-500">
-                    {financeFilters.dateFrom || "01/09/2025"} →{" "}
-                    {financeFilters.dateTo || "30/09/2025"}
-                  </span>
-                </div>
-                <div className="relative h-48 bg-gray-50 rounded-lg overflow-hidden">
-                  <div className="absolute inset-0 flex items-end justify-around px-4 pb-6 gap-1">
-                    {Object.entries(reportData.dailyCashflow)
-                      .sort((a, b) => new Date(a[0]) - new Date(b[0]))
-                      .map(([date, value], index) => {
-                        const height =
-                          Math.min(Math.abs(value) / 50000, 1) * 100;
-                        const isPositive = value >= 0;
-                        return (
-                          <div
-                            key={date}
-                            className="flex flex-col items-center"
-                            style={{ width: "6%" }}
-                          >
-                            <div
-                              className={`w-full rounded-t ${
-                                isPositive ? "bg-green-500" : "bg-red-500"
-                              }`}
-                              style={{
-                                height: `${height}%`,
-                                minHeight: value === 0 ? "2px" : `${height}%`,
-                              }}
-                            ></div>
-                            <span className="text-xs text-gray-500 mt-1">
-                              {date.split("-")[2]}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Positive = inflow (revenue), Negative = outflow (expenses)
-                </p>
-              </div>
-            )}
-
-            {/* Quick Snapshot */}
-            {reportData?.quickSnapshot && (
-              <div className="bg-white rounded-xl shadow border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Quick Snapshot
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Finance Dashboard Tab */}
+          {activeTab === 'finance-dashboard' && (
+            <div>
+              {/* Filters */}
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div className="grid grid-cols-5 gap-4">
                   <div>
-                    <div className="text-sm font-medium text-gray-600">
-                      Salaries
-                    </div>
-                    <div className="text-xl font-bold text-gray-900 mt-1">
-                      {formatCurrency(reportData.quickSnapshot.salaries)}
-                    </div>
+                    <label className="block text-xs text-gray-600 mb-1">From</label>
+                    <input
+                      type="date"
+                      value={financeFilters.dateFrom}
+                      onChange={(e) => handleFinanceFilterChange('dateFrom', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-600">
-                      Other Expenses
-                    </div>
-                    <div className="text-xl font-bold text-gray-900 mt-1">
-                      {formatCurrency(reportData.quickSnapshot.otherExpenses)}
-                    </div>
+                    <label className="block text-xs text-gray-600 mb-1">To</label>
+                    <input
+                      type="date"
+                      value={financeFilters.dateTo}
+                      onChange={(e) => handleFinanceFilterChange('dateTo', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-600">
-                      Commissions
-                    </div>
-                    <div className="text-xl font-bold text-gray-900 mt-1">
-                      {formatCurrency(reportData.quickSnapshot.commissions)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Insurance Payments by Company + Salary by Role - side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Insurance Payments by Company */}
-            {reportData?.insuranceByCompany?.length > 0 && (
-              <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Insurance Payments by Company
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-[#ddfff5] border-b border-gray-300">
-                        <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                          Company
-                        </th>
-                        <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-                          Amount
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {reportData.insuranceByCompany.map((item, index) => (
-                        <tr
-                          key={index}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-700">
-                            {item.company}
-                          </td>
-                          <td className="px-6 py-4 text-right font-medium text-red-600">
-                            -{formatCurrency(item.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Salary by Role */}
-            {reportData?.salaryByRole?.length > 0 && (
-              <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Salary by Role
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-[#ddfff5] border-b border-gray-300">
-                        <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                          Role
-                        </th>
-                        <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-                          Amount
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {reportData.salaryByRole.map((item, index) => (
-                        <tr
-                          key={index}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 text-sm text-gray-700">
-                            {item.role}
-                          </td>
-                          <td className="px-6 py-4 text-right font-medium text-red-600">
-                            {formatCurrency(item.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Transactions */}
-          <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Transactions ({reportData?.transactions?.length || 0} items)
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] border-collapse">
-                <thead>
-                  <tr className="bg-[#ddfff5] border-b border-gray-300">
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Company / Vendor
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Details
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Mode
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {reportData?.transactions?.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="hover:bg-gray-50 transition-colors"
+                    <label className="block text-xs text-gray-600 mb-1">Category</label>
+                    <select
+                      value={financeFilters.category}
+                      onChange={(e) => handleFinanceFilterChange('category', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                     >
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {formatDate(item.date)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        <span
-                          className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                            item.category === "Revenue"
-                              ? "bg-green-100 text-green-800"
-                              : item.category === "Salary"
-                                ? "bg-blue-100 text-blue-800"
-                                : item.category === "Insurance Payment"
-                                  ? "bg-indigo-100 text-indigo-800"
-                                  : item.category === "Marketing"
-                                    ? "bg-orange-100 text-orange-800"
-                                    : item.category === "Office Expense"
-                                      ? "bg-gray-100 text-gray-800"
-                                      : item.category === "Commission"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-purple-100 text-purple-800"
-                          }`}
-                        >
-                          {item.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {item.companyVendor}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {item.details}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {item.mode}
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium text-red-600">
-                        {item.amount < 0 ? "-" : "+"}
-                        {formatCurrency(item.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                  {(!reportData?.transactions ||
-                    reportData.transactions.length === 0) && (
-                    <tr>
-                      <td
-                        colSpan="6"
-                        className="px-6 py-16 text-center text-gray-500 italic"
+                      <option>All</option>
+                      <option>Revenue</option>
+                      <option>Salary</option>
+                      <option>Office Expense</option>
+                      <option>Marketing</option>
+                      <option>Insurance Payment</option>
+                      <option>Commission</option>
+                      <option>Refund</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Company/Vendor</label>
+                    <input
+                      type="text"
+                      placeholder="ICICI, Rent,..."
+                      value={financeFilters.companyVendor}
+                      onChange={(e) => handleFinanceFilterChange('companyVendor', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Payment Mode</label>
+                    <select
+                      value={financeFilters.paymentMode}
+                      onChange={(e) => handleFinanceFilterChange('paymentMode', e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    >
+                      <option>All</option>
+                      <option>Bank</option>
+                      <option>UPI</option>
+                      <option>Cash</option>
+                      <option>NEFT</option>
+                      <option>Card</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => fetchMasterReport('finance-dashboard')}
+                    className="px-4 py-2 bg-[#398C89] text-white rounded text-sm font-medium hover:bg-[#2d6f6c]"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={handleResetFinance}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              {/* Summary Cards */}
+              {reportData?.summary && (
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="bg-[#E8F5E9] rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">Total Revenue</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.revenue)}</div>
+                  </div>
+                  <div className="bg-[#FFEBEE] rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">Total Expenses</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.totalExpenses)}</div>
+                  </div>
+                  <div className="bg-[#E8F5E9] rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">Insurance Paid (Company)</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(reportData.summary.insurancePaid)}</div>
+                  </div>
+                  <div className={`rounded-lg p-4 ${reportData.summary.net >= 0 ? 'bg-[#E8F5E9]' : 'bg-[#FFEBEE]'}`}>
+                    <div className="text-sm text-gray-600 mb-1">Net (Revenue - Expenses)</div>
+                    <div className={`text-2xl font-bold ${reportData.summary.net >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                      {formatCurrency(reportData.summary.net)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Snapshot and Cashflow Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Quick Snapshot */}
+                {reportData?.quickSnapshot && (
+                  <div className="bg-white rounded-lg shadow-sm p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Snapshot</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="text-sm text-gray-600">Salaries</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.salaries)}</div>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="text-sm text-gray-600">Other Expenses</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.otherExpenses)}</div>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="text-sm text-gray-600">Commissions</div>
+                        <div className="text-xl font-bold text-gray-900">{formatCurrency(reportData.quickSnapshot.commissions)}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cashflow (Daily) Chart */}
+                {reportData?.dailyCashflow && reportData.dailyCashflow.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Cashflow (Daily)</h3>
+                      {financeFilters.dateFrom && financeFilters.dateTo && (
+                        <div className="px-4 py-2 bg-[#E8F5E9] rounded-full text-sm text-[#398C89] font-medium">
+                          {formatDate(financeFilters.dateFrom)} → {formatDate(financeFilters.dateTo)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-64">
+                      <ReactApexCharts
+                        type="bar"
+                        height="100%"
+                        series={[
+                          {
+                            name: 'Cashflow',
+                            data: reportData.dailyCashflow.map(item => item.amount || 0)
+                          }
+                        ]}
+                        options={{
+                          chart: {
+                            toolbar: { show: false },
+                            animations: { enabled: true }
+                          },
+                          plotOptions: {
+                            bar: {
+                              horizontal: false,
+                              columnWidth: '50%',
+                              borderRadius: 4,
+                              distributed: true
+                            }
+                          },
+                          dataLabels: { enabled: false },
+                          stroke: { show: false },
+                          colors: reportData.dailyCashflow.map(item => item.amount >= 0 ? '#10B981' : '#EF4444'),
+                          xaxis: {
+                            categories: reportData.dailyCashflow.map(item =>
+                              new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                            ),
+                            labels: {
+                              style: { fontSize: '10px', colors: '#6B7280' },
+                              rotate: -45,
+                              rotateAlways: false
+                            },
+                            axisBorder: { show: true, color: '#E5E7EB' },
+                            axisTicks: { show: false }
+                          },
+                          yaxis: {
+                            labels: {
+                              formatter: (val) => {
+                                if (val >= 1000000) return (val/1000000).toFixed(1) + 'L';
+                                if (val >= 100000) return (val/100000).toFixed(1) + 'L';
+                                if (val >= 1000) return (val/1000).toFixed(0) + 'K';
+                                return val.toString();
+                              },
+                              style: { fontSize: '10px', colors: '#6B7280' }
+                            },
+                            opposite: false,
+                            tickAmount: 3
+                          },
+                          grid: {
+                            borderColor: '#F3F4F6',
+                            strokeDashArray: 4,
+                            yaxis: {
+                              lines: { show: true }
+                            }
+                          },
+                          tooltip: {
+                            theme: 'light',
+                            y: {
+                              formatter: (val) => formatCurrency(val),
+                              title: {
+                                formatter: () => ''
+                              }
+                            },
+                            x: {
+                              formatter: (val, opts) => {
+                                const date = reportData.dailyCashflow[opts.dataPointIndex]?.date;
+                                return date ? formatDate(date) : '';
+                              }
+                            }
+                          },
+                          legend: { show: false },
+                          states: {
+                            hover: {
+                              filter: {
+                                type: 'darken',
+                                value: 0.8
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded bg-green-500"></div>
+                        <span>Positive = Inflow</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded bg-red-500"></div>
+                        <span>Negative = Outflow</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Insurance by Company */}
+              {reportData?.insuranceByCompany && reportData.insuranceByCompany.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Insurance by Company</h3>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Rows:</label>
+                      <select
+                        value={insuranceRows}
+                        onChange={(e) => {
+                          setInsuranceRows(Number(e.target.value));
+                          setInsurancePage(1);
+                        }}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
                       >
-                        No transactions found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Company</th>
+                          <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount Paid</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {reportData.insuranceByCompany
+                          .slice((insurancePage - 1) * insuranceRows, insurancePage * insuranceRows)
+                          .map((item, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 text-sm text-gray-700">{item.company}</td>
+                            <td className="px-4 py-2 text-sm text-right font-medium text-gray-900">{formatCurrency(item.amount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((insurancePage - 1) * insuranceRows + 1, reportData.insuranceByCompany.length)} to {Math.min(insurancePage * insuranceRows, reportData.insuranceByCompany.length)} of {reportData.insuranceByCompany.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setInsurancePage(prev => Math.max(1, prev - 1))}
+                        disabled={insurancePage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {insurancePage} of {Math.ceil(reportData.insuranceByCompany.length / insuranceRows)}
+                      </span>
+                      <button
+                        onClick={() => setInsurancePage(prev => Math.min(Math.ceil(reportData.insuranceByCompany.length / insuranceRows), prev + 1))}
+                        disabled={insurancePage >= Math.ceil(reportData.insuranceByCompany.length / insuranceRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Salary by Role */}
+              {reportData?.salaryByRole && reportData.salaryByRole.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Salary by Role</h3>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Rows:</label>
+                      <select
+                        value={salaryRows}
+                        onChange={(e) => {
+                          setSalaryRows(Number(e.target.value));
+                          setSalaryPage(1);
+                        }}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Role</th>
+                          <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Total Salary</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {reportData.salaryByRole
+                          .slice((salaryPage - 1) * salaryRows, salaryPage * salaryRows)
+                          .map((item, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 text-sm text-gray-700">{item.role}</td>
+                            <td className="px-4 py-2 text-sm text-right font-medium text-gray-900">{formatCurrency(item.amount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((salaryPage - 1) * salaryRows + 1, reportData.salaryByRole.length)} to {Math.min(salaryPage * salaryRows, reportData.salaryByRole.length)} of {reportData.salaryByRole.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSalaryPage(prev => Math.max(1, prev - 1))}
+                        disabled={salaryPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {salaryPage} of {Math.ceil(reportData.salaryByRole.length / salaryRows)}
+                      </span>
+                      <button
+                        onClick={() => setSalaryPage(prev => Math.min(Math.ceil(reportData.salaryByRole.length / salaryRows), prev + 1))}
+                        disabled={salaryPage >= Math.ceil(reportData.salaryByRole.length / salaryRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Transactions Table */}
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    All Transactions ({reportData?.transactions?.length || 0})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Rows:</label>
+                    <select
+                      value={transactionsRows}
+                      onChange={(e) => {
+                        setTransactionsRows(Number(e.target.value));
+                        setTransactionsPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Category</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Company/Vendor</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Details</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Mode</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {reportData?.transactions
+                        ?.slice((transactionsPage - 1) * transactionsRows, transactionsPage * transactionsRows)
+                        .map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.category}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.companyVendor}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.details}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
+                          <td className={`px-4 py-2 text-sm text-right font-medium ${item.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
+                            {item.type === 'inflow' ? '+' : ''}{formatCurrency(Math.abs(item.amount))}
+                          </td>
+                        </tr>
+                      ))}
+                      {(!reportData?.transactions || reportData.transactions.length === 0) && (
+                        <tr>
+                          <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No data available</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {reportData?.transactions && reportData.transactions.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {Math.min((transactionsPage - 1) * transactionsRows + 1, reportData.transactions.length)} to {Math.min(transactionsPage * transactionsRows, reportData.transactions.length)} of {reportData.transactions.length} entries
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setTransactionsPage(prev => Math.max(1, prev - 1))}
+                        disabled={transactionsPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {transactionsPage} of {Math.ceil(reportData.transactions.length / transactionsRows)}
+                      </span>
+                      <button
+                        onClick={() => setTransactionsPage(prev => Math.min(Math.ceil(reportData.transactions.length / transactionsRows), prev + 1))}
+                        disabled={transactionsPage >= Math.ceil(reportData.transactions.length / transactionsRows)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );

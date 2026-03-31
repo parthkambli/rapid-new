@@ -1270,6 +1270,12 @@ const AllVisitedDoctorLists = () => {
   const [sortByDateTo, setSortByDateTo] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const [data, setData] = useState([]);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1315,6 +1321,10 @@ const AllVisitedDoctorLists = () => {
       if (sortByDateFrom) params.dateFrom = sortByDateFrom;
       if (sortByDateTo) params.dateTo = sortByDateTo;
 
+      // Add pagination parameters
+      params.page = currentPage;
+      params.limit = pageSize;
+
       const response = await apiClient.get(apiEndpoints.doctors.myDoctorss, { params });
 
       if (response.data.success) {
@@ -1339,6 +1349,12 @@ const AllVisitedDoctorLists = () => {
           }))
         }));
         setData(mappedData);
+        
+        // Update pagination info from backend response
+        if (response.data.pagination) {
+          setTotalItems(response.data.pagination.total || 0);
+          setTotalPages(response.data.pagination.pages || 0);
+        }
       } else {
         toast.error("Failed to fetch doctors");
       }
@@ -1355,7 +1371,9 @@ const AllVisitedDoctorLists = () => {
     searchBySpecialty,
     sortByMembership,
     sortByDateFrom,
-    sortByDateTo
+    sortByDateTo,
+    currentPage,
+    pageSize
   ]);
 
   useEffect(() => {
@@ -1421,53 +1439,13 @@ const AllVisitedDoctorLists = () => {
     }
   };
 
-  // === Client-side filtering (including robust date range) ===
-  const filteredData = data.filter((row) => {
-    // Name
-    if (searchByName && !row.drName.toLowerCase().includes(searchByName.toLowerCase())) return false;
+  // Backend already filters the data, so we use the data directly
+  // No client-side filtering needed
 
-    // Status
-    if (sortByStatus !== "All" && row.typeOfEnquiries.toLowerCase() !== sortByStatus.toLowerCase()) return false;
-
-    // Membership
-    if (sortByMembership !== "All" && row.typeOfMembership.toLowerCase() !== sortByMembership.toLowerCase()) return false;
-
-    // City
-    if (searchByCity && !row.city.toLowerCase().includes(searchByCity.toLowerCase())) return false;
-
-    // Specialty
-    if (searchBySpecialty && !row.specialty.toLowerCase().includes(searchBySpecialty.toLowerCase())) return false;
-
-    // Salesman (initial letter search)
-    if (searchBySalesman) {
-      const matchesSalesman = row.followUps.some(fu =>
-        fu.salesman.toLowerCase().includes(searchBySalesman.toLowerCase())
-      );
-      if (!matchesSalesman) return false;
-    }
-
-    // === DATE RANGE FILTER (Client-side) ===
-    if (row.createdAt) {
-      const doctorDate = row.createdAt;
-
-      if (sortByDateFrom) {
-        const fromDate = new Date(sortByDateFrom);
-        fromDate.setHours(0, 0, 0, 0); // Start of day
-        if (doctorDate < fromDate) return false;
-      }
-
-      if (sortByDateTo) {
-        const toDate = new Date(sortByDateTo);
-        toDate.setHours(23, 59, 59, 999); // End of day
-        if (doctorDate > toDate) return false;
-      }
-    } else if (sortByDateFrom || sortByDateTo) {
-      // If no createdAt but date filter applied → exclude
-      return false;
-    }
-
-    return true;
-  });
+  // Reset to page 1 whenever filters change (this will trigger fetchDoctors via currentPage dependency)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchByName, sortByStatus, sortByMembership, searchByCity, searchBySpecialty, searchBySalesman, sortByDateFrom, sortByDateTo]);
 
   const extraColumns = [
     {
@@ -1610,11 +1588,17 @@ const AllVisitedDoctorLists = () => {
       {!loading && (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <Table
-            data={filteredData}
+            data={data}
             extraColumns={extraColumns}
             actions={actions}
             excludeColumns={["typeOfMembership", "typeOfEnquiries", "createdAt"]}
             pagination={true}
+            serverPagination={true}
+            totalServerItems={totalItems}
+            currentServerPage={currentPage}
+            defaultPageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+            onPageSizeChange={(size) => setPageSize(size)}
           />
         </div>
       )}

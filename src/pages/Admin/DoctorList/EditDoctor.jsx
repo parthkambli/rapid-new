@@ -1133,11 +1133,17 @@ const EditDoctor = () => {
                   type="text"
                   value={Array.isArray(doc.specialization) ? doc.specialization.join(', ') : doc.specialization || ''}
                   onChange={(e) => {
+                    // User can type freely - just update the display value
+                    handleDoctorInputChange(index, 'specialization', e.target.value);
+                  }}
+                  onBlur={(e) => {
+                    // On blur, convert to array and uppercase
                     const value = e.target.value;
-                    const specialties = value.split(',').map(s => s.trim()).filter(s => s);
+                    const specialties = value.split(',').map(s => s.trim().toUpperCase()).filter(s => s);
                     handleDoctorInputChange(index, 'specialization', specialties);
                   }}
                   className="w-full uppercase p-2 border border-gray-300 rounded-md focus:ring-[#15BBB3] focus:border-[#15BBB3] focus:outline-none"
+                  placeholder="e.g., Cardiology, General Medicine"
                 />
               </div>
               <div>

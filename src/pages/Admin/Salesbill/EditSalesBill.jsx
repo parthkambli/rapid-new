@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiClient, { apiEndpoints } from "../../../services/apiClient";
 import { toast } from "react-toastify";
+import Select from "react-select";
 
 const EditSalesBill = () => {
   const { id } = useParams();
@@ -11,6 +12,9 @@ const EditSalesBill = () => {
   const [doctors, setDoctors] = useState([]);
   const [fetchingPreviousBill, setFetchingPreviousBill] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const debounceTimerRef = useRef(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -29,37 +33,98 @@ const EditSalesBill = () => {
     note: "",
   });
 
+  // Track if this is a new bill creation (vs editing existing bill)
+  const isEditing = !!id;
+  
+  // Store the original status from the fetched bill
+  const [originalStatus, setOriginalStatus] = useState("");
+  
+  // Store the original doctor ID to detect if doctor is changed
+  const [originalDoctorId, setOriginalDoctorId] = useState("");
+  
+  // Store the original doctor name to use in payload
+  const [originalDoctorName, setOriginalDoctorName] = useState("");
+
+  // Store the original type and oldSbNo to restore when coming back to original doctor
+  const [originalType, setOriginalType] = useState("");
+  const [originalOldSbNo, setOriginalOldSbNo] = useState("");
+
   // Fetch the sales bill data for editing
   useEffect(() => {
     const fetchSalesBill = async () => {
       try {
         setLoading(true);
         const response = await apiClient.get(apiEndpoints.salesBills.get(id));
-        
+
         if (response.data.success) {
           const bill = response.data.data;
           const notesParts = bill.notes ? bill.notes.split(" - ") : [];
-const narrationText = notesParts[0]?.trim() || bill.notes || "";
-const internalNoteText = notesParts.length > 1 
-  ? notesParts.slice(1).join(" - ").trim() 
-  : "";
+          const narrationText = notesParts[0]?.trim() || bill.notes || "";
+          const internalNoteText = notesParts.length > 1
+            ? notesParts.slice(1).join(" - ").trim()
+            : "";
+          const doctorId = bill.client?.entityId?._id || "";
+
+          // Determine the type based on the bill's status
+          const billType = bill.status === 'renewal' || bill.type === 'renewal' ? "Renewal" : "New";
+
           // Map the sales bill data to form fields
           setFormData({
             sbNo: bill.billNumber || "",
             sbDate: bill.billDate ? new Date(bill.billDate).toISOString().split("T")[0] : today,
-            type: bill.status === 'renewal' ? "Renewal" : "New",
+            type: billType,
             oldSbNo: bill.renewalFrom || "",
-            // doctorId: bill.client?.entityId || "",
-         doctorId: bill.client?.entityId?._id || "",
+            doctorId: doctorId,
             membershipType: bill.membershipType === 'monthly' ? 'Monthly' : bill.membershipType === 'yearly' ? 'Yearly' : 'One-time',
             membershipYear: bill.items && bill.items.length > 0 ? bill.items[0].quantity?.toString() || "1" : "1",
             particular: bill.items && bill.items.length > 0 ? bill.items[0].description || "" : "",
-            // amount: bill.totalAmount?.toString() || "",
             amount: bill.items[0].amount?.toString() || "",
             expiry: bill.dueDate ? new Date(bill.dueDate).toISOString().split("T")[0] : "",
-           narration: narrationText,
-  note: internalNoteText,  // Ab sirf real internal note aayega
+            narration: narrationText,
+            note: internalNoteText,
           });
+
+          // Store the original status to preserve it during update
+          setOriginalStatus(bill.status || "draft");
+          
+          // Store the original doctor ID to detect changes
+          setOriginalDoctorId(doctorId);
+          
+          // Store the original doctor name to use in payload if doctor is not changed
+          if (bill.client?.name) {
+            setOriginalDoctorName(bill.client.name);
+          }
+          
+          // Store the original type and oldSbNo to restore when coming back to original doctor
+          setOriginalType(billType);
+          setOriginalOldSbNo(bill.renewalFrom || "");
+
+          // ✅ Auto-select doctor in react-select
+          if (doctorId) {
+            // Fetch the specific doctor to populate the select
+            try {
+              const doctorResponse = await apiClient.get(`${apiEndpoints.doctors.get(doctorId)}?populate=hospitalAddress,membership`);
+              if (doctorResponse.data.success) {
+                const doctor = doctorResponse.data.data;
+                const doctorOption = {
+                  value: doctor._id,
+                  label: `${doctor.fullName || "No Name"}${doctor.hospitalName ? ` - ${doctor.hospitalName}` : ""}${doctor.membershipId ? ` (${doctor.membershipId})` : ""
+                    }${doctor.phoneNumber ? ` 📞 ${doctor.phoneNumber}` : ""
+                    }`,
+                  doctorData: doctor,
+                };
+                setSelectedDoctor(doctorOption); // ✅ Pass formatted option, not raw doctor
+                // Add to doctorOptions if not already present
+                setDoctorOptions(prev => {
+                  const exists = prev.find(opt => opt.value === doctor._id);
+                  if (exists) return prev;
+                  return [doctorOption, ...prev];
+                });
+              }
+            } catch (error) {
+              console.error("Error fetching selected doctor:", error);
+            }
+          }
         } else {
           toast.error("Failed to fetch sales bill data");
           navigate("/admin/salesbill/list");
@@ -79,91 +144,216 @@ const internalNoteText = notesParts.length > 1
     }
   }, [id, navigate, today]);
 
-  // Fetch only closed enquiry doctors
-  useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        setLoadingDoctors(true);
-        const response = await apiClient.get(apiEndpoints.doctors.list, {
-          params: { limit: 1000, typeOfEnquiry: "closed" },
-        });
-        setDoctors(response.data.data || []);
-      } catch (error) {
-        console.error("Error fetching doctors:", error);
-        toast.error("Failed to load doctors list");
-      } finally {
-        setLoadingDoctors(false);
-      }
-    };
+  // ✅ FETCH DOCTORS - Server-side search implementation
+  const fetchDoctorsBySearch = useCallback(async (searchQuery = "") => {
+    try {
+      setLoadingDoctors(true);
+      const response = await apiClient.get(apiEndpoints.doctors.list, {
+        params: {
+          limit: searchQuery ? 50 : 10,
+          typeOfEnquiry: "closed",
+          populate: "hospitalAddress,membership",
+          ...(searchQuery && searchQuery.trim() ? { search: searchQuery.trim() } : {})
+        },
+      });
 
-    fetchDoctors();
+      const doctorsData = response.data.data || [];
+      setDoctors(doctorsData);
+
+      // ✅ Convert doctors to react-select format
+      const options = doctorsData.map((doctor) => ({
+        value: doctor._id,
+        label: `${doctor.fullName || "No Name"}${doctor.hospitalName ? ` - ${doctor.hospitalName}` : ""}${doctor.membershipId ? ` (${doctor.membershipId})` : ""
+          }${doctor.phoneNumber ? ` 📞 ${doctor.phoneNumber}` : ""
+          }`,
+        doctorData: doctor,
+      }));
+
+      setDoctorOptions(options);
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+      toast.error("Failed to load doctors list");
+      setDoctorOptions([]);
+    } finally {
+      setLoadingDoctors(false);
+    }
   }, []);
 
-  // Main Change Handler (excluding sbNo which should remain disabled)
-  const handleChange = async (e) => {
-    const { name, value } = e.target;
+  // ✅ DEBOUNCED SEARCH HANDLER
+  const handleDoctorSearchInputChange = useCallback((value, { action }) => {
+    if (action === "input-change") {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        fetchDoctorsBySearch(value);
+      }, 500);
+    }
+  }, [fetchDoctorsBySearch]);
 
-    if (name === "doctorId") {
-      if (!value) {
-        setFormData(prev => ({
-          ...prev,
-          doctorId: "",
-          oldSbNo: "",
-          type: "New",
-        }));
-        return;
-      }
+  // Initial load
+  useEffect(() => {
+    fetchDoctorsBySearch("");
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [fetchDoctorsBySearch]);
 
-      // Reset first
+  // ✅ YEAR OPTIONS for react-select (40 years)
+  const yearOptions = Array.from({ length: 40 }, (_, i) => ({
+    value: String(i + 1),
+    label: `${i + 1} Year${i > 0 ? 's' : ''}`,
+  }));
+
+  // ✅ MEMBERSHIP TYPE OPTIONS for react-select
+  const membershipTypeOptions = [
+    { value: "Monthly", label: "Monthly" },
+    { value: "Yearly", label: "Yearly" },
+    { value: "One-time", label: "One-time" },
+  ];
+
+  // ✅ CUSTOM STYLES FOR REACT-SELECT
+  const customSelectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: "42px",
+      borderColor: state.isFocused ? "#398C89" : "#d1d5db",
+      backgroundColor: "#f9fafb",
+      boxShadow: state.isFocused ? "0 0 0 1px #398C89" : "none",
+      "&:hover": {
+        borderColor: "#398C89",
+      },
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected ? "#398C89" : state.isFocused ? "#e6f7f7" : "white",
+      color: state.isSelected ? "white" : "#333",
+      "&:active": {
+        backgroundColor: "#2e706e",
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 50,
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#9ca3af",
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: "#1f2937",
+    }),
+  };
+
+  // ✅ DOCTOR SELECTION HANDLER for react-select
+  const handleDoctorSelect = async (selectedOption) => {
+    if (!selectedOption) {
+      setSelectedDoctor(null);
       setFormData(prev => ({
         ...prev,
-        doctorId: value,
+        doctorId: "",
         oldSbNo: "",
         type: "New",
       }));
+      return;
+    }
 
-      setFetchingPreviousBill(true);
+    const doctorId = selectedOption.value;
+    setSelectedDoctor(selectedOption.doctorData);
 
-      try {
-        // Correct query to fetch only this doctor's previous bills
-        const response = await apiClient.get(apiEndpoints.salesBills.list, {
-          params: {
-            "client.entityId._id": value,
-            "client.type": "doctor",       // Extra safety
-            limit: 1,
-            sort: "-createdAt",
-            status: { $ne: "cancelled" },  // Ignore cancelled bills
-          },
-        });
+    // Check if doctor is actually changed (only then fetch previous bill)
+    const isDoctorChanged = isEditing && doctorId !== originalDoctorId;
+    
+    // Check if user came back to the original doctor after changing
+    const cameBackToOriginalDoctor = isEditing && doctorId === originalDoctorId;
 
-        const bills = response.data?.data || [];
+    // When editing with same doctor OR came back to original doctor, preserve/restore the original type and oldSbNo
+    if (cameBackToOriginalDoctor) {
+      // Restore original values when coming back to original doctor
+      setFormData(prev => ({
+        ...prev,
+        doctorId: doctorId,
+        type: originalType,
+        oldSbNo: originalOldSbNo,
+      }));
+      toast.info(`Restored original bill details`, { autoClose: 2000 });
+      return; // Don't check previous bill
+    }
 
-        if (bills.length > 0) {
-          const latestBill = bills[0];
+    if (isDoctorChanged) {
+      // Doctor changed to a different one - reset and fetch previous bill
+      setFormData(prev => ({
+        ...prev,
+        doctorId: doctorId,
+        oldSbNo: "",
+        type: "New",
+      }));
+    } else {
+      // Same doctor (first time, not changed yet)
+      setFormData(prev => ({
+        ...prev,
+        doctorId: doctorId,
+      }));
+      return; // Skip checking previous bill for same doctor in edit mode
+    }
+
+    setFetchingPreviousBill(true);
+
+    try {
+      const response = await apiClient.get(apiEndpoints.salesBills.list, {
+        params: {
+          "client.entityId._id": doctorId,
+          "client.type": "doctor",
+          limit: 1,
+          sort: "-createdAt",
+          status: { $ne: "cancelled" },
+        },
+      });
+
+      const bills = response.data?.data || [];
+
+      if (bills.length > 0) {
+        const latestBill = bills[0];
+        // Make sure we're not picking the current bill as previous
+        if (latestBill.billNumber !== formData.sbNo) {
           setFormData(prev => ({
             ...prev,
-            doctorId: value,
+            doctorId: doctorId,
             oldSbNo: latestBill.billNumber || "",
-            type: "Renewal", // Auto set to Renewal
+            type: "Renewal",
           }));
           toast.success(`Renewal from: ${latestBill.billNumber}`, { autoClose: 2000 });
         } else {
+          // Current bill is the latest, so it's effectively a "New" type for this doctor
           setFormData(prev => ({
             ...prev,
-            doctorId: value,
+            doctorId: doctorId,
             oldSbNo: "",
             type: "New",
           }));
-          toast.info("New Membership Bill", { autoClose: 2000 });
+          toast.info("No previous bill found (this is the latest)", { autoClose: 2000 });
         }
-      } catch (error) {
-        console.error("Error fetching previous bill:", error);
-        toast.warn("Could not check previous bill");
-        setFormData(prev => ({ ...prev, doctorId: value })); // Still keep doctor
-      } finally {
-        setFetchingPreviousBill(false);
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          doctorId: doctorId,
+          oldSbNo: "",
+          type: "New",
+        }));
+        toast.info("New Membership Bill", { autoClose: 2000 });
       }
-    } else if (name !== "sbNo") { // Prevent changing sbNo
+    } catch (error) {
+      console.error("Error fetching previous bill:", error);
+      toast.warn("Could not check previous bill");
+      setFormData(prev => ({ ...prev, doctorId: doctorId }));
+    } finally {
+      setFetchingPreviousBill(false);
+    }
+  };
+
+  // ✅ MAIN CHANGE HANDLER for regular inputs (excluding sbNo)
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name !== "sbNo") {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
@@ -207,7 +397,28 @@ const internalNoteText = notesParts.length > 1
     try {
       const amount = parseFloat(formData.amount);
       const years = parseInt(formData.membershipYear, 10) || 1;
-      const selectedDoctor = doctors.find(d => d._id === formData.doctorId);
+      
+      // Check if doctor is changed
+      const isDoctorChanged = isEditing && formData.doctorId !== originalDoctorId;
+      
+      // Determine doctor name to use in payload
+      let doctorName;
+      if (isEditing && !isDoctorChanged) {
+        // Same doctor - use original name from bill
+        doctorName = originalDoctorName;
+      } else {
+        // Doctor changed or new bill - get from selected options
+        const doctorFromList = doctors.find(d => d._id === formData.doctorId);
+        const doctorData = selectedDoctor?.doctorData || doctorFromList || selectedDoctor;
+        doctorName = doctorData?.fullName || doctorData?.label?.split(' - ')[0] || "Unknown Doctor";
+      }
+
+      // When editing:
+      // - If doctor is same OR came back to original: preserve original status
+      // - If doctor is changed: use the new type's status
+      const billStatus = isEditing && !isDoctorChanged
+        ? originalStatus
+        : (formData.type === "Renewal" ? "renewal" : "draft");
 
       const payload = {
         // Don't include billNumber in edit mode since it should remain unchanged
@@ -216,7 +427,7 @@ const internalNoteText = notesParts.length > 1
         dueDate: formData.expiry,
         client: {
           type: "doctor",
-          name: selectedDoctor?.fullName || "Unknown Doctor",
+          name: doctorName,
           entityId: formData.doctorId,
         },
         type: formData.type.toLowerCase(),                    // "new" | "renewal"
@@ -234,12 +445,9 @@ const internalNoteText = notesParts.length > 1
             amount: amount,
           },
         ],
-        // subTotal: amount,
-        // totalAmount: amount,
-        // outstandingAmount: amount,
         paymentTerms: "30_days",
         currency: "INR",
-        status: formData.type === "Renewal" ? "renewal" : "draft",
+        status: billStatus,
         notes: [formData.narration, formData.note].filter(Boolean).join(" - "),
       };
 
@@ -330,52 +538,59 @@ const internalNoteText = notesParts.length > 1
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Doctor *</label>
-            <select
+            <label className="block text-sm font-medium text-gray-700 mb-1">Doctor *</label>
+            <Select
               name="doctorId"
-              value={formData.doctorId}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md bg-gray-50"
+              options={doctorOptions}
+              value={selectedDoctor}
+              onChange={handleDoctorSelect}
+              onInputChange={handleDoctorSearchInputChange}
+              isLoading={loadingDoctors}
+              loadingMessage={() => "Searching doctors..."}
+              placeholder={loadingDoctors ? "Loading..." : "Search & Select Doctor"}
+              isSearchable={true}
+              isClearable={true}
+              filterOption={() => true}
+              noOptionsMessage={() => "No doctors found"}
+              styles={customSelectStyles}
+              className="react-select-container"
+              classNamePrefix="react-select"
               required
-            >
-              <option value="">{loadingDoctors ? "Loading..." : "Select Doctor"}</option>
-              {doctors.map((doc) => (
-                <option key={doc._id} value={doc._id}>
-                  {doc.fullName}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 
         {/* Row 2 */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Membership Type</label>
-            <select
-              name="membershipType"
-              value={formData.membershipType}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md bg-gray-50"
-            >
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-              <option value="One-time">One-time</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Membership Type</label>
+            <Select
+              options={membershipTypeOptions}
+              value={membershipTypeOptions.find(option => option.value === formData.membershipType)}
+              onChange={(selected) =>
+                setFormData(prev => ({ ...prev, membershipType: selected.value }))
+              }
+              isSearchable={false}
+              styles={customSelectStyles}
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Years</label>
-            <select
-              name="membershipYear"
-              value={formData.membershipYear}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md bg-gray-50"
-            >
-              {[...Array(10)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>{i + 1}</option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Years</label>
+            <Select
+              options={yearOptions}
+              value={yearOptions.find(option => option.value === formData.membershipYear)}
+              onChange={(selected) =>
+                setFormData(prev => ({ ...prev, membershipYear: selected.value }))
+              }
+              isSearchable={true}
+              maxMenuHeight={150}
+              styles={customSelectStyles}
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
           </div>
 
           <div className="md:col-span-2">
