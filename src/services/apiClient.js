@@ -85,13 +85,6 @@ export const apiEndpoints = {
     search: "/employees/search",
     profile: "/employees/profile",
   },
-  //   // Salesman Targets
-  //   salesmanTargets: {
-  //   byEmployee: (id) => `/salesman-targets/employee/${id}`,  // id = Employee _id
-  //   stats: '/salesman-targets/stats',
-  //   create: '/salesman-targets',
-  //   update: (id) => `/salesman-targets/${id}`
-  // },
 
   salesmanTargets: {
     // Get all targets for employee (with year/month filtering)
@@ -109,7 +102,6 @@ export const apiEndpoints = {
     // Reset daily stats (admin)
     resetDaily: (employeeId) => `/salesman-targets/reset-daily/${employeeId}`,
     // NEW - ALL EMPLOYEES APIs (Main jo hum use karenge)
-    // allCurrentTargets: '/salesman-targets/employee-all/current',   // ← Yeh sabse powerful
     allCurrentTargets: "/salesman-targets/all-current", // ← Yeh sabse powerful
     allStats: "/salesman-targets/stats-all",
     // YE 2 NAYE ADD KAR DE
@@ -160,7 +152,7 @@ export const apiEndpoints = {
     followUps: {
       all: '/doctors/followups/all',
       my: '/doctors/followups/my',
-      today: '/doctors/followups/today', 
+      today: '/doctors/followups/today',
     },
   },
 
@@ -207,8 +199,7 @@ export const apiEndpoints = {
 
     get: (id) => `/sales-bills/${id}`,
     getRenewalExpiry: (id) => `/sales-bills/${id}/renewal-info`,
-    // apiEndpoints.js mein yeh line fix karo
-    getDoctorByBillNumber: (billNumber) => `/sales-bills/billno/${billNumber}`, // Fixed: // → /
+    getDoctorByBillNumber: (billNumber) => `/sales-bills/billno/${billNumber}`,
     getServiceAgreementPolicies: (salesBillId) =>
       `/sales-bills/${salesBillId}/service-agreement-policies`,
     update: (id) => `/sales-bills/${id}`,
@@ -566,7 +557,11 @@ export const apiEndpoints = {
     renewalReminders: '/admin/dashboard/renewal-reminders',
   },
 
-
+  // Bulk Messaging
+  messages: {
+    doctorsForMessaging: "/messages/doctors-for-messaging",
+    sendBulkMessages: "/messages/send-bulk-messages",
+  },
 };
 
 // Helper functions for common API operations

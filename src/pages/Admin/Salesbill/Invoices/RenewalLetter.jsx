@@ -1474,7 +1474,7 @@ import { useParams } from "react-router-dom";
 import apiClient, { apiEndpoints } from "../../../../services/apiClient";
 import HeaderImg from '../../../../assets/quotation/Header.png';
 import FooterImg from '../../../../assets/quotation/footer.png';
-import QrImg from '../../../../assets/quotation/paymentQr.png';
+import QrImg from '../../../../assets/quotation/PaymentQr.png';
 
 const RenewalContractLetter = () => {
   const { id } = useParams();

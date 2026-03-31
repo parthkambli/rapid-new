@@ -816,6 +816,7 @@ const AppContent = () => {
               <Route path="/superadmin/expense-list" element={<SuperAdminExpenseList />} />
               <Route path="/superadmin/create-expense" element={<SuperAdminCreateExpense />} />
               <Route path="/superadmin/send-message" element={<SuperAdminSendMessage />} />
+              <Route path="/superadmin/send-message/:doctorId" element={<SuperAdminSendMessage />} />
               <Route path="/superadmin/employee-reports" element={<SuperAdminEmployeeReports />} />
               <Route path="/superadmin/doctor-reports" element={<SuperAdminDoctorReports />} />
               {/* <Route path="/admin/doctors/:id" element={<DoctorDetailPage />} /> */}

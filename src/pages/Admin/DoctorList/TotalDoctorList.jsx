@@ -2837,8 +2837,8 @@ const TotalDoctorList = () => {
                     <FiEdit className="mr-2" size={14} />
                     Edit Doctor
                   </button>
-                  <Link 
-                    to="/Superadmin/send-message" 
+                  <Link
+                    to={`/superadmin/send-message/${row._id}`}
                     className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
                     onClick={() => setMenuOpen(null)}
                   >

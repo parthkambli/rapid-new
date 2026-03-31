@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import apiClient, { apiEndpoints } from "../../services/apiClient";
 
-import Right from "../../assets/salesbill/WNright.png";
-import left from "../../assets/salesbill/logo.png";
-import stamp from "../../assets/salesbill/stamp.png";
-import signature from "../../assets/salesbill/signature.png";
+import Right from "../../assets/Salesbill/WNright.png";
+import left from "../../assets/Salesbill/Logo.png";
+import stamp from "../../assets/Salesbill/stamp.png";
+import signature from "../../assets/Salesbill/signature.png";
 
 const DoctorPrintMonthlyReceipt = () => {
   const { id } = useParams();
