@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Share2, UserCircle, X, Users, MapPin, Stethoscope, IdCard, ArrowRightCircle } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Share2, UserCircle, X, Users, MapPin, Stethoscope, IdCard, ArrowRightCircle, ChevronLeft, ChevronRight, Search, History } from "lucide-react";
 import apiClient from '../../../services/apiClient';
 import { toast } from 'react-toastify';
 
@@ -10,6 +10,7 @@ const TransferDoctor = () => {
   const [myAddedDoctors, setMyAddedDoctors] = useState([]);
   const [transferredDoctors, setTransferredDoctors] = useState([]);
   const [assignedTasks, setAssignedTasks] = useState([]);
+  const [transferHistory, setTransferHistory] = useState([]);
 
   const [combinedData, setCombinedData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,26 +19,68 @@ const TransferDoctor = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [salesmenList, setSalesmenList] = useState([]);
 
-  // Fetch functions adapted for Salesman
+  // Server-side pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPagesState, setTotalPagesState] = useState(0);
+
+  // Server-side search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch functions adapted for Salesman with server-side pagination
   const fetchMyTaskCalls = async () => {
     try {
-      // Salesmen might use same task endpoint or specialized one
-      // For now, mirroring telecaller if they have tasks
-      const res = await apiClient.get('/tasks/telecallertask/my-calls');
-      if (res.data.success) setTaskCalls(res.data.data || []);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      
+      const res = await apiClient.get('/tasks/telecallertask/my-calls', { params });
+      if (res.data.success) {
+        setTaskCalls(res.data.data || []);
+        if (res.data.pagination) {
+          setTotalRecords(res.data.pagination.total);
+          setTotalPagesState(res.data.pagination.pages);
+        }
+      }
     } catch (err) {
-      // If endpoint doesn't exist for salesman, just set empty
       setTaskCalls([]);
     }
   };
 
   const fetchMyAddedDoctors = async () => {
     try {
-      // Use salesman specific doctor fetch
-      const res = await apiClient.get('/salesman/doctors');
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      
+      const res = await apiClient.get('/salesman/doctors', { params });
       if (res.data.success) {
+        // For "my-calls" tab, show only doctors NOT transferred to me
         const onlyMyAdded = (res.data.data || []).filter(doc => !doc.isTransferredToMe);
         setMyAddedDoctors(onlyMyAdded);
+        if (res.data.pagination) {
+          setTotalRecords(res.data.pagination.total);
+          setTotalPagesState(res.data.pagination.pages);
+        }
       }
     } catch (err) {
       toast.error("Failed to load your added doctors");
@@ -46,10 +89,23 @@ const TransferDoctor = () => {
 
   const fetchTransferredDoctors = async () => {
     try {
-      const res = await apiClient.get('/salesman/doctors');
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      
+      // Use the new endpoint that returns only doctors transferred TO the current user
+      const res = await apiClient.get('/salesman/transferred-to-me', { params });
       if (res.data.success) {
-        const onlyTransferred = (res.data.data || []).filter(doc => doc.isTransferredToMe);
-        setTransferredDoctors(onlyTransferred);
+        const allDoctors = res.data.data || [];
+        setTransferredDoctors(allDoctors);
+        if (res.data.pagination) {
+          setTotalRecords(res.data.pagination.total);
+          setTotalPagesState(res.data.pagination.pages);
+        }
       }
     } catch (err) {
       toast.error("Failed to load transferred doctors");
@@ -58,10 +114,48 @@ const TransferDoctor = () => {
 
   const fetchAssignedTasks = async () => {
     try {
-      const res = await apiClient.get('/tasks/telecallertask/assigned-to-me');
-      if (res.data.success) setAssignedTasks(res.data.data || []);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      
+      const res = await apiClient.get('/tasks/telecallertask/assigned-to-me', { params });
+      if (res.data.success) {
+        setAssignedTasks(res.data.data || []);
+        if (res.data.pagination) {
+          setTotalRecords(res.data.pagination.total);
+          setTotalPagesState(res.data.pagination.pages);
+        }
+      }
     } catch (err) {
       setAssignedTasks([]);
+    }
+  };
+
+  const fetchTransferHistory = async () => {
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      
+      // Fetch doctors that I transferred to others
+      const res = await apiClient.get('/salesman/transfer-history', { params });
+      if (res.data.success) {
+        setTransferHistory(res.data.data || []);
+        if (res.data.pagination) {
+          setTotalRecords(res.data.pagination.total);
+          setTotalPagesState(res.data.pagination.pages);
+        }
+      }
+    } catch (err) {
+      toast.error("Failed to load transfer history");
     }
   };
 
@@ -69,10 +163,12 @@ const TransferDoctor = () => {
     setLoading(true);
     if (activeTab === "my-calls") {
       Promise.all([fetchMyTaskCalls(), fetchMyAddedDoctors()]).finally(() => setLoading(false));
-    } else {
+    } else if (activeTab === "assigned-to-me") {
       Promise.all([fetchAssignedTasks(), fetchTransferredDoctors()]).finally(() => setLoading(false));
+    } else if (activeTab === "transfer-history") {
+      fetchTransferHistory().finally(() => setLoading(false));
     }
-  }, [activeTab]);
+  }, [activeTab, currentPage, itemsPerPage, debouncedSearch]);
 
   // MERGE DATA
   useEffect(() => {
@@ -105,7 +201,7 @@ const TransferDoctor = () => {
           scheduledDate: doc.createdAt || new Date(),
         }))
       ];
-    } else {
+    } else if (activeTab === "assigned-to-me") {
       merged = [
         ...assignedTasks.map(item => ({
           ...item,
@@ -132,26 +228,49 @@ const TransferDoctor = () => {
           scheduledDate: doc.createdAt || new Date(),
         }))
       ];
+    } else if (activeTab === "transfer-history") {
+      merged = transferHistory.map(doc => ({
+        ...doc,
+        itemType: 'doctor',
+        isTransferredByMe: true,
+        doctorId: doc._id,
+        doctor: {
+          fullName: doc.fullName || 'Dr. Unknown',
+          hospitalName: doc.hospitalName || 'N/A',
+          city: doc.hospitalAddress?.city || doc.contactDetails?.currentAddress?.city || 'N/A',
+          specialization: Array.isArray(doc.specialization) ? doc.specialization.join(', ') : (doc.specialization || 'General'),
+          membershipId: doc.membershipId || doc.doctorId || '—'
+        },
+        doctorTaskStatus: doc.doctorStatus || 'cold',
+        source: { type: 'transferred_by_me', label: 'Transferred by Me' },
+        scheduledDate: doc.transferredAt || doc.createdAt || new Date(),
+        transferredTo: doc.transferredTo,
+        transferReason: doc.transferReason || 'Transfer'
+      }));
     }
 
     setCombinedData(merged);
-  }, [activeTab, taskCalls, myAddedDoctors, assignedTasks, transferredDoctors]);
+  }, [activeTab, taskCalls, myAddedDoctors, assignedTasks, transferredDoctors, transferHistory]);
 
   const getSourceLabel = (source) => {
     if (!source?.label) return 'Unknown';
-    if (source.label === 'Salesman Added') return 'Data Store';
-    if (source.label === 'Renewal Call') return 'Renewal';
-    if (source.label === 'Service Call') return 'Service Call';
-    return source.label;
+    if (source.label === 'My Added') return 'bg-purple-100 text-purple-700';
+    if (source.label === 'Transferred to Me') return 'bg-orange-100 text-orange-700';
+    if (source.label === 'Transferred by Me') return 'bg-blue-100 text-blue-700';
+    if (source.label === 'Salesman Added') return 'bg-indigo-100 text-indigo-700';
+    if (source.label === 'Renewal Call') return 'bg-pink-100 text-pink-700';
+    if (source.label === 'Service Call') return 'bg-green-100 text-green-700';
+    return 'bg-gray-100 text-gray-700';
   };
 
   const getSourceColor = (row) => {
     const label = row.source?.label;
     if (label === 'My Added') return 'bg-purple-100 text-purple-700';
     if (row.isTransferredToMe) return 'bg-orange-100 text-orange-700';
-    if (label === 'Salesman Added') return 'bg-blue-100 text-blue-700';
-    if (label === 'Renewal Call') return 'bg-indigo-100 text-indigo-700';
-    if (label === 'Service Call') return 'bg-pink-100 text-pink-700';
+    if (row.isTransferredByMe) return 'bg-blue-100 text-blue-700';
+    if (label === 'Salesman Added') return 'bg-indigo-100 text-indigo-700';
+    if (label === 'Renewal Call') return 'bg-pink-100 text-pink-700';
+    if (label === 'Service Call') return 'bg-green-100 text-green-700';
     return 'bg-gray-100 text-gray-700';
   };
 
@@ -225,8 +344,10 @@ const TransferDoctor = () => {
 
       if (activeTab === "my-calls") {
         await Promise.all([fetchMyTaskCalls(), fetchMyAddedDoctors()]);
-      } else {
+      } else if (activeTab === "assigned-to-me") {
         await Promise.all([fetchAssignedTasks(), fetchTransferredDoctors()]);
+      } else if (activeTab === "transfer-history") {
+        await fetchTransferHistory();
       }
     } catch (err) {
       console.error("Transfer error:", err);
@@ -246,6 +367,15 @@ const TransferDoctor = () => {
     return <span className={`px-2.5 py-0.5 ${color} rounded-full text-xs font-bold`}>{(status || 'cold').toUpperCase()}</span>;
   };
 
+  // Use combinedData directly since it's already server-side filtered and paginated
+  const displayData = combinedData;
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPagesState) {
+      setCurrentPage(page);
+    }
+  };
+
   if (loading) return (
     <div className="p-10 text-center">
       <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-[#15BBB3] mx-auto"></div>
@@ -258,107 +388,217 @@ const TransferDoctor = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-2xl font-bold text-[#15BBB3]">
-            {activeTab === "my-calls" ? "My Doctors & Visits" : "Assigned to Me"}
+            {activeTab === "my-calls" ? "My Doctors & Visits" : activeTab === "assigned-to-me" ? "Assigned to Me" : "Transfer History"}
           </h2>
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button onClick={() => setActiveTab("my-calls")} className={`px-5 py-2 rounded-md text-sm font-medium ${activeTab === "my-calls" ? "bg-[#15BBB3] text-white" : "text-gray-600"}`}>
-              My Doctors ({combinedData.length})
+          <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+            <button onClick={() => { setActiveTab("my-calls"); setCurrentPage(1); }} className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === "my-calls" ? "bg-[#15BBB3] text-white" : "text-gray-600"}`}>
+              My Doctors ({totalRecords})
             </button>
-            <button onClick={() => setActiveTab("assigned-to-me")} className={`px-5 py-2 rounded-md text-sm font-medium flex items-center gap-1 ${activeTab === "assigned-to-me" ? "bg-[#15BBB3] text-white" : "text-gray-600"}`}>
-              <Users size={14} /> Assigned ({combinedData.length})
+            <button onClick={() => { setActiveTab("assigned-to-me"); setCurrentPage(1); }} className={`px-4 py-2 rounded-md text-sm font-medium flex items-center gap-1 ${activeTab === "assigned-to-me" ? "bg-[#15BBB3] text-white" : "text-gray-600"}`}>
+              <Users size={14} /> Assigned ({totalRecords})
+            </button>
+            <button onClick={() => { setActiveTab("transfer-history"); setCurrentPage(1); }} className={`px-4 py-2 rounded-md text-sm font-medium flex items-center gap-1 ${activeTab === "transfer-history" ? "bg-[#15BBB3] text-white" : "text-gray-600"}`}>
+              <History size={14} /> History ({totalRecords})
             </button>
           </div>
         </div>
 
-        {activeTab === "assigned-to-me" && combinedData.length > 0 && (
+        {activeTab === "assigned-to-me" && totalRecords > 0 && (
           <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-800 text-sm flex items-center gap-2">
             <ArrowRightCircle size={18} />
             <span>These doctors were transferred to you</span>
           </div>
         )}
 
+        {activeTab === "transfer-history" && totalRecords > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm flex items-center gap-2">
+            <History size={18} />
+            <span>Doctors you have transferred to other salesmen</span>
+          </div>
+        )}
+
+        {/* Search Bar */}
+        <div className="mb-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by doctor name..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1); // Reset to first page on search
+              }}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15BBB3] focus:border-transparent"
+            />
+          </div>
+        </div>
+
         <div className="bg-white rounded-xl shadow overflow-hidden">
-          {combinedData.length === 0 ? (
+          {displayData.length === 0 && !loading ? (
             <div className="p-12 text-center text-gray-400">
               <Users size={48} className="mx-auto mb-3 opacity-50" />
-              <p>No data found</p>
+              <p>{searchQuery ? 'No results found for your search' : 'No data found'}</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs min-w-[1000px]">
-                <thead className="bg-[#15BBB3] text-white">
-                  <tr>
-                    <th className="px-3 py-2.5 text-left font-bold">Date</th>
-                    <th className="px-3 py-2.5 text-left font-bold">DR Name</th>
-                    <th className="px-3 py-2.5 text-left font-bold">Hospital</th>
-                    <th className="px-3 py-2.5 text-left font-bold">City</th>
-                    <th className="px-3 py-2.5 text-left font-bold">Speciality</th>
-                    <th className="px-3 py-2.5 text-left font-bold">Membership ID</th>
-                    <th className="px-3 py-2.5 text-left font-bold">Source</th>
-                    <th className="px-3 py-2.5 text-left font-bold">Status</th>
-                    {activeTab === "my-calls" && <th className="px-3 py-2.5 text-center font-bold">Action</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {combinedData.map((row, i) => (
-                    <tr key={row.callEntryId || row.doctorId || row._id || i} className="hover:bg-gray-50">
-                      <td className="px-3 py-3 font-medium text-gray-700">
-                        {new Date(row.scheduledDate || row.createdAt || new Date()).toLocaleDateString('en-GB')}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-gray-900">
-                            Dr. {row.doctor?.fullName || 'Unknown'}
-                          </span>
-                          {row.itemType === 'doctor' && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full mt-1 w-fit ${row.isTransferredToMe ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
-                              {row.isTransferredToMe ? 'Transferred to Me' : 'My Added'}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-gray-700">{row.doctor?.hospitalName || '-'}</td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-1 text-gray-600">
-                          <MapPin size={13} /> {row.doctor?.city || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-1 text-gray-600">
-                          <Stethoscope size={13} /> {row.doctor?.specialization || 'General'}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-1">
-                          <IdCard size={13} className="text-blue-600" />
-                          <span className="font-mono text-blue-700 font-bold">
-                            {row.doctor?.membershipId || '—'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getSourceColor(row)}`}>
-                          {getSourceLabel(row.source)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">
-                        {getStatusBadge(row.doctorTaskStatus || row.doctorStatus)}
-                      </td>
-                      {activeTab === "my-calls" && (
-                        <td className="px-3 py-3 text-center">
-                          <button
-                            onClick={() => openTransferModal(row)}
-                            className="bg-[#15BBB3] hover:bg-teal-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 mx-auto shadow transition"
-                          >
-                            <Share2 size={14} /> Transfer
-                          </button>
-                        </td>
-                      )}
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs min-w-[1000px]">
+                  <thead className="bg-[#15BBB3] text-white">
+                    <tr>
+                      <th className="px-3 py-2.5 text-left font-bold">Date</th>
+                      <th className="px-3 py-2.5 text-left font-bold">DR Name</th>
+                      <th className="px-3 py-2.5 text-left font-bold">Hospital</th>
+                      <th className="px-3 py-2.5 text-left font-bold">City</th>
+                      <th className="px-3 py-2.5 text-left font-bold">Speciality</th>
+                      <th className="px-3 py-2.5 text-left font-bold">Membership ID</th>
+                      <th className="px-3 py-2.5 text-left font-bold">Source</th>
+                      <th className="px-3 py-2.5 text-left font-bold">Status</th>
+                      {activeTab === "transfer-history" && <th className="px-3 py-2.5 text-left font-bold">Transferred To</th>}
+                      {activeTab === "my-calls" && <th className="px-3 py-2.5 text-center font-bold">Action</th>}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {displayData.map((row, i) => (
+                      <tr key={row.callEntryId || row.doctorId || row._id || i} className="hover:bg-gray-50">
+                        <td className="px-3 py-3 font-medium text-gray-700">
+                          {new Date(row.scheduledDate || row.createdAt || new Date()).toLocaleDateString('en-GB')}
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-900">
+                              Dr. {row.doctor?.fullName || 'Unknown'}
+                            </span>
+                            {row.itemType === 'doctor' && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full mt-1 w-fit ${row.isTransferredToMe ? 'bg-orange-100 text-orange-700' : row.isTransferredByMe ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                {row.isTransferredToMe ? 'Transferred to Me' : row.isTransferredByMe ? 'Transferred by Me' : 'My Added'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-gray-700">{row.doctor?.hospitalName || '-'}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-1 text-gray-600">
+                            <MapPin size={13} /> {row.doctor?.city || 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-1 text-gray-600">
+                            <Stethoscope size={13} /> {row.doctor?.specialization || 'General'}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-1">
+                            <IdCard size={13} className="text-blue-600" />
+                            <span className="font-mono text-blue-700 font-bold">
+                              {row.doctor?.membershipId || '—'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getSourceColor(row)}`}>
+                            {getSourceLabel(row.source)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3">
+                          {getStatusBadge(row.doctorTaskStatus || row.doctorStatus)}
+                        </td>
+                        {activeTab === "transfer-history" && (
+                          <td className="px-3 py-3">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900">
+                                {row.transferredTo?.fullName || 'Unknown'}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {row.transferReason || 'Transfer'}
+                              </span>
+                            </div>
+                          </td>
+                        )}
+                        {activeTab === "my-calls" && (
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              onClick={() => openTransferModal(row)}
+                              className="bg-[#15BBB3] hover:bg-teal-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 mx-auto shadow transition"
+                            >
+                              <Share2 size={14} /> Transfer
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <span>Showing</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#15BBB3]"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span>of {totalRecords} results</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700">
+                    Page {currentPage} of {totalPagesState || 1}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 rounded border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    {Array.from({ length: Math.min(5, totalPagesState) }, (_, i) => {
+                      let pageNum;
+                      if (totalPagesState <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPagesState - 2) {
+                        pageNum = totalPagesState - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-1 rounded border text-sm font-medium transition ${
+                            currentPage === pageNum
+                              ? 'bg-[#15BBB3] text-white border-[#15BBB3]'
+                              : 'border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPagesState}
+                      className="px-3 py-1 rounded border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
