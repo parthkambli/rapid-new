@@ -427,6 +427,34 @@ const InvoicePreviewPage = () => {
           .max-w-4xl { position: absolute; left: 0; top: 0; width: 210mm; }
           .print\\:hidden { display: none; }
           @page { size: A4; margin: 5mm; }
+          
+          /* Ensure header and footer stay within page width */
+          .header, .footer {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          
+          /* Ensure proper page breaks */
+          .page {
+            page-break-after: always;
+            page-break-inside: avoid;
+          }
+          
+          /* Ensure content doesn't overflow */
+          .content {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          
+          /* Force proper table rendering */
+          table {
+            page-break-inside: auto;
+          }
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
         }
       `}</style>
     </div>

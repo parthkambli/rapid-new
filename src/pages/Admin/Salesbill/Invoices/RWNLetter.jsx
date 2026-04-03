@@ -425,6 +425,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../../../../services/apiClient';
 import { apiEndpoints } from '../../../../services/apiClient';
 
+import header from '../../../../assets/Salesbill/Header.png'
 import Top from '../../../../assets/Salesbill/WNright.png';
 import Logo from '../../../../assets/Salesbill/Logo.png';
 import stamp from '../../../../assets/Salesbill/stamp.png';
@@ -483,10 +484,11 @@ const RenewalLetterExact = () => {
               </div>
             </div> */}
  <div className="flex justify-between items-start pb-3 border-b-4 border-red-700 mb-4">
-              <img src={Logo} alt="Logo" className="w-52 mt-4" />
+              {/* <img src={Logo} alt="Logo" className="w-52 mt-4" />
               <div className="text-right text-xs leading-tight">
                 <img src={Top} alt="" className='w-full' />
-              </div>
+              </div> */}
+              <img src={header} alt="" className='w-full h-[150px]'/>
             </div>
             {/* Date */}
             <div className="text-right mb-6 font-bold text-xs">
@@ -496,7 +498,7 @@ const RenewalLetterExact = () => {
             {/* To Address */}
             <div className="mb-6 text-xs leading-relaxed">
               <strong>To</strong><br />
-              Dr. {to.doctors}<br />
+               {to.doctors}<br />
               {to.hospitalName}<br />
               {to.addressLine1}<br />
               {to.addressLine2}<br />
@@ -513,22 +515,22 @@ const RenewalLetterExact = () => {
             <div className="text-justify text-xs leading-5 flex-grow">
               <p>Dear Doctor,</p>
 
-              <p className="mt-4">
+              <p className="mt-2">
                 We are delighted to inform you that your membership with Rapid Medicolegal Services India Ltd. has been successfully renewed. Thank you for placing your trust in our services and continuing to be a valued member.
               </p>
 
-              <p className="mt-4">
+              <p className="mt-2">
                 Your renewed membership is now active from{' '}
                 <strong>{formatDate(dates.validFrom)}</strong> to{' '}
                 <strong>{formatDate(dates.validTill)}</strong>.
                 We remain committed to providing you with reliable, expert medicolegal and risk management support whenever you need it.
               </p>
 
-              <p className="mt-4">
+              <p className="mt-2">
                 Your continued association inspires us to maintain the highest standards of service and ensure your complete satisfaction. Our team remains your primary point of contact for any questions or assistance.
               </p>
 
-              <p className="mt-4">
+              <p className="mt-2">
                 Thank you once again for staying with Rapid Medicolegal Services India Ltd.
               </p>
 

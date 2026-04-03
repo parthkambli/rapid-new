@@ -3,8 +3,8 @@ import React from 'react';
 
 const InvoiceFooter = () => {
   return (
-    <div className="footer border-t-2 border-gray-800 pt-3 mt-6 text-xs text-gray-600">
-      <div className="flex flex-wrap justify-between">
+    <div className="footer border-t-2 border-gray-800 pt-3 mt-6 text-xs text-gray-600 w-full max-w-full">
+      <div className="flex flex-wrap justify-between w-full">
         <div className="w-full md:w-1/2 mb-4 md:mb-0 md:pr-4">
           <div className="mb-2">
             <strong>Register Office:</strong><br />
@@ -19,8 +19,8 @@ const InvoiceFooter = () => {
             Contact: +91-9421464275
           </div>
         </div>
-        
-        <div className="w-full md:w-1/2">
+
+        <div className="w-full md:w-1/2 md:pl-4">
           <div className="mb-2">
             <strong>Regional Offices:</strong><br />
             <strong>MUMBAI:</strong> House No 158, Ananje Master Building, No-7,<br />

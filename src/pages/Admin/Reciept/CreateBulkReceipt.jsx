@@ -2777,10 +2777,11 @@ const CreateBulkReceipt = () => {
         let previousReceiptBankDetails = null;
         if (bill.client?.entityId) {
           try {
+            const entityId = typeof bill.client.entityId === 'object' ? bill.client.entityId._id : bill.client.entityId;
             const response = await apiClient.get('/receipts', {
               params: {
                 payerType: 'doctor',
-                payerEntityId: bill.client.entityId,
+                payerEntityId: entityId,
                 paymentMethod: 'nach',
                 limit: 1,
                 sortBy: 'receiptDate',

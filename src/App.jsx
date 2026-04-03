@@ -686,6 +686,7 @@ const AppContent = () => {
               <Route path="/telecaller/employee/salary/view/:id" element={<SalaryDetailView />} />
               <Route path="/telecaller/create-quotation" element={<CreateQuotation />} />
               <Route path="/telecaller/add-salesbill" element={<CreateBill />} />
+              <Route path="/telecaller/edit-salesbill/:id" element={<EditSalesBill />} />
               <Route path="/telecaller/create-receipt" element={<CreateReciept />} />
               <Route path="/telecaller/add-policy" element={<AddPolicy />} />
               <Route path="/telecaller/attendance-record" element={<AttendanceRecord />} />
@@ -711,8 +712,22 @@ const AppContent = () => {
               <Route path="/telecaller/quotation/edit/:id" element={<TeleEditQuotation />} />
               <Route path="/telecaller/quotation/:id" element={<QuotationInvoices />} />
               <Route path="/telecaller/salesbill/list" element={<SalesBillTele />} />
+              <Route path="/telecaller/salesbill/print/:id" element={<SalesBillPrintWrapper />} />
+              <Route path="/telecaller/salesbill/WN/:id" element={<WelcomeLetter />} />
+              <Route path="/telecaller/salesbill/renewed/:id" element={<RenewalLetterExact />} />
+              <Route path="/telecaller/salesbill/rwnl/:id" element={<RenewalContractLetter />} />
+              <Route path="/telecaller/salesbill/membership-form/:id" element={<MembershipForm />} />
+              <Route path="/telecaller/salesbill/sa-whf-monthly/:id" element={<SAWHFMonthlyPlan />} />
+              <Route path="/telecaller/salesbill/sa-whf-yearly/:id" element={<SAWHFYearlyPlan />} />
+              <Route path="/telecaller/salesbill/sa/monthly/:id" element={<MonthlySA />} />
+              <Route path="/telecaller/salesbill/sa/yearly/:id" element={<YearlySA />} />
               <Route path="/telecaller/receipt-list" element={<ReceiptListTele />} />
               <Route path="/telecaller/create-receipt" element={<CreateReciept />} />
+              <Route path="/telecaller/edit-receipt/:id" element={<EditReceipt />} />
+              <Route path="/telecaller/view-receipt/:id" element={<ViewReceipt />} />
+              <Route path="/telecaller/print-receipt/:id" element={<PrintRecieptInvoice />} />
+              <Route path="/telecaller/print-yearly-receipt/:id" element={<PrintRecieptInvoice />} />
+              <Route path="/telecaller/print-monthly-receipt/:id" element={<MonthlyReceiptPrint />} />
 
               <Route path="/telecaller/policy" element={<PolicyList />} />
               <Route path="/telecaller/policy-history/:policyNo" element={<PolicyHistory />} />
