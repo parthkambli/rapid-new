@@ -32,6 +32,8 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { apiHelpers, apiEndpoints } from "../../../services/apiClient";
 
+
+import header from "../../../assets/Salesbill/Header.png"
 import Right from "../../../assets/salesbill/WNright.png";
 import left from "../../../assets/salesbill/logo.png";
 import stamp from "../../../assets/salesbill/stamp.png";
@@ -94,8 +96,8 @@ const formatDate = (isoString) => {
 
   // Template Data
   const template = {
-    // doctorName: (doctor.fullName || "N/A").toUpperCase(),
-    doctorName: (payer.name || "N/A").toUpperCase(),
+    doctorName: (doctor.fullName || "N/A").toUpperCase(),
+    // doctorName: (payer.name || "N/A").toUpperCase(),
     qualification: doctor.qualification || "--",
     specialization: doctor.specialization?.join(", ") || "GENERAL PRACTITIONER",
     hospitalName: doctor.hospitalName || "--",
@@ -170,13 +172,14 @@ membershipYearDisplay: (() => {
     <>
       <div className="max-w-3xl border p-4 mx-auto bg-white print:max-w-full print:mx-0 print:p-4" style={{ fontFamily: "Arial, sans-serif" }}>
         {/* Red Top Border */}
-        <div className="h-2 bg-red-700"></div>
+       
 
         {/* Header Logos */}
         <div className="">
           <div className="flex justify-between items-start">
-            <img src={left} alt="Logo" className="w-48 h-auto mt-4" />
-            <img src={Right} alt="Right Logo" className="w-100 h-auto" />
+            {/* <img src={left} alt="Logo" className="w-48 h-auto mt-4" />
+            <img src={Right} alt="Right Logo" className="w-100 h-auto" /> */}
+            <img src={header} alt="" className="w-full h-[160px]" />
           </div>
 
           {/* Doctor Details + RECEIPT Title */}
@@ -284,11 +287,11 @@ membershipYearDisplay: (() => {
           <div className="mt-10 text-sm">
             <strong>Date :</strong> {template.date}
           </div>
-          <div className="mt-4 text-lg font-semibold">Thank you...!</div>
+          {/* <div className="mt-4 text-lg font-semibold">Thank you...!</div> */}
         </div>
 
         {/* Bottom Bar */}
-        <div className="h-3 bg-gray-800"></div>
+        {/* <div className="h-3 bg-gray-800"></div> */}
       </div>
 
       {/* Manual Print Button */}
