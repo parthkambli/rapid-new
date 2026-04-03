@@ -296,6 +296,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient, { apiEndpoints } from '../../../../services/apiClient';
 import { toast } from 'react-toastify';
 
+import Header from '../../../../assets/Salesbill/Header.png';
 import Top from '../../../../assets/Salesbill/WNright.png';
 import Logo from '../../../../assets/Salesbill/Logo.png';
 import stamp from '../../../../assets/Salesbill/stamp.png';
@@ -358,7 +359,7 @@ const WelcomeLetter = () => {
   const client = bill.client;
   const entity = client?.entityId || {};
 
-  const doctorNames = client.name ? `Dr. ${client.name}` : "Valued Doctor";
+  const doctorNames = client.name ? ` ${client.name}` : "Valued Doctor";
 
   // Hospital / Clinic Name
   const hospitalName = entity.hospitalName || entity.fullName || "Clinic/Hospital";
@@ -366,7 +367,14 @@ const WelcomeLetter = () => {
   // Full Address
   const address = entity.hospitalAddress || entity.address || {};
   const addressLine1 = address.address || "";
-  const addressLine2 = `${address.city || ""}${address.city && address.state ? ", " : ""}${address.state || ""}`;
+  // const addressLine2 = `${address.city || ""}${address.city && address.state ? ", " : ""}${address.state || ""}`;
+ 
+ const addressLine2 = [
+  address.city || "",
+  address?.district,
+  address?.state,
+  address?.country
+].filter(Boolean).join(", ");
   const pinCode = address.pinCode || "";
   const phone = entity.phoneNumber || entity.whatsappNumber || "N/A";
 
@@ -376,17 +384,18 @@ const WelcomeLetter = () => {
   return (
     <div className="min-h-screen py-4 px-4 font-sans text-black ">
       <div className="max-w-3xl mx-auto  ">
-        <div className='shadow-lg border-2 border-black'>
+        <div className='shadow-lg border-2 border-black '>
 
           {/* Main Letter */}
           <div className="bg-white pl-6 pr-6 relative">
 
             {/* Header */}
             <div className="flex justify-between items-start pb-3 border-b-4 border-red-700 mb-4">
-              <img src={Logo} alt="Logo" className="w-42 mt-4 print:w-[180px]" />
+              {/* <img src={Logo} alt="Logo" className="w-42 mt-4 print:w-[180px]" />
               <div className="text-right text-xs leading-tight">
-                <img src={Top} alt="" className="w-full" />
-              </div>
+                <img src={Top} alt="" className="w-full" /> */}
+                <img src={Header} alt=""     className="w-[98vw] h-[170px]"   />
+              {/* </div> */}
             </div>
 
             {/* Date */}
