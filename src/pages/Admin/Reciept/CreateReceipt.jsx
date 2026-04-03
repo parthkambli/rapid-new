@@ -290,13 +290,22 @@ const CreateReceipt = () => {
             pinCode: doctor.address.pinCode || doctor.pinCode || '',
             country: doctor.address.country || doctor.country || 'India',
           };
-        } else {
-          // Address is a string or has .full property
+        } else if (doctor.address && typeof doctor.address === 'object' && doctor.address.full) {
+          // Address is an object with .full property
           addressObj = {
-            address: doctor.address?.full || doctor.address || doctor.hospitalAddress?.address || "",
-            city: doctor.city || doctor.hospitalAddress?.city || doctor.address?.city || "",
-            state: doctor.state || doctor.hospitalAddress?.state || doctor.address?.state || "",
-            pinCode: doctor.pinCode || doctor.hospitalAddress?.pinCode || doctor.address?.pinCode || "",
+            address: doctor.address.full || '',
+            city: doctor.address.city || doctor.city || '',
+            state: doctor.address.state || doctor.state || '',
+            pinCode: doctor.address.pinCode || doctor.pinCode || '',
+            country: doctor.address.country || doctor.country || 'India',
+          };
+        } else {
+          // Address is a string or doesn't exist - use empty strings
+          addressObj = {
+            address: typeof doctor.address === 'string' ? doctor.address || "" : "",
+            city: typeof doctor.city === 'string' ? doctor.city || "" : "",
+            state: typeof doctor.state === 'string' ? doctor.state || "" : "",
+            pinCode: typeof doctor.pinCode === 'string' ? doctor.pinCode || "" : "",
             country: "India",
           };
         }
@@ -692,6 +701,7 @@ const handleSave = async () => {
       ...(formData.receiptNumber?.trim() && {
         receiptNumber: formData.receiptNumber.trim()
       }),
+      receiptDate: formData.receiptDate, // Send selected receipt date
       payer: {
         type: "doctor",
         entityId: formData.customer.entityId,
