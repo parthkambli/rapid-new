@@ -105,30 +105,38 @@ const NotificationBell = ({ user }) => {
   // Handle notification click
   const handleNotificationClick = (notification) => {
     markAsRead(notification._id);
-    
-    // Navigate based on alert type
-    if (notification.alertId?.entityId) {
+
+    // Navigate based on alert type - notification.alertId is the full alert object
+    if (notification.alertId) {
+      const alertId = notification.alertId._id || notification.alertId;
       const { alertType, entityType, entityId } = notification.alertId;
-      
-      switch (entityType) {
-        case 'Doctor':
-          navigate(`/admin/doctors/${entityId}`);
-          break;
-        case 'Task':
-          navigate(`/telecaller/tasks/${entityId}`);
-          break;
-        case 'Policy':
-          navigate(`/admin/policies/${entityId}`);
-          break;
-        case 'Quotation':
-          navigate(`/admin/quotations/${entityId}`);
-          break;
-        default:
-          navigate(`/alerts/${notification._id}`);
-          break;
+
+      // If entityType and entityId exist, navigate to the entity
+      if (entityType && entityId) {
+        switch (entityType) {
+          case 'Doctor':
+            navigate(`/admin/doctors/${entityId}`);
+            break;
+          case 'Task':
+            navigate(`/telecaller/tasks/${entityId}`);
+            break;
+          case 'Policy':
+            navigate(`/admin/policies/${entityId}`);
+            break;
+          case 'Quotation':
+            navigate(`/admin/quotations/${entityId}`);
+            break;
+          default:
+            navigate(`/alerts/${alertId}`);
+            break;
+        }
+      } else {
+        // No entityType/entityId, just navigate to the alert
+        navigate(`/alerts/${alertId}`);
       }
     } else {
-      navigate(`/alerts/${notification._id}`);
+      // Fallback: navigate to general alerts page
+      navigate('/admin/alerts');
     }
   };
 

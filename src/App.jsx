@@ -94,6 +94,8 @@ import AddInsuranceType from './pages/Admin/Policy/AddInsuranceType';
 import EditInsuranceType from './pages/Admin/Policy/EditInsuranceType';
 import ServiceRenewalAlertList from './pages/Admin/RenewalAlertList/ServiceRenewalAlertList';
 import IndemnityRenewalAlertList from './pages/Admin/RenewalAlertList/IndemnityRenewalAlertList';
+import AlertDetail from './pages/Admin/Alerts/AlertDetail';
+import AlertsList from './pages/Admin/Alerts/AlertsList';
 import CreateServicePackage from './pages/Admin/ServicePackage/CreateService';
 import EditServicePackage from './pages/Admin/ServicePackage/EditService';
 import QueriesOrCase from './pages/Admin/Queries/QueriesOrCase';
@@ -934,6 +936,9 @@ const AppContent = () => {
               <Route path="/admin/edit-insurance-type/:id" element={<EditInsuranceType />} />
               <Route path="/admin/service-alert-list" element={<ServiceRenewalAlertList />} />
               <Route path="/admin/indemnity-alert-list" element={<IndemnityRenewalAlertList />} />
+              <Route path="/admin/alerts" element={<AlertsList />} />
+              <Route path="/admin/alerts/:id" element={<AlertDetail />} />
+              <Route path="/alerts/:id" element={<AlertDetail />} />
               <Route path="/admin/service-package-list" element={<ServicePackageList />} />
               <Route path="/admin/create-service-package" element={<CreateServicePackage />} />
               <Route path="/admin/edit-service-package/:id" element={<EditServicePackage />} />

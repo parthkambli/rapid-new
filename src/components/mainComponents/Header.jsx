@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import NotificationBell from '../common/NotificationBell';
-import logo from '../../../src/assets/Logo.png'
+import logo from '../../assets/logo.png';
 
 const Navbar = ({ toggleSidebar, onLogout, user }) => {
   const [isOpen, setIsOpen] = useState(false);

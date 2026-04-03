@@ -561,6 +561,7 @@ export const apiEndpoints = {
   messages: {
     doctorsForMessaging: "/messages/doctors-for-messaging",
     sendBulkMessages: "/messages/send-bulk-messages",
+    getTemplates: "/messages/templates",
   },
 };
 
