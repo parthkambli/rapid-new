@@ -641,7 +641,7 @@ const mapToMember = (d, isPrimary = true) => {
     isHospitalOnly: isHospitalOnly,
     hospitalDetails: d.hospitalDetails,
     formattedHospitalAddress: d.hospitalName && d.hospitalAddress ?
-      `${d.hospitalName}, ${d.hospitalAddress.address || 'N/A'}, ${d.hospitalAddress.city || 'N/A'}, ${d.hospitalAddress.state || 'N/A'}, ${(d.hospitalAddress.country || 'India').toUpperCase()}  , , PIN CODE  - ${d.hospitalAddress.pinCode || 'N/A'}` :
+      `${d.hospitalName}, ${d.hospitalAddress.address || 'N/A'}, ${d.hospitalAddress.city || 'N/A'},${d.hospitalAddress.district || 'N/A'}, ${d.hospitalAddress.state || 'N/A'}, ${(d.hospitalAddress.country || 'India').toUpperCase()}  , , PIN CODE  - ${d.hospitalAddress.pinCode || 'N/A'}` :
       d.hospitalName || 'N/A',
     // ✅ ADDED: Original addresses for reference
     originalHospitalAddress: d.hospitalAddress,
