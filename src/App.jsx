@@ -59,7 +59,10 @@ import CreateUser from './pages/Admin/User/CreateUser';
 import ServicePackageList from './pages/Admin/ServicePackage/ServicePackageList';
 // import EditServicePackage from './pages/Admin/ServicePackage/EditService';
 
-
+// additonal
+import EditDoctorAddtional from './pages/TeleCaller/Additional/EditDoctor'
+import AllVisitedDoctorListsAddtional from './pages/TeleCaller/Additional/TotalDoctor'
+import CreateRecieptAdditional from './pages/TeleCaller/Additional/Reciept/CreateReciept'
 // Use existing salesperson components instead of creating new ones
 
 import AdvocateDashboard from './pages/Advocate/Dashboard';
@@ -479,6 +482,7 @@ const AppContent = () => {
               <Route path="/sales/add-doctor" element={<AddDoctorFormbySales />} />
               <Route path="/sales/view-doctor/:id" element={<SalesViewDoctor />} />
               <Route path="/sales/edit-doctor/:id" element={<EditDoctor />} />
+              <Route path="/sales/addtional/edit-doctor/:id" element={<EditDoctorAddtional />} />
               <Route path="/sales/dr-followups" element={<SalesFollowUp />} />
               <Route path="/sales/revisit-doctor/:id" element={<RevisitForm />} />
 
@@ -611,7 +615,7 @@ const AppContent = () => {
               <Route path="/" element={<TelecallerDashboard />} />
               <Route path="/telecaller/dashboard" element={<TelecallerDashboard />} />
               <Route path="/telecaller/add-doctor" element={<TelecallerAddDoctor />} />
-              <Route path="/telecaller/all-doctors" element={<AllVisitedDoctorLists />} />
+              <Route path="/telecaller/all-doctors" element={<AllVisitedDoctorListsAddtional />} />
               <Route path="/telecaller/edit-doctor/:id" element={<EditdoctorTele />} />
               <Route path="/telecaller/calling-list" element={<TelecallerCallingList />} />
               <Route path="/telecaller/add/quotation" element={<AddQuotationTeleCaller />} />
@@ -720,7 +724,7 @@ const AppContent = () => {
               <Route path="/telecaller/salesbill/sa/monthly/:id" element={<MonthlySA />} />
               <Route path="/telecaller/salesbill/sa/yearly/:id" element={<YearlySA />} />
               <Route path="/telecaller/receipt-list" element={<ReceiptListTele />} />
-              <Route path="/telecaller/create-receipt" element={<CreateReciept />} />
+              <Route path="/telecaller/create-receipt" element={<CreateRecieptAdditional />} />
               <Route path="/telecaller/edit-receipt/:id" element={<EditReceipt />} />
               <Route path="/telecaller/view-receipt/:id" element={<ViewReceipt />} />
               <Route path="/telecaller/print-receipt/:id" element={<PrintRecieptInvoice />} />
