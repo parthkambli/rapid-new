@@ -1276,7 +1276,7 @@ const ReceiptList = () => {
       const receiptData = await response.json();
 
       // Default print path
-      let printPath = `/admin/print-receipt/${receipt._id}`;
+      let printPath = `/telecaller/print-receipt/${receipt._id}`;
 
       // Step 2: Check if linked to a SalesBill
       if (receiptData.data?.paymentAgainst?.referenceId) {
@@ -1297,9 +1297,9 @@ const ReceiptList = () => {
           const membershipType = billData.data?.membershipType;
 
           if (membershipType === 'monthly') {
-            printPath = `/admin/print-monthly-receipt/${receipt._id}`;
+            printPath = `/telecaller/print-monthly-receipt/${receipt._id}`;
           } else if (membershipType === 'yearly') {
-            printPath = `/admin/print-yearly-receipt/${receipt._id}`;
+            printPath = `/telecaller/print-yearly-receipt/${receipt._id}`;
           }
         }
       }
@@ -1407,7 +1407,7 @@ const ReceiptList = () => {
         <h2 className="text-2xl font-bold text-gray-800">Receipt Management</h2>
         <div className="space-x-2">
           <button
-            onClick={() => navigate("/admin/create-bulk-receipt")}
+            onClick={() => navigate("/telecaller/create-bulk-receipt")}
             className="px-4 py-2 bg-[#398C89] text-white rounded-md hover:bg-[#2e706e] transition-colors"
           >
             Create Bulk Receipt
@@ -1419,7 +1419,7 @@ const ReceiptList = () => {
             Add Bank Account
           </button>
           <button
-            onClick={() => navigate("/admin/create-receipt")}
+            onClick={() => navigate("/telecaller/create-receipt")}
             className="px-4 py-2 bg-[#398C89] text-white rounded-md hover:bg-[#2e706e] transition-colors"
           >
             Create Receipt
