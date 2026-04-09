@@ -139,6 +139,7 @@ export const apiEndpoints = {
     getWithSpouse: (id) => `/doctors/${id}/with-spouse`,
     getQueryCases: (id) => `/doctors/${id}/query-cases`,
     update: (id) => `/doctors/${id}`,
+    updateAdditional: (id) => `/doctors/additional/${id}`,
     updatesalesman: (id) => `/doctors/salesman/${id}`,
     patchUpdate: (id) => `/doctors/${id}`,
     transferdrtoTele: (id) => `/doctors/transfer-doctor/${id}`,
