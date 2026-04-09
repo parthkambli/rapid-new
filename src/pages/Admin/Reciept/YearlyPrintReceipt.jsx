@@ -104,6 +104,7 @@ const formatDate = (isoString) => {
     hospitalAddress: [
       doctor.hospitalAddress?.address || "",
       doctor.hospitalAddress?.city || "",
+      doctor.hospitalAddress?.district || "",
       doctor.hospitalAddress?.state || "",
       doctor.hospitalAddress?.pinCode || "",
       "INDIA"
