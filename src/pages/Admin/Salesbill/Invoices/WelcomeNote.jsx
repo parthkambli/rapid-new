@@ -359,10 +359,16 @@ const WelcomeLetter = () => {
   const client = bill.client;
   const entity = client?.entityId || {};
 
-  const doctorNames = client.name ? ` ${client.name}` : "Valued Doctor";
+  // Check if doctor type is hospital
+  const isHospital = entity.doctorType === 'hospital';
 
-  // Hospital / Clinic Name
-  const hospitalName = entity.hospitalName || entity.fullName || "Clinic/Hospital";
+  // For hospital: only show hospital name, for individual: show doctor name
+  const doctorNames = isHospital 
+    ? (entity.hospitalName || "Hospital") 
+    : (client.name ? `${client.name}` : "Valued Doctor");
+
+  // Hospital / Clinic Name - only show for non-hospital types
+  const hospitalName = !isHospital ? (entity.hospitalName || entity.fullName || "") : "";
 
   // Full Address
   const address = entity.hospitalAddress || entity.address || {};
