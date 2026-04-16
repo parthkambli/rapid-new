@@ -335,8 +335,8 @@ const MonthlyPremiumReceipt = () => {
       doctor.hospitalAddress?.city || "",
       doctor.hospitalAddress?.district || "",
       doctor.hospitalAddress?.state || "",
-      doctor.hospitalAddress?.pinCode || "",
-      "INDIA"
+       "INDIA",
+       doctor.hospitalAddress?.pinCode || ""
     ].filter(Boolean).join(", "),
     registrationNo: doctor.licenseNumber || doctor.doctorId || null,
 
