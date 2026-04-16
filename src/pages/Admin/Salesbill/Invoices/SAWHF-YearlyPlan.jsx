@@ -329,9 +329,9 @@ const SAWHFYearlyPlan = () => {
                 <p className="mb-2">This Agreement for providing professional services is made at <b>{salesBill.city || 'Kolhapur'}</b> on this day of <b>{agreementDate}</b></p>
                 {doctor.hasSpouse && doctor.spouseInfo ? (
                   <p className="mb-2"><b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.</p>
-                ) : doctor.doctorType === 'hospital' ? (
+                ) : doctor.doctorType?.toLowerCase() === 'hospital' ? (
                   <p className="mb-2"><b>{doctor.hospitalName}</b> having its registered office at {doctor.hospitalAddress}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} Herein after referred as the doctor the one part.</p>
-                ) : doctor.doctorType === 'hospital_individual' && !doctor.hasSpouse ? (
+                ) : doctor.doctorType?.toLowerCase() === 'hospital_individual' && !doctor.hasSpouse ? (
                   <p className="mb-2"><b>{doctor.fullName}</b> (representing {doctor.hospitalName}) residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.</p>
                 ) : (
                   <p className="mb-2"><b>{doctor.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.</p>

@@ -947,6 +947,10 @@ const InfoTable = ({ title, tableType, data, salesBill, className = '' }) => {
       return membershipType === 'MONTHLY' ? `${value || ''} /MONTH` : (value || '-');
     }
 
+    if (row.key === 'doctorType' || row.key === 'membershipType') {
+      return value ? value.toString().toUpperCase() : '-';
+    }
+
     return value || '-';
   };
 
@@ -1008,6 +1012,10 @@ const InfoTable = ({ title, tableType, data, salesBill, className = '' }) => {
       const filteredRows = rows.filter(row => {
         if (row.conditional) {
           return data.some(member => member.membershipType?.toLowerCase() !== 'monthly');
+        }
+        // ✅ HIDE: 'Doctor Name' row if it's hospital only (no individual doctor items)
+        if (row.key === 'fullName' && doctorItems.length === 0) {
+          return false;
         }
         return true;
       });
