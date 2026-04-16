@@ -106,8 +106,9 @@ const formatDate = (isoString) => {
       doctor.hospitalAddress?.city || "",
       doctor.hospitalAddress?.district || "",
       doctor.hospitalAddress?.state || "",
+      
+      "INDIA",
       doctor.hospitalAddress?.pinCode || "",
-      "INDIA"
     ].filter(Boolean).join(", "),
     registrationNo: doctor.licenseNumber || doctor.doctorId || "--",
 
