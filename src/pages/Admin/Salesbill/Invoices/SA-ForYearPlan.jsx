@@ -173,12 +173,12 @@ const YearlySA = () => {
                   <p className="mb-2 print:mb-2">
                     <b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
                   </p>
-                ) : doctor.doctorType === 'hospital' ? (
+                ) : doctor.doctorType?.toLowerCase() === 'hospital' ? (
                   // ✅ Case 2: Hospital only - show hospital address
                   <p className="mb-2 print:mb-2">
                     <b>{doctor.hospitalName}</b> having its registered office at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} Herein after referred as the doctor the one part.
                   </p>
-                ) : doctor.doctorType === 'hospital_individual' && !doctor.hasSpouse ? (
+                ) : doctor.doctorType?.toLowerCase() === 'hospital_individual' && !doctor.hasSpouse ? (
                   // ✅ Case 3: Hospital_individual without spouse - show doctor's personal address
                   <p className="mb-2 print:mb-2">
                     <b>{doctor.fullName}</b> (representing {doctor.hospitalName}) residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
