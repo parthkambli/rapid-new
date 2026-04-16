@@ -2834,7 +2834,7 @@ const CreateBulkReceipt = () => {
           paymentAgainst: { type: 'bill', referenceId: bill._id },
           referenceNumber: bill.billNumber,
           relatedDocuments: { billId: bill._id },
-          remarks: `Payment against monthly bill ${bill.billNumber} via NACH`,
+          remarks: '',
           billDetails: {
             totalAmount: bill.totalAmount,
             outstandingAmount: bill.outstandingAmount,
