@@ -1626,13 +1626,8 @@ const RenewalContractLetter = () => {
         const membershipPeriod = calculateMembershipPeriod(bill.billDate, bill.dueDate);
         const currentIndemnity = primaryDoctor.currentIndemnity || "₹50,00,000";
 
-        // 8. Get the most recent sales bill number from the doctor's salesBills array for ID Number
-        let oldBillNumber = "RML-XXXXX";
-        if (primaryDoctor.salesBills && primaryDoctor.salesBills.length > 0) {
-          // Sort by billDate to get the most recent one
-          const sortedBills = primaryDoctor.salesBills.sort((a, b) => new Date(b.billDate || b.createdAt) - new Date(a.billDate || a.createdAt));
-          oldBillNumber = sortedBills[0].billNumber || sortedBills[0].number || sortedBills[0].billNumber || "RML-XXXXX";
-        }
+        // 8. Use the current bill's number as the ID Number for renewal
+        const oldBillNumber = bill.billNumber || "RML-XXXXX";
 
         // 9. Fetch service charge from old sales bill
         let serviceChargeAmount = 0;
