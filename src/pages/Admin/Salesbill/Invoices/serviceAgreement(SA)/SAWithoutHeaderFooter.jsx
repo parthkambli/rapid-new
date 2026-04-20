@@ -391,22 +391,22 @@ const SAWithoutHeaderFooter = () => {
      {doctor.hasSpouse && doctor.spouseInfo ? (
                   // ✅ Case 1: Spouse case - show both doctors with personal addresses
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country},  PIN CODE - {doctor.pincode},  with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
+                    <b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {doctor.address}, {doctor.taluka}, {doctor.district}, PIN CODE - {doctor.pincode}, {doctor.city}, {doctor.state}, {doctor.country},  with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
                   </p>
                 ) : doctor.doctorType === 'hospital' ? (
                   // ✅ Case 2: Hospital only - show hospital address
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.hospitalName}</b> having its registered office at {doctor.address},  {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE - {doctor.pincode}, Herein after referred as the doctor the one part.
+                    <b>{doctor.hospitalName}</b> having its registered office at {doctor.address}, {doctor.taluka}, {doctor.district}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE - {doctor.pincode}, Herein after referred as the doctor the one part.
                   </p>
                 ) : doctor.doctorType === 'hospital_individual' && !doctor.hasSpouse ? (
                   // ✅ Case 3: Hospital_individual without spouse - show doctor's personal address
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.fullName}</b> (representing {doctor.hospitalName}) residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country},  PIN CODE - {doctor.pincode},  with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
+                    <b>{doctor.fullName}</b> (representing {doctor.hospitalName}) residing at {doctor.address}, {doctor.taluka}, {doctor.district}, {doctor.city}, {doctor.state}, {doctor.country},  PIN CODE - {doctor.pincode},  with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
                   </p>
                 ) : (
                   // ✅ Case 4: Individual doctor - show doctor's personal address
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.fullName}</b> residing at {doctor.address}, {doctor.city},{doctor.state}, {doctor.country},  PIN CODE - {doctor.pincode}, with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
+                    <b>{doctor.fullName}</b> residing at {doctor.address}, {doctor.taluka}, {doctor.district}, {doctor.city}, {doctor.state}, {doctor.country},  PIN CODE - {doctor.pincode}, with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
                   </p>
                 )}
 
