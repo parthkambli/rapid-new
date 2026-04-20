@@ -1545,7 +1545,7 @@ const RenewalContractLetter = () => {
         let newPriceRows = [];
         let newSelectedYears = [1, 5];
         let newShowMonthly = false;
-        let newIndemnityCover = "₹50,00,000"; // fallback
+        let newIndemnityCover = "-"; // fallback
 
         if (quotation) {
           const items = quotation.requestDetails?.items || [];
@@ -1556,10 +1556,10 @@ const RenewalContractLetter = () => {
 
           if (items.length > 0) {
             const lastItem = items[items.length - 1]; // Only last row
-            newIndemnityCover = lastItem.indemnity || "₹50,00,000";
+            newIndemnityCover = lastItem.indemnity || "-";
 
             newPriceRows = [{
-              indemnity: lastItem.indemnity || "Custom Limit",
+              indemnity: lastItem.indemnity || "-",
               monthly: lastItem.monthly ? `₹${Number(lastItem.monthly).toLocaleString('en-IN')}/-` : "-",
               ...newSelectedYears.reduce((acc, y) => {
                 const yearKey = `year_${y}`;
@@ -1571,17 +1571,17 @@ const RenewalContractLetter = () => {
           }
         }
 
-        // Fallback for new charges
+        // Fallback for new charges if still empty
         if (newPriceRows.length === 0) {
           newPriceRows = [{
-            indemnity: "₹50,00,000",
-            monthly: "999/-",
-            y1: "10,000/-",
-            y5: "50,000/-"
+            indemnity: "-",
+            monthly: "-",
+            y1: "-",
+            y5: "-"
           }];
           newSelectedYears = [1, 5];
-          newShowMonthly = true;
-          newIndemnityCover = "₹50,00,000";
+          newShowMonthly = false;
+          newIndemnityCover = "-";
         }
 
         // 6. Spouse name for display
@@ -1624,33 +1624,70 @@ const RenewalContractLetter = () => {
         };
 
         const membershipPeriod = calculateMembershipPeriod(bill.billDate, bill.dueDate);
-        const currentIndemnity = primaryDoctor.currentIndemnity || "₹50,00,000";
+        
+        // 8. Insurance and Service Charge details from API - Match by relatedSalesBillId
+        // The ID from useParams (id) is the current sales bill ID
+        const matchedPolicyEntry = (primaryDoctor.policies || []).find(p => 
+          p.relatedSalesBillId === id || 
+          (p.policyId && p.policyId.relatedSalesBillId === id)
+        );
 
-        // 8. Use the current bill's number as the ID Number for renewal
-        const oldBillNumber = bill.billNumber || "RML-XXXXX";
+        // Fallback to first policy if no match found (safeguard)
+        const policyEntry = matchedPolicyEntry || (primaryDoctor.policies && primaryDoctor.policies.length > 0 ? primaryDoctor.policies[0] : null);
+        
+        const policyDetails = policyEntry?.policyId || {};
+        
+        const insuranceCo = policyDetails.insuranceCompany?.companyName || "-";
+        const insuranceType = policyDetails.insuranceType?.typeName || "-";
+        
+        // Use coverageAmount from the matched policy entry or its details
+        const coverageAmount = policyEntry?.coverageAmount || policyDetails.coverageAmount;
+        const formattedIndemnity = coverageAmount ? `₹${coverageAmount.toLocaleString('en-IN')}` : "-";
 
-        // 9. Fetch service charge from old sales bill
-        let serviceChargeAmount = 0;
-        if (bill.renewalFrom) {
-          try {
-            const oldBillRes = await apiClient.get(apiEndpoints.salesBills.getByNumber(bill.renewalFrom));
-            if (oldBillRes.data.success && oldBillRes.data.data && oldBillRes.data.data.items && oldBillRes.data.data.items.length > 0) {
-              serviceChargeAmount = oldBillRes.data.data.items[0].amount || 0;
-            }
-          } catch (err) {
-            console.warn("Could not fetch old bill items for service charge");
-            serviceChargeAmount = bill.items && bill.items.length > 0 ? bill.items[0].amount || 0 : 0;
+        // Amount to be paid logic: based on paidBy field of the matched policy
+        const paidByRaw = policyDetails.paidBy || policyEntry?.paidBy;
+        const premiumAmount = policyEntry?.premiumAmount || policyDetails.premiumAmount;
+        const formattedPremium = premiumAmount ? ` (₹${premiumAmount.toLocaleString('en-IN')})` : "";
+
+        let amountToBePaidText = "-";
+        if (paidByRaw) {
+          if (paidByRaw === 'by_rapid' || paidByRaw === 'rapid') {
+            amountToBePaidText = "BY RAPID";
+          } else {
+            amountToBePaidText = `BY DOCTOR${formattedPremium}`;
           }
         }
 
-        // 10. Fetch particular text from latest quotation - specifically from additionalRequirements field
-        let particularText = "WE PROVIDE 50 LAKH INDEMNITY ";
+        // Service charge logic: Use this sales bill's totalAmount
+        let serviceChargeDisplay = "-";
+        if (bill.totalAmount) {
+          const isMonthly = bill.membershipType === 'monthly' || 
+                           (bill.items && bill.items.some(item => item.description?.toLowerCase().includes('monthly')));
+
+          if (isMonthly) {
+            // Find the monthly consultation fee or membership item
+            const monthlyItem = bill.items?.find(item => 
+              item.serviceType === 'consultation' || 
+              item.description?.toLowerCase().includes('membership')
+            );
+            // Use unitPrice (monthly rate) instead of total amount
+            const amount = monthlyItem ? (monthlyItem.unitPrice || monthlyItem.amount) : (bill.planTotalPeriods > 0 ? bill.totalAmount / bill.planTotalPeriods : bill.totalAmount);
+            serviceChargeDisplay = `₹${Math.round(amount).toLocaleString('en-IN')} (MONTHLY)`;
+          } else {
+            serviceChargeDisplay = `₹${bill.totalAmount.toLocaleString('en-IN')}`;
+          }
+        }
+
+        const oldBillNumber = bill.billNumber || "-";
+
+        // 10. Fetch particular text from latest quotation - specifically from additional Requirements field
+        let particularText = "-";
         if (quotation && quotation.requestDetails && quotation.requestDetails.additionalRequirements) {
           particularText = quotation.requestDetails.additionalRequirements;
         }
 
         // 11. Fetch special conditions from latest quotation for note section
-        let specialConditions = "Indemnity Cover Required";
+        let specialConditions = "-";
         if (quotation && quotation.requestDetails && quotation.requestDetails.additionalRequirements) {
           specialConditions = quotation.requestDetails.additionalRequirements;
         }
@@ -1658,52 +1695,55 @@ const RenewalContractLetter = () => {
         const formatted = {
           currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase(),
 
-          doctorsName: doctorsName,
-          clinicName: primaryDoctor.hospitalName ? `${primaryDoctor.hospitalName},` : "CLINIC NAME NOT AVAILABLE,",
+          doctorsName: doctorsName || "-",
+          clinicName: primaryDoctor.hospitalName ? `${primaryDoctor.hospitalName},` : "-",
           
-          // Address logic: if no address, show nothing
-          addressLine1: primaryDoctor.hospitalAddress?.address || "",
+          addressLine1: primaryDoctor.hospitalAddress?.address || "-",
           addressLine2: [
             primaryDoctor.hospitalAddress?.city,
             primaryDoctor.hospitalAddress?.state,
             primaryDoctor.hospitalAddress?.district,
             primaryDoctor.hospitalAddress?.taluka,
             primaryDoctor.hospitalAddress?.pinCode ? `PIN-${primaryDoctor.hospitalAddress.pinCode}` : ""
-          ].filter(Boolean).join(', ') || "",
+          ].filter(Boolean).join(', ') || "-",
 
           expiryDate: bill.dueDate
             ? new Date(bill.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()
-            : "EXPIRY DATE NOT AVAILABLE",
+            : "-",
 
-          // ID Number from the most recent sales bill in the doctor's salesBills array
-          idNumber: oldBillNumber,
-          insuranceCo: "ICICI LOMBARD GIC LTD.",
+          idNumber: oldBillNumber || "-",
+          insuranceCo: insuranceCo || "-",
           specialization: Array.isArray(primaryDoctor.specialization)
             ? primaryDoctor.specialization.join(', ')
-            : primaryDoctor.specialization || "SPECIALIZATION NOT AVAILABLE",
+            : primaryDoctor.specialization || "-",
+          
+          insuranceType: insuranceType || "-",
 
-          membershipType: primaryDoctor.membershipType || "INDIVIDUAL MEMBERSHIP (COVERAGE TO ALL OVER INDIA + ALL COVERAGE OF VISITING DOCTORS/QUALIFIED/UNQUALIFIED STAFF)",
+          membershipType: (primaryDoctor.doctorType === 'hospital_individual' || (primaryDoctor.membershipType && primaryDoctor.membershipType.toLowerCase().includes('individual + hospital')))
+            ? "INDIVIDUAL + HOSPITAL MEMBERSHIP (COVERAGE TO ALL OVER INDIA + ALL COVERAGE OF DOCTOR STAFF, VISITING DOCTORS, QUALIFIED/NONQUALIFIED NURSING STAFF)"
+            : (primaryDoctor.doctorType === 'hospital' || (primaryDoctor.membershipType && primaryDoctor.membershipType.toLowerCase().includes('hospital')))
+              ? "HOSPITAL MEMBERSHIP (ALL COVERAGE OF DOCTOR STAFF, VISITING DOCTORS, QUALIFIED/NONQUALIFIED NURSING STAFF)"
+              : "INDIVIDUAL MEMBERSHIP (COVER TO ALL OVER INDIA)",
 
           // PAGE 1: Current membership indemnity (with spouse logic)
           currentIndemnityCover: primaryDoctor.linkedDoctorId && primaryDoctor.relationshipType === 'spouse' 
-            ? `${currentIndemnity} FOR EACH DOCTOR` 
-            : `${currentIndemnity} /`,
+            ? `${formattedIndemnity} FOR EACH DOCTOR` 
+            : `${formattedIndemnity} `,
+
+          amountToBePaid: amountToBePaidText || "-",
 
           // PAGE 2: New charges from quotation
-          newIndemnityCover: newIndemnityCover,
+          newIndemnityCover: newIndemnityCover || "-",
           newPriceRows: newPriceRows,
           newSelectedYears: newSelectedYears,
           newShowMonthly: newShowMonthly,
 
-          membershipPeriod: membershipPeriod,
-          // Service charge from old sales bill items
-          serviceCharge: serviceChargeAmount ? `₹${serviceChargeAmount.toLocaleString('en-IN')}/-` : "₹0/-",
+          membershipPeriod: membershipPeriod || "-",
+          // Service charge from current sales bill logic
+          serviceCharge: serviceChargeDisplay || "-",
           
-          // Particular text for Page 2 table
-          particularText: particularText,
-          
-          // Special conditions for note section
-          specialConditions: specialConditions,
+          particularText: particularText || "-",
+          specialConditions: specialConditions || "-",
         };
 
         setData(formatted);
@@ -1713,23 +1753,27 @@ const RenewalContractLetter = () => {
         setError("Failed to load data.");
 
         setData({
-          currentDate: "31 DECEMBER 2025",
-          doctorsName: "DR. RAHUL & MISS RAHUL",
-          clinicName: "SKIN CLINIC,",
-          addressLine1: "", // Empty if not available
-          addressLine2: "", // Empty if not available
-          expiryDate: "31 DECEMBER 2025",
-          idNumber: "RML-12345", // From old sales bill
-          insuranceCo: "ICICI LOMBARD GIC LTD.",
-          specialization: "Skin Specialist",
-          membershipType: "INDIVIDUAL MEMBERSHIP",
-          currentIndemnityCover: "₹25,00,000 /", // With spouse logic
-          newIndemnityCover: "₹25,00,000",    // New (from quotation)
-          newPriceRows: [{ indemnity: "₹25,00,000", monthly: "-", y1: "₹899/-", y2: "₹1,800/-", y3: "₹2,700/-", y4: "₹3,600/-" }],
-          newSelectedYears: [1, 2, 3, 4],
+          currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase(),
+          doctorsName: "-",
+          clinicName: "-",
+          addressLine1: "-", 
+          addressLine2: "-", 
+          expiryDate: "-",
+          idNumber: "-", 
+          insuranceCo: "-",
+          specialization: "-",
+          insuranceType: "-",
+          membershipType: "-",
+          currentIndemnityCover: "-", 
+          amountToBePaid: "-",
+          newIndemnityCover: "-",    
+          newPriceRows: [{ indemnity: "-", monthly: "-", y1: "-", y2: "-", y3: "-", y4: "-" }],
+          newSelectedYears: [1],
           newShowMonthly: false,
-          serviceCharge: "₹1000/-", // From old sales bill items
-          particularText: "WE PROVIDE 50 LAKH INDEMNITY ", // From latest quotation
+          serviceCharge: "-", 
+          particularText: "-", 
+          membershipPeriod: "-",
+          specialConditions: "-"
         });
       } finally {
         setLoading(false);
@@ -1804,7 +1848,7 @@ const RenewalContractLetter = () => {
                     <td className="border border-black p-2 font-bold bg-gray-100 text-black">Specialization</td>
                     <td className="border border-black p-2">{data.specialization}</td>
                     <td className="border border-black p-2 font-bold bg-gray-100 text-black">Insurance Type</td>
-                    <td className="border border-black p-2">PROFESSIONAL INDEMNITY</td>
+                    <td className="border border-black p-2 uppercase">{data.insuranceType}</td>
                   </tr>
                   <tr>
                     <td className="border border-black p-2 font-bold bg-gray-100 text-black">Member Category</td>
@@ -1815,8 +1859,9 @@ const RenewalContractLetter = () => {
                   <tr>
                     <td className="border border-black p-2 font-bold bg-gray-100 text-black">Membership Period</td>
                     <td className="border border-black p-2 uppercase">{data.membershipPeriod}</td>
-                    <td className="border border-black p-2 font-bold bg-gray-100 text-black">Amount to be paid (Including Service Charges)</td>
-                    <td className="border border-black p-2">{data.currentIndemnityCover}</td>
+                    {/* <td className="border border-black p-2 font-bold bg-gray-100 text-black">Amount to be paid (Including Service Charges)</td> */}
+                    <td className="border border-black p-2 font-bold bg-gray-100 text-black">Amount paid for policy</td>
+                    <td className="border border-black p-2 uppercase">{data.amountToBePaid}</td>
                   </tr>
                   <tr>
                     <td className="border border-black p-2 font-bold bg-gray-100 text-black">Type Of Service</td>
