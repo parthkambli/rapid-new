@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useServiceAgreementData from '../Invoices/serviceAgreement(SA)/hooks/useServiceAgreementDate';
 import Header from '../Invoices/serviceAgreement(SA)/Header';
@@ -19,6 +19,88 @@ const formatDate = (isoString) => {
 const NewMembershipForm = () => {
   const { id } = useParams();
   const { doctor, salesBill, policies, loading, error } = useServiceAgreementData('monthly', id);
+  const pageRef = useRef(null);
+  const headerRef = useRef(null);
+  const contentRef = useRef(null);
+  const footerRef = useRef(null);
+  const [printFooterSpacer, setPrintFooterSpacer] = useState(0);
+
+  const calculatePrintFooterSpacer = () => {
+    if (!pageRef.current || !headerRef.current || !contentRef.current || !footerRef.current) {
+      setPrintFooterSpacer(0);
+      return;
+    }
+
+    const measure = document.createElement('div');
+    measure.style.width = '1mm';
+    measure.style.height = '1mm';
+    measure.style.position = 'absolute';
+    measure.style.visibility = 'hidden';
+    document.body.appendChild(measure);
+
+    const pxPerMm = measure.getBoundingClientRect().height || 3.78;
+    document.body.removeChild(measure);
+
+    const printablePageHeight = 277 * pxPerMm;
+    const headerHeight = headerRef.current.getBoundingClientRect().height;
+    const contentHeight = contentRef.current.getBoundingClientRect().height;
+    const footerHeight = footerRef.current.getBoundingClientRect().height;
+    const contentBeforeFooter = headerHeight + contentHeight;
+    const usedOnLastPage = contentBeforeFooter % printablePageHeight;
+    const remainingOnLastPage = usedOnLastPage === 0 ? printablePageHeight : printablePageHeight - usedOnLastPage;
+
+    let spacer = 0;
+
+    if (remainingOnLastPage >= footerHeight) {
+      spacer = remainingOnLastPage - footerHeight;
+    } else {
+      spacer = 0;
+    }
+
+    if (!isLinked) {
+      const maxSafeSpacer = printablePageHeight * 0.35;
+      spacer = Math.min(spacer, maxSafeSpacer);
+    }
+
+    const safeSpacer = spacer < 24 ? 0 : spacer;
+    setPrintFooterSpacer(Math.max(0, safeSpacer));
+  };
+
+  const primaryDoctor = doctor?.originalDoctor || {};
+  const linkedDoctor = doctor?.originalLinkedDoctor || {};
+  const isLinked = !!doctor?.hasSpouse;
+  const doctorType = primaryDoctor.doctorType || 'individual';
+  const isHospital = doctorType === 'hospital' || doctorType === 'hospital_individual';
+  const forceBreakAfterSpouse = isLinked;
+  const forceBreakAfterHospitalAuth = !isLinked && isHospital;
+  const forceBreakAfterMembership = !isLinked && !isHospital;
+
+  const handlePrint = () => {
+    calculatePrintFooterSpacer();
+    window.print();
+  };
+
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      calculatePrintFooterSpacer();
+    };
+
+    const handleAfterPrint = () => {
+      setPrintFooterSpacer(0);
+    };
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, [salesBill, doctor, policies]);
+
+  useEffect(() => {
+    calculatePrintFooterSpacer();
+  }, [salesBill, doctor, policies, isLinked, isHospital]);
 
   if (loading) {
     return (
@@ -31,16 +113,6 @@ const NewMembershipForm = () => {
   if (error || !doctor || !salesBill) {
     return <div className="text-center py-8">Error loading membership form data: {error || 'Data not found'}</div>;
   }
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const primaryDoctor = doctor.originalDoctor || {};
-  const linkedDoctor = doctor.originalLinkedDoctor || {};
-  const isLinked = !!doctor.hasSpouse;
-  const doctorType = primaryDoctor.doctorType || 'individual';
-  const isHospital = doctorType === 'hospital' || doctorType === 'hospital_individual';
 
   // Calculate membership years
   const calculateYears = (start, end) => {
@@ -99,22 +171,29 @@ const NewMembershipForm = () => {
           }
           
           .section-header { background-color: #999; color: white; padding: 6px 12px; font-weight: bold; text-transform: uppercase; margin-top: 25px; margin-bottom: 10px; font-size: 14px; }
-          .field-row { display: flex; border-bottom: 1px solid #eee; padding: 7px 0; align-items: center; }
-          .field-label { color: red; font-weight: 500; min-width: 160px; }
-          .field-value { flex: 1; padding-left: 10px; color: #000; }
+          .field-row { display: flex; border: 1px solid #d4d4d4; border-top: none; align-items: stretch; }
+          .field-label { color: red; font-weight: 500; min-width: 160px; padding: 7px 10px; border-right: 1px solid #d4d4d4; display: flex; align-items: center; }
+          .field-value { flex: 1; padding: 7px 10px; color: #000; display: flex; align-items: center; }
           .dept-line { border-bottom: 1px solid #333; flex: 1; margin-left: 5px; min-height: 20px; }
-          .field-half { width: 50%; display: flex; align-items: center; }
+          .field-half { width: 50%; display: flex; align-items: stretch; }
+          .field-half + .field-half { border-left: 1px solid #d4d4d4; }
+          .auth-field-row { display: flex; align-items: stretch; }
+          .auth-field-number { width: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center; font-weight: 700; border-right: 1px solid #d4d4d4; }
+          .auth-field-number.is-empty { color: transparent; }
+          .auth-field-row .field-label { min-width: 220px; }
           .form-title { text-align: center; font-size: 20px; font-weight: bold; text-decoration: underline; margin: 15px 0; }
           .intro-text { margin-bottom: 15px; text-align: justify; font-size: 14px; }
+          .section-group .field-row:first-of-type { border-top: 1px solid #d4d4d4;  }
           
-          .payment-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          .payment-table td { border: 1px solid #ccc; padding: 0 10px; height: 50px; vertical-align: middle !important; line-height: 1; }
+          .payment-table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #bdbdbd; }
+          .payment-table td { border: 1px solid #bdbdbd; padding: 0 10px; height: 50px; vertical-align: middle !important; line-height: 1; }
           .payment-label { font-weight: bold; width: 22%; background-color: #f3f4f6 !important; }
           .payment-val { width: 28%; }
           
           .signature-section { display: flex; justify-content: space-between; margin-top: 50px; padding: 0 30px; }
           .sig-box { text-align: center; width: 220px; }
           .sig-line { border-top: 1px solid #000; margin-bottom: 5px; }
+          .print-footer-spacer { display: none; }
 
           /* ========== PRINT VIEW STYLES ========== */
           @media print {
@@ -122,6 +201,13 @@ const NewMembershipForm = () => {
               size: A4;
               margin: 10mm;
             }
+ .field-row {
+    page-break-inside: avoid;
+  }
+
+    table, tr, td {
+    page-break-inside: avoid;
+  }
 
             body {
               margin: 0;
@@ -134,26 +220,32 @@ const NewMembershipForm = () => {
               width: 100% !important;
               margin: 0 !important;
               box-shadow: none !important;
-              min-height: 277mm !important; /* Ensure content stretches to at least one page */
+              min-height: 277mm !important;
               display: flex !important;
               flex-direction: column !important;
               border: none !important;
             }
 
             .content-wrapper {
-                flex-grow: 1 !important; /* This pushes the footer down */
                 padding: 0 5mm;
-            }
+                // flex: 1 0 auto !important;
+              display: block !important;
+                }
 
             .section-group {
-              break-inside: avoid;
+              break-inside: auto;
+                page-break-inside: auto;
               margin-top: 25px;
             }
+              .field-row {
+  page-break-inside: avoid;
+}
 
             .payment-table td {
                 height: 50px !important;
                 vertical-align: middle !important;
                 padding: 0 10px !important;
+                border: 1px solid #bdbdbd !important;
             }
             
             .payment-label {
@@ -162,14 +254,31 @@ const NewMembershipForm = () => {
             }
 
             .form-footer-wrapper {
-                margin-top: auto !important; /* KEY: Pushes footer to absolute bottom of last page */
-                padding-top: 30px;
-                break-inside: avoid;
+                margin-top: auto !important;
+                padding-top: 12mm;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                page-break-before: auto !important;
+            }
+
+            .print-footer-spacer {
+                display: block !important;
+            }
+
+            .print-page-break-after {
+                break-after: page !important;
+                page-break-after: always !important;
             }
 
             /* Fix for content lines */
             .field-row {
-                border-bottom: 1px solid #f0f0f0 !important;
+                border-color: #d4d4d4 !important;
+            }
+
+            .field-label,
+            .field-half + .field-half,
+            .auth-field-number {
+                border-color: #d4d4d4 !important;
             }
           }
 
@@ -178,17 +287,22 @@ const NewMembershipForm = () => {
                 padding: 0 15mm;
                 flex: 1;
             }
+            .print-footer-spacer {
+                display: none;
+            }
             .form-footer-wrapper {
                 margin-top: auto;
             }
           }
         `}</style>
 
-        <div className="a4-container">
+        <div ref={pageRef} className="a4-container">
           {/* HEADER - ONLY ONCE AT THE VERY TOP */}
-          <Header />
+          <div ref={headerRef}>
+            <Header />
+          </div>
 
-          <div className="content-wrapper">
+          <div ref={contentRef} className="content-wrapper">
             <div className="flex justify-end items-center gap-3 mt-4">
               <span className="font-bold">SALE BILL NO-</span>
               <span className="bg-blue-700 text-white px-5 py-1 rounded font-bold">
@@ -229,7 +343,7 @@ const NewMembershipForm = () => {
                 </div>
                 <div className="field-row">
                   <div className="field-half">
-                    <span className="field-label">Medical Registration No.:</span>
+                    <span className="field-label">Medical Regi No.:</span>
                     <span className="field-value">{primaryDoctor.licenseNumber}</span>
                   </div>
                   <div className="field-half">
@@ -287,7 +401,7 @@ const NewMembershipForm = () => {
 
             {/* Doctor 2 Details (Spouse) */}
             {isLinked && (
-              <div className="section-group">
+              <div className={`section-group ${forceBreakAfterSpouse ? 'print-page-break-after' : ''}`}>
                 <div className="section-header">DOCTOR DETAILS _2</div>
                 <div className="field-row">
                   <span className="field-label">Full Name:</span>
@@ -305,7 +419,7 @@ const NewMembershipForm = () => {
                 </div>
                 <div className="field-row">
                   <div className="field-half">
-                    <span className="field-label">Medical Registration No.:</span>
+                    <span className="field-label">Medical Regi No.:</span>
                     <span className="field-value font-semibold">{linkedDoctor.licenseNumber}</span>
                   </div>
                   <div className="field-half">
@@ -429,38 +543,45 @@ const NewMembershipForm = () => {
                   </div>
                 </div>
 
-                <div className="section-header">AUTHORIZED PERSON DETAILS (OWNER/ADMIN):</div>
-                <div className="mt-2 pl-2">
-                  <div className="field-row">
-                    <span className="mr-2">1.</span>
-                    <span className="field-label">Director Name/ Medical Superintendent:</span>
-                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.name}</span>
-                  </div>
-                  <div className="field-row ml-6">
-                    <span className="field-label">Designation:</span>
-                    <span className="field-value">________________</span>
-                  </div>
-                  <div className="field-row ml-6">
-                    <span className="field-label">Director contact no..:</span>
-                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.contact}</span>
-                  </div>
-                  <div className="field-row ml-6">
-                    <span className="field-label">Email:</span>
-                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.email}</span>
-                  </div>
+                <div className={`hospital-auth-section ${forceBreakAfterHospitalAuth ? 'print-page-break-after' : ''}`}>
+                  <div className="section-header">AUTHORIZED PERSON DETAILS (OWNER/ADMIN):</div>
+                  <div className="mt-2">
+                    <div className="field-row auth-field-row">
+                      <span className="auth-field-number">1.</span>
+                      <span className="field-label">Director Name/ Medical Superintendent:</span>
+                      <span className="field-value">{primaryDoctor.hospitalDetails?.director?.name}</span>
+                    </div>
+                    <div className="field-row auth-field-row">
+                      <span className="auth-field-number is-empty">.</span>
+                      <span className="field-label">Designation:</span>
+                      <span className="field-value">________________</span>
+                    </div>
+                    <div className="field-row auth-field-row">
+                      <span className="auth-field-number is-empty">.</span>
+                      <span className="field-label">Director contact no..:</span>
+                      <span className="field-value">{primaryDoctor.hospitalDetails?.director?.contact}</span>
+                    </div>
+                    <div className="field-row auth-field-row">
+                      <span className="auth-field-number is-empty">.</span>
+                      <span className="field-label">Email:</span>
+                      <span className="field-value">{primaryDoctor.hospitalDetails?.director?.email}</span>
+                    </div>
 
-                  <div className="field-row mt-2">
-                    <span className="mr-2">2.</span>
-                    <span className="field-label">Admin / Mgmt Officer Name:</span>
-                    <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.name}</span>
-                  </div>
-                  <div className="field-row ml-6">
-                    <span className="field-label">Contact no..:</span>
-                    <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.contact}</span>
-                  </div>
-                  <div className="field-row ml-6">
-                    <span className="field-label">Email :</span>
-                    <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.email}</span>
+                    <div className="field-row auth-field-row mt-2">
+                      <span className="auth-field-number">2.</span>
+                      <span className="field-label">Admin / Mgmt Officer Name:</span>
+                      <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.name}</span>
+                    </div>
+                    <div className="field-row auth-field-row">
+                      <span className="auth-field-number is-empty">.</span>
+                      <span className="field-label">Contact no..:</span>
+                      <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.contact}</span>
+                    </div>
+                    <div className="field-row auth-field-row">
+                      <span className="auth-field-number is-empty">.</span>
+                      <span className="field-label">Email :</span>
+                      <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.email}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -477,7 +598,7 @@ const NewMembershipForm = () => {
             )}
 
             {/* Membership Details */}
-            <div className="section-group">
+            <div className={`section-group ${forceBreakAfterMembership ? 'print-page-break-after' : ''}`}>
               <div className="section-header">MEMBERSHIP DETAILS:</div>
               <div className="field-row">
                 <span className="field-label">Membership Type:</span>
@@ -599,7 +720,12 @@ const NewMembershipForm = () => {
           </div>
 
           {/* FOOTER - ONLY AT THE VERY BOTTOM OF THE LAST PAGE */}
-          <div className="form-footer-wrapper">
+          <div
+            className="print-footer-spacer"
+            aria-hidden="true"
+            style={{ height: printFooterSpacer ? `${printFooterSpacer}px` : 0 }}
+          />
+          <div ref={footerRef} className="form-footer-wrapper">
              <Footer />
           </div>
         </div>
