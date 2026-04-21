@@ -171,11 +171,22 @@ const useServiceAgreementData = (type, salesBillId) => {
         // Process Payment Data
         const payments = bill.payments || [];
         const lastPayment = payments.length > 0 ? payments[payments.length - 1] : null;
-        let paymentMode = (bill.paymentTerms === 'Auto Debit' ? 'By Nach (Auto Debit)' : 'N/A').toUpperCase();
+        
+        // Robust payment mode and debit type logic
+        const isAutomated = 
+          bill.paymentTerms === 'Auto Debit' || 
+          bill.paymentTerms === 'NACH' || 
+          lastPayment?.paymentMethod === 'nach' || 
+          lastPayment?.paymentMethod === 'online' ||
+          lastPayment?.paymentId?.debitType;
+
+        let paymentMode = (isAutomated ? 'By Nach (Auto Debit)' : 'N/A').toUpperCase();
         
         if (lastPayment) {
-          paymentMode = (lastPayment.paymentMethod === 'cheque' ? `Cheque (${lastPayment.referenceNumber || '-'})` :
-                         lastPayment.paymentMethod === 'online' ? 'Online Transfer' : 'Cash').toUpperCase();
+          const method = lastPayment.paymentMethod?.toLowerCase();
+          paymentMode = (method === 'cheque' ? `Cheque (${lastPayment.referenceNumber || '-'})` :
+                         (method === 'online' || method === 'online_transfer' || method === 'upi') ? 'Online Transfer' : 
+                         (method === 'nach' || method === 'auto_debit') ? 'By Nach (Auto Debit)' : 'Cash').toUpperCase();
         }
 
         const formattedPolicies = saPolicies.map(p => ({
@@ -190,6 +201,30 @@ const useServiceAgreementData = (type, salesBillId) => {
           holderName: p.policyHolderName || p.holderName || 'N/A',
           status: p.status || 'active'
         }));
+
+        // Extract receipt details if paymentId is populated
+        const receipt = lastPayment?.paymentId;
+
+        // Dynamic Upcoming Payment Logic
+        const getOrdinalDay = (day) => {
+          if (!day || day < 1 || day > 31) return '27th';
+          const s = ["th", "st", "nd", "rd"];
+          const v = day % 100;
+          return day + (s[(v - 20) % 10] || s[v] || s[0]);
+        };
+
+        let debitDateDisplay = '27th of every month';
+        if (receipt?.debitDate) {
+          const dDate = new Date(receipt.debitDate);
+          if (!isNaN(dDate.getTime())) {
+            debitDateDisplay = `${getOrdinalDay(dDate.getDate())} of every month`;
+          }
+        } else if (lastPayment?.nextDebitDate) {
+          const nDate = new Date(lastPayment.nextDebitDate);
+          if (!isNaN(nDate.getTime())) {
+            debitDateDisplay = `${getOrdinalDay(nDate.getDate())} of every month`;
+          }
+        }
 
         setData({
           doctor: {
@@ -208,8 +243,17 @@ const useServiceAgreementData = (type, salesBillId) => {
               paidAmount: `₹${payments.reduce((sum, p) => sum + (p.amount || 0), 0).toLocaleString('en-IN')}`,
               paymentMode,
               paymentDate: lastPayment ? new Date(lastPayment.paymentDate).toLocaleDateString('en-GB') : 'N/A',
-              amountPaid: lastPayment ? `₹${lastPayment.amount?.toLocaleString('en-IN')}` : 'N/A'
-            }
+              amountPaid: lastPayment ? `₹${lastPayment.amount?.toLocaleString('en-IN')}` : 'N/A',
+              chequeNo: lastPayment?.paymentMethod?.toLowerCase() === 'cheque' ? lastPayment.referenceNumber : '-',
+              drawnOnBank: receipt?.drawnOnBank || '-'
+            },
+            upcomingPayments: bill.membershipType === 'monthly' ? {
+              paymentFrequency: 'Monthly',
+              debitType: isAutomated ? 'By Nach (Auto Debit)' : 'N/A',
+              debitDate: debitDateDisplay,
+              gst: receipt?.gst || 'NA',
+              monthlyPremium: `₹${(receipt?.monthlyPremium || serviceChargeAmount).toLocaleString('en-IN')}`
+            } : null
           },
           loading: false,
           error: null
