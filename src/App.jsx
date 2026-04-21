@@ -388,6 +388,7 @@ import ProfileExpert from './pages/Expert/ProfileExpert';
 import EmployeeProfile from './pages/salesperson/SalespersonProfile';
 import SalespersonProfile from './pages/salesperson/SalespersonProfile';
 import MembershipForm from './pages/Admin/Salesbill/MembershipForm/MembershipForm';
+import NewMembershipForm from './pages/Admin/Salesbill/MembershipForm/NewMembershipForm';
 
 
 const AppContent = () => {
@@ -719,6 +720,7 @@ const AppContent = () => {
               <Route path="/telecaller/salesbill/renewed/:id" element={<RenewalLetterExact />} />
               <Route path="/telecaller/salesbill/rwnl/:id" element={<RenewalContractLetter />} />
               <Route path="/telecaller/salesbill/membership-form/:id" element={<MembershipForm />} />
+              <Route path="/telecaller/salesbill/membership-form-new/:id" element={<NewMembershipForm />} />
               <Route path="/telecaller/salesbill/sa-whf-monthly/:id" element={<SAWHFMonthlyPlan />} />
               <Route path="/telecaller/salesbill/sa-whf-yearly/:id" element={<SAWHFYearlyPlan />} />
               <Route path="/telecaller/salesbill/sa/monthly/:id" element={<MonthlySA />} />
@@ -899,6 +901,7 @@ const AppContent = () => {
               <Route path="/admin/salesbill/renewed/:id" element={< RenewalLetterExact />} />
               <Route path="/admin/salesbill/rwnl/:id" element={< RenewalContractLetter />} />
               <Route path="/admin/salesbill/membership-form/:id" element={<MembershipForm />} />
+              <Route path="/admin/salesbill/membership-form-new/:id" element={<NewMembershipForm />} />
               {/* Service Agreement routes - with header and footer - handles both monthly and yearly based on type parameter */}
               {/* <Route path="/admin/salesbill/sa/:type/:id" element={<ServiceAgreement />} /> */}
 

@@ -1,479 +1,3 @@
-// import React from 'react';
-// import { useParams } from 'react-router-dom';
-// import useServiceAgreementData from '../Invoices/serviceAgreement(SA)/hooks/useServiceAgreementDate'; // Adjust path if needed
-// // Assume you have Header component (same as SA)
-// import Header from '../Invoices/serviceAgreement(SA)/Header';
-// import Footer from '../Invoices/serviceAgreement(SA)/Footer';
-
-// // Helper to format date
-// const formatDate = (isoString) => {
-//   if (!isoString) return '________________';
-//   try {
-//     return new Date(isoString).toLocaleDateString('en-GB'); // DD-MM-YYYY
-//   } catch {
-//     return '________________';
-//   }
-// };
-
-// // Helper for full residential address
-// const getFullAddress = (addr) => {
-//   if (!addr) return '_______________________________________________';
-//   const parts = [
-//     addr.address || '',
-//     addr.city ? `, ${addr.city}` : '',
-//     addr.district ? `, Dist. ${addr.district}` : '',
-//     addr.taluka ? `, Tal. ${addr.taluka}` : '',
-//     addr.state ? `, ${addr.state}` : '',
-//     addr.pinCode ? ` - ${addr.pinCode}` : '',
-//     addr.country ? `, ${addr.country}` : ''
-//   ];
-//   return parts.filter(Boolean).join('') || '_______________________________________________';
-// };
-
-// // Helper to calculate membership years
-// const calculateMembershipYears = (start, end) => {
-//   if (!start || !end) return '______';
-
-//   try {
-//     // Handle different date formats
-//     const parseDate = (dateStr) => {
-//       if (!dateStr) return null;
-
-//       // If it's already a Date object, return it
-//       if (dateStr instanceof Date) return dateStr;
-
-//       // If it's a string, try to parse it
-//       const date = new Date(dateStr);
-
-//       // Check if the date is valid
-//       if (isNaN(date.getTime())) {
-//         console.error('Invalid date string:', dateStr);
-//         return null;
-//       }
-
-//       return date;
-//     };
-
-//     const s = parseDate(start);
-//     const e = parseDate(end);
-
-//     if (!s || !e) {
-//       console.error('Could not parse dates:', start, end);
-//       return '______';
-//     }
-
-//     let years = e.getFullYear() - s.getFullYear();
-
-//     // Adjust if end date is before anniversary in the year
-//     if (
-//       e.getMonth() < s.getMonth() ||
-//       (e.getMonth() === s.getMonth() && e.getDate() < s.getDate())
-//     ) {
-//       years--;
-//     }
-
-//     if (years > 0) {
-//       return `${years} Year${years > 1 ? 's' : ''}`;
-//     } else {
-//       // Fallback: calculate based on days difference
-//       const timeDiff = e.getTime() - s.getTime();
-//       const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
-//       const yearsDiff = Math.floor(daysDiff / 365);
-
-//       if (yearsDiff > 0) {
-//         return `${yearsDiff} Year${yearsDiff > 1 ? 's' : ''}`;
-//       } else {
-//         // If less than a year, calculate months
-//         const monthsDiff = Math.floor(daysDiff / 30);
-
-//         // Convert months to years if 12 or more months
-//         if (monthsDiff >= 12) {
-//           const yearsFromMonths = Math.floor(monthsDiff / 12);
-//           return `${yearsFromMonths} Year${yearsFromMonths > 1 ? 's' : ''}`;
-//         }
-
-//         return monthsDiff > 0 ? `${monthsDiff} Month${monthsDiff > 1 ? 's' : ''}` : '______';
-//       }
-//     }
-//   } catch (err) {
-//     console.error('Error calculating membership years:', err);
-//     return '______';
-//   }
-// };
-
-// const MembershipForm = () => {
-//   const { id } = useParams(); // salesBill id
-//   const { doctor, salesBill, loading } = useServiceAgreementData('monthly', id); // Reuse hook (adjust type if needed)
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center">
-//         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-//       </div>
-//     );
-//   }
-
-//   if (!doctor || !salesBill) {
-//     return <div className="text-center py-8">Error loading membership form data.</div>;
-//   }
-
-//   // Extract logic from doctor object (adjust keys as per your backend response)
-//   const doctorType = doctor.doctorType || 'individual'; // "individual" or "hospital"
-//   const isLinked = doctor.hasSpouse || false; // true if spouse/Doctor 2 exists
-
-//   // Get linked doctor data if available
-//   const linkedDoctor = doctor.linkedDoctor || null;
-
-//   // Get first payment details from salesBill
-//   const firstPayment = salesBill.payments && salesBill.payments.length > 0
-//     ? salesBill.payments[0]
-//     : null;
-
-//   const handlePrint = () => {
-//     window.print();
-//   };
-
-//   // Function to get the highest coverage amount from policies as indemnity premium
-//   const getIndemnityPremium = () => {
-//     if (!doctor.originalDoctor?.policies || !Array.isArray(doctor.originalDoctor.policies)) {
-//       return salesBill.totalAmount || 0;
-//     }
-
-//     // Find the highest coverage amount from policies
-//     const maxCoverage = doctor.originalDoctor.policies.reduce((max, policy) => {
-//       const coverage = policy.coverageAmount || policy.policyId?.coverageAmount || 0;
-//       return Math.max(max, coverage);
-//     }, 0);
-
-//     return maxCoverage > 0 ? maxCoverage : salesBill.totalAmount || 0;
-//   };
-
-//   const indemnityPremium = getIndemnityPremium();
-
-//   return (
-//     <>
-//       {/* Print Button */}
-//       <div className="fixed top-4 right-4 z-50 print:hidden">
-//         <button
-//           onClick={handlePrint}
-//           className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
-//         >
-//           🖨️ Print Membership Form
-//         </button>
-//       </div>
-
-//       {/* A4 Container */}
-//       <div className="font-[Times New Roman] text-[12px] leading-[18px] print:text-black bg-white min-h-screen">
-//         <style jsx global>{`
-//           @media print {
-//             @page {
-//               size: A4 portrait;
-//               margin: 12mm 14mm 15mm 14mm;   /* thoda balanced margin */
-//             }
-//             body {
-//               margin: 0;
-//               padding: 0;
-//               -webkit-print-color-adjust: exact !important;
-//               print-color-adjust: exact !important;
-//             }
-//             .print-hidden { display: none !important; }
-//           }
-
-//           .a4-page {
-//             width: 210mm;
-//             min-height: 297mm;
-//             margin: 20px auto;
-//             padding: 0 14mm;
-//             background: white;
-//             box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-//             font-family: 'Times New Roman', Times, serif;
-//             font-size: 12px;
-//             line-height: 1.45;
-//             color: #000;
-//           }
-
-//           .avoid-break { page-break-inside: avoid; }
-//           .section-break { page-break-before: always; margin-top: 24px; }
-//           .declaration-section { margin-top: 32px; }
-
-//           .underline-dotted-thick {
-//             text-decoration: underline dotted;
-//             text-decoration-thickness: 2px;
-//             text-underline-offset: 3px;
-//           }
-
-//           .bg-gray-100 {
-//             background-color: #f5f5f5 !important;
-//             padding: 8px 12px;
-//             border-radius: 4px;
-//           }
-
-//           .text-13 { font-size: 13px; }
-//           .text-14 { font-size: 14px; }
-//           .leading-6  { line-height: 1.5; }   /* better readability */
-//           .leading-5  { line-height: 1.25; }  /* tight sections */
-
-//           @media print {
-//             .section-break {
-//               page-break-before: always;
-//               margin-top: 20px;
-//             }
-
-//             .avoid-break {
-//               page-break-inside: avoid;
-//             }
-
-//             .force-new-page {
-//               page-break-before: always !important;
-//             }
-
-//             /* Declaration ko last page pe force karo agar content zyada hai */
-//             .declaration-section {
-//               page-break-before: auto;
-//               orphans: 3;   /* min 3 lines bottom pe */
-//               widows: 3;    /* min 3 lines top pe */
-//             }
-//           }
-//         `}</style>
-
-//         {/* Page 1 */}
-//         <div className="a4-page">
-//           <Header /> {/* Your header with logo & company info */}
-
-//           {/* SALE BILL NO Badge */}
-//           <div className="flex justify-end mt-4 mr-8">
-
-//           <div className="text-xs font-bold">
-//             SALE BILL NO: <span className=' bg-blue-600 text-white px-4 py-1 rounded ml-2'> {salesBill.billNumber || 'RML-XXXXX'}</span>
-//           </div>
-//           </div>
-
-//           {/* Declaration Text */}
-//           <div className="mt-8 text-center text-14 font-bold">
-//             DOCTOR MEMBERSHIP FORM
-//           </div>
-
-//           <div className="mt-6 text-justify text-[12px] leading-5">
-//             As Per Schemes and services of Rapid Medicolegal Services India Ltd. I here voluntarily agree to become a member of Rapid for which I deposit Rs.{' '}
-//             <span className="underline-dotted-thick">
-//               {salesBill?.totalAmount?.toLocaleString('en-IN') || '________'}
-//             </span> for{' '}
-//             <span className="underline-dotted-thick">
-//               {calculateMembershipYears(salesBill?.billDate, salesBill?.dueDate) || '______'}
-//             </span> and I am quoting my details below.
-//           </div>
-
-//           {/* Doctor 1 Details */}
-//           {doctorType !== 'hospital' && (
-//             <div className="avoid-break mt-6">
-//               <div className="font-bold text-13 bg-gray-100 p-3">Doctor 1 Details</div>
-//               <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-3 text-[12px] leading-6">
-//                 <div>Full Name: <span className="underline-dotted-thick">  {doctor.originalDoctor?.fullName || doctor.fullName}</span></div>
-//                 <div>Speciality: <span className="underline-dotted-thick">{Array.isArray(doctor.originalDoctor?.specialization) ? doctor.originalDoctor.specialization.join(", ") : Array.isArray(doctor.specialization) ? doctor.specialization.join(", ") : doctor.specialization || '________________'}</span></div>
-//                 <div>Qualification: <span className="underline-dotted-thick">{doctor.originalDoctor?.qualification || doctor.qualification}</span></div>
-//                 <div>Medical Registration No.: <span className="underline-dotted-thick">{doctor.originalDoctor?.licenseNumber || doctor.licenseNumber}</span></div>
-//                 <div>Regi. Year: <span className="underline-dotted-thick">{doctor.originalDoctor?.registrationYear || doctor.registrationYear}</span></div>
-//                 <div>Date of Birth: <span className="underline-dotted-thick">{formatDate(doctor.originalDoctor?.dateOfBirth || doctor.dateOfBirth)}</span></div>
-//                 <div>Mobile (Wa): <span className="underline-dotted-thick">{doctor.originalDoctor?.whatsappNumber || doctor.originalDoctor?.phoneNumber || doctor.whatsappNumber || doctor.phoneNumber || '________________'}</span></div>
-//                 <div>Mobile: <span className="underline-dotted-thick">{doctor.originalDoctor?.phoneNumber || doctor.phoneNumber || '________________'}</span></div>
-//                 <div>Email: <span className="underline-dotted-thick">{doctor.originalDoctor?.email || doctor.email || '________________'}</span></div>
-//                 <div>Aadhar Number: <span className="underline-dotted-thick">{doctor.originalDoctor?.aadharNumber || doctor.aadharNumber || '________________'}</span></div>
-//                 <div>Pan Number: <span className="underline-dotted-thick">{doctor.originalDoctor?.panNumber || doctor.panNumber || '________________'}</span></div>
-//                 <div className="col-span-2">
-//                   Residential Address: <span className="underline-dotted-thick inline-block min-w-[300px]">{getFullAddress(doctor.originalDoctor?.contactDetails?.currentAddress || doctor.contactDetails?.currentAddress)}</span>
-//                 </div>
-//                 <div>Pin: <span className="underline-dotted-thick">{doctor.originalDoctor?.contactDetails?.currentAddress?.pinCode || doctor.contactDetails?.currentAddress?.pinCode || '________________'}</span></div>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Doctor 2 Details (Spouse) */}
-//           {isLinked && linkedDoctor && (
-//             <div className="avoid-break mt-8 section-break">
-//               <div className="font-bold text-13 bg-gray-100 p-3">Doctor 2 (Spouse) Details</div>
-//               <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-3 text-[12px] leading-6">
-//                 <div>Full Name: <span className="underline-dotted-thick">{linkedDoctor.fullName}</span></div>
-//                 <div>Speciality: <span className="underline-dotted-thick">{Array.isArray(linkedDoctor.specialization) ? linkedDoctor.specialization.join(", ") : linkedDoctor.specialization || '________________'}</span></div>
-//                 <div>Qualification: <span className="underline-dotted-thick">{linkedDoctor.qualification}</span></div>
-//                 <div>Medical Registration No.: <span className="underline-dotted-thick">{linkedDoctor.licenseNumber}</span></div>
-//                 <div>Regi. Year: <span className="underline-dotted-thick">{linkedDoctor.registrationYear}</span></div>
-//                 <div>Date of Birth: <span className="underline-dotted-thick">{formatDate(linkedDoctor.dateOfBirth)}</span></div>
-//                 <div>Mobile (Wa): <span className="underline-dotted-thick">{linkedDoctor.whatsappNumber || linkedDoctor.phoneNumber || '________________'}</span></div>
-//                 <div>Mobile: <span className="underline-dotted-thick">{linkedDoctor.phoneNumber || '________________'}</span></div>
-//                 <div>Email: <span className="underline-dotted-thick">{linkedDoctor.email || '________________'}</span></div>
-//                 <div>Aadhar Number: <span className="underline-dotted-thick">{linkedDoctor.aadharNumber || '________________'}</span></div>
-//                 <div>Pan Number: <span className="underline-dotted-thick">{linkedDoctor.panNumber || '________________'}</span></div>
-//                 <div className="col-span-2">
-//                   Residential Address: <span className="underline-dotted-thick inline-block min-w-[300px]">{getFullAddress(linkedDoctor.contactDetails?.currentAddress)}</span>
-//                 </div>
-//                 <div>Pin: <span className="underline-dotted-thick">{linkedDoctor.contactDetails?.currentAddress?.pinCode || '________________'}</span></div>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Hospital / Clinic Details */}
-//           {(doctorType === 'hospital' || doctorType === 'hospital_individual') && (
-//             <div className="avoid-break mt-8">
-//               <div className="font-bold text-13 bg-gray-100 p-3">Hospital / Clinic Details</div>
-//               <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-3 text-[12px] leading-6">
-//                 <div>Hospital / Clinic Name: <span className="underline-dotted-thick">{doctor.hospitalName}</span></div>
-//                 <div>Hospital Address: <span className="underline-dotted-thick inline-block min-w-[300px]">{getFullAddress(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)}</span></div>
-//                 <div>City: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.city || '________________'}</span></div>
-//                 <div>District: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.district || '________________'}</span></div>
-//                 <div>State: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.state || '________________'}</span></div>
-//                 <div>Pin Code: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.pinCode || '________________'}</span></div>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Membership Details */}
-//           <div className="avoid-break mt-8">
-//             <div className="font-bold text-13 bg-gray-100 p-3">Membership Details</div>
-//             <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-3 text-[12px] leading-6">
-//               <div>Membership Type: <span className="underline-dotted-thick">{doctor.doctorType}</span></div>
-//               <div>Membership Start Date: <span className="underline-dotted-thick">{formatDate(salesBill.billDate)}</span></div>
-//               <div>Membership End Date: <span className="underline-dotted-thick">{formatDate(salesBill.dueDate)}</span></div>
-//               <div>Membership Period: <span className="underline-dotted-thick">{calculateMembershipYears(salesBill?.billDate, salesBill?.dueDate) || '________________'}</span></div>
-//             </div>
-//           </div>
-
-//           {/* Hospital Membership Extra Fields (only if hospital) */}
-//           {(doctorType === 'hospital') && (
-//             <div className="avoid-break mt-8">
-//               <div className="font-bold text-13 bg-gray-100 p-3">Hospital Membership Details</div>
-//               <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-3 text-[12px] leading-6">
-//                 <div>Type of Hospital: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.hospitalType || '________________'}</span></div>
-//                 <div>No. of Beds: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.beds || '________________'}</span></div>
-//                 <div>Regi No Pan Number: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.hospitalPanNumber || '________________'}</span></div>
-//                 <div>Year of Establishment: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.establishmentYear || '________________'}</span></div>
-//                 <div>Hospital Contact: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.director?.contact || '________________'}</span></div>
-//                 <div>WhatsApp No.: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.admin?.contact || '________________'}</span></div>
-//                 <div>Email: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.director?.email || '________________'}</span></div>
-//                 <div>Website: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.website || '________________'}</span></div>
-//                 <div>Ownership Type: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.ownershipType || '________________'}</span></div>
-//                 <div>Departments: <span className="underline-dotted-thick">
-//                   {doctor.originalDoctor?.hospitalDetails?.departments && Array.isArray(doctor.originalDoctor.hospitalDetails.departments) && doctor.originalDoctor.hospitalDetails.departments.length > 0
-//                     ? doctor.originalDoctor.hospitalDetails.departments.join(', ')
-//                     : '________________'}
-//                 </span></div>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Authorized Person Details (only hospital) */}
-//           {(doctorType === 'hospital') && (
-//             <div className="avoid-break mt-8">
-//               <div className="font-bold text-13 bg-gray-100 p-3">Authorized Person Details (Owner/Admin)</div>
-//               <div className="mt-3 text-[12px] leading-6">
-//                 1. Medical Superintendent / Director :<br />
-//                 Name: {doctor.originalDoctor?.hospitalDetails?.director?.name || '________________'} Designation: ________________ Contact No: {doctor.originalDoctor?.hospitalDetails?.director?.contact || '________________'} Email ID: {doctor.originalDoctor?.hospitalDetails?.director?.email || '________________'}<br /><br />
-//                 2. Admin / Mgmt Officer Name {doctor.originalDoctor?.hospitalDetails?.admin?.name || '________________'} Contact No {doctor.originalDoctor?.hospitalDetails?.admin?.contact || '________________'} Email ID: {doctor.originalDoctor?.hospitalDetails?.admin?.email || '________________'}<br /><br />
-//                 Department Available:<br />
-//                 {doctor.originalDoctor?.hospitalDetails?.departments && Array.isArray(doctor.originalDoctor.hospitalDetails.departments) &&
-//                   doctor.originalDoctor.hospitalDetails.departments.map((dept, index) => (
-//                     <div key={index}>{index + 1}. {dept || '________________'}<br /></div>
-//                   ))}
-//                 {(!doctor.originalDoctor?.hospitalDetails?.departments ||
-//                   !Array.isArray(doctor.originalDoctor.hospitalDetails.departments) ||
-//                   doctor.originalDoctor.hospitalDetails.departments.length === 0) &&
-//                   <>
-//                     1. ________________<br />
-//                     2. ________________<br />
-//                     3. ________________<br />
-//                   </>
-//                 }
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Payment Details */}
-//           <div className="avoid-break mt-8">
-//             <div className="font-bold text-13 bg-gray-100 p-3">Payment Details</div>
-//             <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-3 text-[12px] leading-6">
-//               {firstPayment ? (
-//                 <>
-//                   <div>Payment Date: <span className="font-bold">{formatDate(firstPayment.paymentDate)}</span></div>
-//                   <div>Payment Mode: <span className="font-bold">{firstPayment.paymentMethod || '________________'}</span></div>
-//                   <div>Cheque No.: <span className="font-bold">{firstPayment.paymentMethod === 'cheque' ? (firstPayment.paymentId?.bankDetails?.chequeNumber || firstPayment.referenceNumber) : '—'}</span></div>
-//                   <div>Drawn On (Bank): <span className="font-bold">{firstPayment.paymentMethod === 'cheque' ? (firstPayment.paymentId?.drawnOnBank || '________________') : '________________'}</span></div>
-//                   <div>Amount Paid: <span className="font-bold">₹{firstPayment.amount?.toLocaleString('en-IN') || '________________'}</span></div>
-//                 </>
-//               ) : (
-//                 <>
-//                   <div>Cheque Date: ________________</div>
-//                   <div>Cheque No.: ________________</div>
-//                   <div>Drawn On (Bank): ________________</div>
-//                   <div>Service Charges: ________________</div>
-//                   <div>GST: ________________</div>
-//                   <div>Indemnity Premium: ₹{indemnityPremium?.toLocaleString('en-IN') || '________________'}</div>
-//                   <div>Total Amount: <span className="font-bold">₹{salesBill.totalAmount?.toLocaleString('en-IN') || '________'}</span></div>
-//                 </>
-//               )}
-//               <div>Service Charges: <span className="font-bold">₹{salesBill.subTotal?.toLocaleString('en-IN') || '________________'}</span></div>
-//               <div>GST: <span className="font-bold">₹{(salesBill.totalAmount - salesBill.subTotal)?.toLocaleString('en-IN') || '________________'}</span></div>
-//               <div>Indemnity Premium: <span className="font-bold">₹{indemnityPremium?.toLocaleString('en-IN') || '________________'}</span></div>
-//               <div>Total Amount: <span className="font-bold">₹{salesBill.totalAmount?.toLocaleString('en-IN') || '________'}</span></div>
-//               <div>Note: {salesBill.notes || '________________'}</div>
-//             </div>
-//           </div>
-
-//           {/* Declaration & Signatures */}
-//           <div className="declaration-section text-center border-t border-black pt-4">
-//             <p className="font-bold text-14">Declaration</p>
-//             <p className="mt-2 text-[12px]">
-//               I/We hereby declare that we have fully understood the policy coverage details, services, rules, and regulations of Rapid Medicolegal Services India Ltd.
-//             </p>
-
-//             <div className="mt-16 grid grid-cols-2 gap-8 text-right">
-//               {doctorType === 'hospital' ? (
-//                 <div className="col-span-2 text-center">
-//                   Hospital Representative Signature: ________________<br />
-//                   <span className="text-[10px]">(Name & Designation)</span>
-//                 </div>
-//               ) : (
-//                 <>
-//                   <div>
-//                     Doctor 1 Signature: ________________<br />
-//                     <span className="text-[10px]">(Name: {doctor.fullName})</span>
-//                   </div>
-//                   {isLinked && (
-//                     <div>
-//                       Doctor 2 Signature: ________________<br />
-//                       <span className="text-[10px]">(Name: {linkedDoctor?.fullName || '________________'})</span>
-//                     </div>
-//                   )}
-//                 </>
-//               )}
-//             </div>
-
-//             <div className="mt-16">
-//               Name of Executive/Officer: ________________ (sales person name)
-//             </div>
-//           </div>
-
-//           {/* Company Footer */}
-//           <div className="mt-12 text-center text-[10px] border-t border-black pt-4">
-//             <Footer />
-//           </div>
-//         </div>
-
-//         {/* Visual Page Break Indicator (for screen only) */}
-//         <div className="page-break-dotted print:hidden" />
-
-//         {/* Page 2 (only if content overflows - can be extended) */}
-//         {/* <div className="a4-page print:hidden">
-//           <p className="text-center text-gray-500 mt-20">Page 2 (if content overflows)</p>
-//           <p className="text-center mt-4 text-sm">This area will be used if long hospital details or more departments are added.</p>
-//         </div> */}
-//       </div>
-//     </>
-//   );
-// };
-
-// export default MembershipForm;
-
-
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import useServiceAgreementData from '../Invoices/serviceAgreement(SA)/hooks/useServiceAgreementDate';
@@ -484,101 +8,17 @@ import Footer from '../Invoices/serviceAgreement(SA)/Footer';
 const formatDate = (isoString) => {
   if (!isoString) return '________________';
   try {
-    return new Date(isoString).toLocaleDateString('en-GB'); // DD-MM-YYYY
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '________________';
+    return date.toLocaleDateString('en-GB'); // DD-MM-YYYY
   } catch {
     return '________________';
   }
 };
 
-// Helper for full residential address
-const getFullAddress = (addr) => {
-  if (!addr) return '_______________________________________________';
-  const parts = [
-    addr.address || '',
-    addr.city ? `, ${addr.city}` : '',
-    addr.district ? `, Dist. ${addr.district}` : '',
-    addr.taluka ? `, Tal. ${addr.taluka}` : '',
-    addr.state ? `, ${addr.state}` : '',
-    addr.pinCode ? ` - ${addr.pinCode}` : '',
-    addr.country ? `, ${addr.country}` : ''
-  ];
-  return parts.filter(Boolean).join('') || '_______________________________________________';
-};
-
-// Helper to calculate membership years
-const calculateMembershipYears = (start, end) => {
-  if (!start || !end) return '______';
-
-  try {
-    // Handle different date formats
-    const parseDate = (dateStr) => {
-      if (!dateStr) return null;
-
-      // If it's already a Date object, return it
-      if (dateStr instanceof Date) return dateStr;
-
-      // If it's a string, try to parse it
-      const date = new Date(dateStr);
-
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        console.error('Invalid date string:', dateStr);
-        return null;
-      }
-
-      return date;
-    };
-
-    const s = parseDate(start);
-    const e = parseDate(end);
-
-    if (!s || !e) {
-      console.error('Could not parse dates:', start, end);
-      return '______';
-    }
-
-    let years = e.getFullYear() - s.getFullYear();
-
-    // Adjust if end date is before anniversary in the year
-    if (
-      e.getMonth() < s.getMonth() ||
-      (e.getMonth() === s.getMonth() && e.getDate() < s.getDate())
-    ) {
-      years--;
-    }
-
-    if (years > 0) {
-      return `${years} Year${years > 1 ? 's' : ''}`;
-    } else {
-      // Fallback: calculate based on days difference
-      const timeDiff = e.getTime() - s.getTime();
-      const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
-      const yearsDiff = Math.floor(daysDiff / 365);
-
-      if (yearsDiff > 0) {
-        return `${yearsDiff} Year${yearsDiff > 1 ? 's' : ''}`;
-      } else {
-        // If less than a year, calculate months
-        const monthsDiff = Math.floor(daysDiff / 30);
-
-        // Convert months to years if 12 or more months
-        if (monthsDiff >= 12) {
-          const yearsFromMonths = Math.floor(monthsDiff / 12);
-          return `${yearsFromMonths} Year${yearsFromMonths > 1 ? 's' : ''}`;
-        }
-
-        return monthsDiff > 0 ? `${monthsDiff} Month${monthsDiff > 1 ? 's' : ''}` : '______';
-      }
-    }
-  } catch (err) {
-    console.error('Error calculating membership years:', err);
-    return '______';
-  }
-};
-
-const MembershipForm = () => {
-  const { id } = useParams(); // salesBill id
-  const { doctor, salesBill, loading } = useServiceAgreementData('monthly', id); // Reuse hook (adjust type if needed)
+const NewMembershipForm = () => {
+  const { id } = useParams();
+  const { doctor, salesBill, policies, loading, error } = useServiceAgreementData('monthly', id);
 
   if (loading) {
     return (
@@ -588,46 +28,53 @@ const MembershipForm = () => {
     );
   }
 
-  if (!doctor || !salesBill) {
-    return <div className="text-center py-8">Error loading membership form data.</div>;
+  if (error || !doctor || !salesBill) {
+    return <div className="text-center py-8">Error loading membership form data: {error || 'Data not found'}</div>;
   }
-
-  // Extract logic from doctor object (adjust keys as per your backend response)
-  const doctorType = doctor.doctorType || 'individual'; // "individual" or "hospital"
-  const isLinked = doctor.hasSpouse || false; // true if spouse/Doctor 2 exists
-
-  // Get linked doctor data if available
-  const linkedDoctor = doctor.linkedDoctor || null;
-
-  // Get first payment details from salesBill
-  const firstPayment = salesBill.payments && salesBill.payments.length > 0
-    ? salesBill.payments[0]
-    : null;
 
   const handlePrint = () => {
     window.print();
   };
 
-  // Function to get the highest coverage amount from policies as indemnity premium
-  const getIndemnityPremium = () => {
-    if (!doctor.originalDoctor?.policies || !Array.isArray(doctor.originalDoctor.policies)) {
-      return salesBill.totalAmount || 0;
+  const primaryDoctor = doctor.originalDoctor || {};
+  const linkedDoctor = doctor.originalLinkedDoctor || {};
+  const isLinked = !!doctor.hasSpouse;
+  const doctorType = primaryDoctor.doctorType || 'individual';
+  const isHospital = doctorType === 'hospital' || doctorType === 'hospital_individual';
+
+  // Calculate membership years
+  const calculateYears = (start, end) => {
+    if (!start || !end) return '______';
+    const s = new Date(start);
+    const e = new Date(end);
+    let years = e.getFullYear() - s.getFullYear();
+    if (e.getMonth() < s.getMonth() || (e.getMonth() === s.getMonth() && e.getDate() < s.getDate())) {
+      years--;
     }
-
-    // Find the highest coverage amount from policies
-    const maxCoverage = doctor.originalDoctor.policies.reduce((max, policy) => {
-      const coverage = policy.coverageAmount || policy.policyId?.coverageAmount || 0;
-      return Math.max(max, coverage);
-    }, 0);
-
-    return maxCoverage > 0 ? maxCoverage : salesBill.totalAmount || 0;
+    return years > 0 ? years : '______';
   };
 
-  const indemnityPremium = getIndemnityPremium();
+  const membershipYears = calculateYears(salesBill.billDate, salesBill.dueDate);
+  const firstPayment = salesBill.payments && salesBill.payments.length > 0 ? salesBill.payments[0] : null;
+
+  const isMonthly = salesBill.membershipType?.toLowerCase() === 'monthly';
+  const monthlyAmount = salesBill.upcomingPayments?.monthlyPremium || (salesBill.items?.find(i => i.serviceType === 'consultation')?.amount?.toLocaleString('en-IN')) || salesBill.totalAmount?.toLocaleString('en-IN');
+
+  // Indemnity Premium Logic
+  const primaryPolicy = policies && policies.length > 0 ? policies[0] : null;
+  let indemnityPremiumDisplay = '-';
+  if (primaryPolicy) {
+    if (primaryPolicy.paidBy === 'by_company') {
+      indemnityPremiumDisplay = 'PAID BY RAPID';
+    } else if (primaryPolicy.paidBy === 'by_doctor') {
+      indemnityPremiumDisplay = `₹${primaryPolicy.premiumAmount?.toLocaleString('en-IN')} (BY DOCTOR)`;
+    } else {
+      indemnityPremiumDisplay = 'INCLUDING SERVICES CHARGES';
+    }
+  }
 
   return (
     <>
-      {/* Print Button */}
       <div className="fixed top-4 right-4 z-50 print:hidden">
         <button
           onClick={handlePrint}
@@ -637,461 +84,528 @@ const MembershipForm = () => {
         </button>
       </div>
 
-      {/* A4 Container */}
-      <div className="font-[Times New Roman] text-[12px] leading-[1.42] print:text-black bg-white min-h-screen">
-   <style jsx global>{`
-  @media print {
-    @page {
-      size: A4 portrait;
-      margin: 10mm 12mm 12mm 12mm;
-    }
+      <div className="bg-white min-h-screen font-serif text-[14px] leading-relaxed">
+        <style jsx global>{`
+          /* ========== SCREEN VIEW STYLES ========== */
+          .a4-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            color: black;
+            display: flex;
+            flex-direction: column;
+          }
+          
+          .section-header { background-color: #999; color: white; padding: 6px 12px; font-weight: bold; text-transform: uppercase; margin-top: 25px; margin-bottom: 10px; font-size: 14px; }
+          .field-row { display: flex; border-bottom: 1px solid #eee; padding: 7px 0; align-items: center; }
+          .field-label { color: red; font-weight: 500; min-width: 160px; }
+          .field-value { flex: 1; padding-left: 10px; color: #000; }
+          .dept-line { border-bottom: 1px solid #333; flex: 1; margin-left: 5px; min-height: 20px; }
+          .field-half { width: 50%; display: flex; align-items: center; }
+          .form-title { text-align: center; font-size: 20px; font-weight: bold; text-decoration: underline; margin: 15px 0; }
+          .intro-text { margin-bottom: 15px; text-align: justify; font-size: 14px; }
+          
+          .payment-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          .payment-table td { border: 1px solid #ccc; padding: 0 10px; height: 50px; vertical-align: middle !important; line-height: 1; }
+          .payment-label { font-weight: bold; width: 22%; background-color: #f3f4f6 !important; }
+          .payment-val { width: 28%; }
+          
+          .signature-section { display: flex; justify-content: space-between; margin-top: 50px; padding: 0 30px; }
+          .sig-box { text-align: center; width: 220px; }
+          .sig-line { border-top: 1px solid #000; margin-bottom: 5px; }
 
-    body {
-      margin: 0;
-      padding: 0;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
+          /* ========== PRINT VIEW STYLES ========== */
+          @media print {
+            @page {
+              size: A4;
+              margin: 10mm;
+            }
 
-    .print-hidden {
-      display: none !important;
-    }
+            body {
+              margin: 0;
+              padding: 0;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
 
-    /* ========== FIXED PRINT STYLES ========== */
-    /* Keep major sections together */
-    .avoid-break,
-    .section-start,
-    .payment-section,
-    .declaration-section,
-    .signature-section,
-    .footer-section {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-    }
+            .a4-container {
+              width: 100% !important;
+              margin: 0 !important;
+              box-shadow: none !important;
+              min-height: 277mm !important; /* Ensure content stretches to at least one page */
+              display: flex !important;
+              flex-direction: column !important;
+              border: none !important;
+            }
 
-    /* Prevent section titles from being separated from content */
-    .section-title {
-      page-break-after: avoid !important;
-      break-after: avoid !important;
-    }
+            .content-wrapper {
+                flex-grow: 1 !important; /* This pushes the footer down */
+                padding: 0 5mm;
+            }
 
-    /* Keep signature grid together */
-    .signature-grid {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-    }
+            .section-group {
+              break-inside: avoid;
+              margin-top: 25px;
+            }
 
-    /* Keep footer with previous content */
-    .footer-section {
-      page-break-before: avoid !important;
-      break-before: avoid !important;
-    }
+            .payment-table td {
+                height: 50px !important;
+                vertical-align: middle !important;
+                padding: 0 10px !important;
+            }
+            
+            .payment-label {
+                background-color: #f3f4f6 !important;
+                -webkit-print-color-adjust: exact;
+            }
 
-    /* Orphan/widow control */
-    p, div, .grid-compact > div {
-      orphans: 3 !important;
-      widows: 3 !important;
-    }
+            .form-footer-wrapper {
+                margin-top: auto !important; /* KEY: Pushes footer to absolute bottom of last page */
+                padding-top: 30px;
+                break-inside: avoid;
+            }
 
-    /* Allow grid to break if needed but keep items together */
-    .grid-compact {
-      page-break-inside: auto !important;
-      break-inside: auto !important;
-    }
-    .grid-compact > div {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-    }
+            /* Fix for content lines */
+            .field-row {
+                border-bottom: 1px solid #f0f0f0 !important;
+            }
+          }
 
-    /* Horizontal dividers */
-    hr.divider {
-      page-break-after: avoid !important;
-      break-after: avoid !important;
-      margin: 0.6cm 0 !important;
-    }
-  }
+          @media screen {
+            .content-wrapper {
+                padding: 0 15mm;
+                flex: 1;
+            }
+            .form-footer-wrapper {
+                margin-top: auto;
+            }
+          }
+        `}</style>
 
-  /* Screen + Print Styles */
-  .a4-page {
-    width: 210mm;
-    min-height: 297mm;
-    margin: 15px auto;
-    padding: 0 12mm;
-    background: white;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 12px;
-    line-height: 1.42;
-    color: #000;
-  }
-
-  @media print {
-    .a4-page {
-      margin: 0;
-      box-shadow: none;
-      min-height: auto;
-    }
-  }
-
-  .avoid-break {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .section-start {
-    margin-top: 0.6cm;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .section-title {
-    font-size: 13px;
-    font-weight: bold;
-    background: #f5f5f5;
-    padding: 5px 8px;
-    margin-bottom: 0.3cm;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  @media print {
-    .section-title {
-      background: #f5f5f5 !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-  }
-
-  .grid-compact {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 1cm;
-    row-gap: 0.28cm;
-  }
-
-  .grid-compact > div {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .underline-dotted-thick {
-    text-decoration: underline dotted;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 2.5px;
-    display: inline-block;
-    min-width: 130px;
-  }
-
-  .long-underline {
-    min-width: 300px;
-  }
-
-  .signature-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.8cm;
-    margin-top: 1.6cm;
-    text-align: center;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .sig-line {
-    border-bottom: 1px solid #000;
-    margin: 0.4cm 0 0.2cm;
-  }
-
-  hr.divider {
-    border: none;
-    border-top: 1px solid #000;
-    margin: 0.6cm 0;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  .long-text-field {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-  }
-
-  .payment-section {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .hospital-section {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .authorized-person-section {
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-  }
-
-  .dept-list-item {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .declaration-section p:first-of-type {
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  .executive-line {
-    margin-top: 1.5cm;
-    page-break-before: avoid !important;
-    break-before: avoid !important;
-  }
-
-  .footer-section {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    margin-top: 1cm;
-  }
-`}</style>
-
-        <div className="a4-page">
+        <div className="a4-container">
+          {/* HEADER - ONLY ONCE AT THE VERY TOP */}
           <Header />
 
-          {/* SALE BILL NO Badge */}
-          <div className="flex justify-end mt-3">
-            <div className="text-xs font-bold">
-              SALE BILL NO: <span className="bg-blue-600 text-white px-4 py-1 rounded ml-2">
+          <div className="content-wrapper">
+            <div className="flex justify-end items-center gap-3 mt-4">
+              <span className="font-bold">SALE BILL NO-</span>
+              <span className="bg-blue-700 text-white px-5 py-1 rounded font-bold">
                 {salesBill.billNumber || 'RML-XXXXX'}
               </span>
             </div>
-          </div>
 
-          {/* Declaration Text */}
-          <div className="mt-5 text-center text-[14px] font-bold">
-            DOCTOR MEMBERSHIP FORM
-          </div>
+            <h1 className="form-title">MEMBERSHIP FORM</h1>
 
-          <div className="mt-4 text-justify leading-[1.45] avoid-break">
-            As Per Schemes and services of Rapid Medicolegal Services India Ltd. I here voluntarily agree to become a member of Rapid for which I deposit Rs.{' '}
-            <span className="underline-dotted-thick long-underline">
-              {salesBill?.totalAmount?.toLocaleString('en-IN') || '________'}
-            </span> for{' '}
-            <span className="underline-dotted-thick">
-              {calculateMembershipYears(salesBill?.billDate, salesBill?.dueDate) || '______'}
-            </span> and I am quoting my details below.
-          </div>
+            <div className="intro-text">
+              As Per Schemes and services of Rapid Medicolegal Services India Ltd. I here by voluntarily to be a member
+              of Rapid for Which I Deposit Rs. <span className="underline decoration-dotted font-bold px-2">{isMonthly ? monthlyAmount : (salesBill.totalAmount?.toLocaleString('en-IN') || '________')}</span> 
+              {isMonthly ? (
+                <span className="bg-yellow-300 px-2 font-bold ml-1">month / per month</span>
+              ) : (
+                <> for <span className="bg-yellow-300 px-2 font-bold">{membershipYears} Years</span></>
+              )}
+              {" "}and I am quoting my details below.
+            </div>
 
-          <hr className="divider" />
-
-          {/* Doctor 1 Details */}
-          {doctorType !== 'hospital' && (
-            <div className="avoid-break section-start">
-              <div className="section-title">Doctor 1 Details</div>
-              <div className="grid-compact">
-                <div>Full Name: <span className="underline-dotted-thick"> {doctor.originalDoctor?.fullName || doctor.fullName}</span></div>
-                <div>Speciality: <span className="underline-dotted-thick">{Array.isArray(doctor.originalDoctor?.specialization) ? doctor.originalDoctor.specialization.join(", ") : Array.isArray(doctor.specialization) ? doctor.specialization.join(", ") : doctor.specialization || '________________'}</span></div>
-                <div>Qualification: <span className="underline-dotted-thick">{doctor.originalDoctor?.qualification || doctor.qualification}</span></div>
-                <div>Medical Registration No.: <span className="underline-dotted-thick">{doctor.originalDoctor?.licenseNumber || doctor.licenseNumber}</span></div>
-                <div>Regi. Year: <span className="underline-dotted-thick">{doctor.originalDoctor?.registrationYear || doctor.registrationYear}</span></div>
-                <div>Date of Birth: <span className="underline-dotted-thick">{formatDate(doctor.originalDoctor?.dateOfBirth || doctor.dateOfBirth)}</span></div>
-                <div>Mobile (Wa): <span className="underline-dotted-thick">{doctor.originalDoctor?.whatsappNumber || doctor.originalDoctor?.phoneNumber || doctor.whatsappNumber || doctor.phoneNumber || '________________'}</span></div>
-                <div>Mobile: <span className="underline-dotted-thick">{doctor.originalDoctor?.phoneNumber || doctor.phoneNumber || '________________'}</span></div>
-                <div>Email: <span className="underline-dotted-thick">{doctor.originalDoctor?.email || doctor.email || '________________'}</span></div>
-                <div>Aadhar Number: <span className="underline-dotted-thick">{doctor.originalDoctor?.aadharNumber || doctor.aadharNumber || '________________'}</span></div>
-                <div>Pan Number: <span className="underline-dotted-thick">{doctor.originalDoctor?.panNumber || doctor.panNumber || '________________'}</span></div>
-                <div className="col-span-2">
-                  Residential Address: <span className="underline-dotted-thick long-underline">{getFullAddress(doctor.originalDoctor?.contactDetails?.currentAddress || doctor.contactDetails?.currentAddress)}</span>
+            {/* Doctor 1 Details */}
+            {(doctorType === 'individual' || doctorType === 'hospital_individual') && (
+              <div className="section-group">
+                <div className="section-header">DOCTOR DETAILS _1</div>
+                <div className="field-row">
+                  <span className="field-label">Full Name:</span>
+                  <span className="field-value font-bold">{primaryDoctor.fullName}</span>
                 </div>
-                <div>Pin: <span className="underline-dotted-thick">{doctor.originalDoctor?.contactDetails?.currentAddress?.pinCode || doctor.contactDetails?.currentAddress?.pinCode || '________________'}</span></div>
-              </div>
-            </div>
-          )}
-
-          {/* Doctor 2 Details (Spouse) */}
-          {isLinked && linkedDoctor && (
-            <div className="avoid-break section-start">
-              <div className="section-title">Doctor 2 (Spouse) Details</div>
-              <div className="grid-compact">
-                <div>Full Name: <span className="underline-dotted-thick">{linkedDoctor.fullName}</span></div>
-                <div>Speciality: <span className="underline-dotted-thick">{Array.isArray(linkedDoctor.specialization) ? linkedDoctor.specialization.join(", ") : linkedDoctor.specialization || '________________'}</span></div>
-                <div>Qualification: <span className="underline-dotted-thick">{linkedDoctor.qualification}</span></div>
-                <div>Medical Registration No.: <span className="underline-dotted-thick">{linkedDoctor.licenseNumber}</span></div>
-                <div>Regi. Year: <span className="underline-dotted-thick">{linkedDoctor.registrationYear}</span></div>
-                <div>Date of Birth: <span className="underline-dotted-thick">{formatDate(linkedDoctor.dateOfBirth)}</span></div>
-                <div>Mobile (Wa): <span className="underline-dotted-thick">{linkedDoctor.whatsappNumber || linkedDoctor.phoneNumber || '________________'}</span></div>
-                <div>Mobile: <span className="underline-dotted-thick">{linkedDoctor.phoneNumber || '________________'}</span></div>
-                <div>Email: <span className="underline-dotted-thick">{linkedDoctor.email || '________________'}</span></div>
-                <div>Aadhar Number: <span className="underline-dotted-thick">{linkedDoctor.aadharNumber || '________________'}</span></div>
-                <div>Pan Number: <span className="underline-dotted-thick">{linkedDoctor.panNumber || '________________'}</span></div>
-                <div className="col-span-2">
-                  Residential Address: <span className="underline-dotted-thick long-underline">{getFullAddress(linkedDoctor.contactDetails?.currentAddress)}</span>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Qualification:</span>
+                    <span className="field-value">{primaryDoctor.qualification}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Speciality:</span>
+                    <span className="field-value">{Array.isArray(primaryDoctor.specialization) ? primaryDoctor.specialization.join(', ') : primaryDoctor.specialization}</span>
+                  </div>
                 </div>
-                <div>Pin: <span className="underline-dotted-thick">{linkedDoctor.contactDetails?.currentAddress?.pinCode || '________________'}</span></div>
-              </div>
-            </div>
-          )}
-
-          {/* Hospital / Clinic Details */}
-          {(doctorType === 'hospital' || doctorType === 'hospital_individual') && (
-            <div className="avoid-break section-start hospital-section">
-              <div className="section-title">Hospital / Clinic Details</div>
-              <div className="grid-compact">
-                <div className="col-span-2">Hospital / Clinic Name: <span className="underline-dotted-thick long-underline">{doctor.hospitalName}</span></div>
-                <div className="col-span-2 long-text-field">Hospital Address: <span className="underline-dotted-thick long-underline">{getFullAddress(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)}</span></div>
-                <div>City: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.city || '________________'}</span></div>
-                <div>District: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.district || '________________'}</span></div>
-                <div>State: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.state || '________________'}</span></div>
-                <div>Pin Code: <span className="underline-dotted-thick">{(doctor.hospitalAddress || doctor.originalDoctor?.hospitalAddress)?.pinCode || '________________'}</span></div>
-              </div>
-            </div>
-          )}
-
-          <hr className="divider" />
-
-          {/* Membership Details */}
-          <div className="avoid-break section-start">
-            <div className="section-title">Membership Details</div>
-            <div className="grid-compact">
-              <div>Membership Type: <span className="underline-dotted-thick">{doctor.doctorType}</span></div>
-              <div>Membership Start Date: <span className="underline-dotted-thick">{formatDate(salesBill.billDate)}</span></div>
-              <div>Membership End Date: <span className="underline-dotted-thick">{formatDate(salesBill.dueDate)}</span></div>
-              <div>Membership Period: <span className="underline-dotted-thick">{calculateMembershipYears(salesBill?.billDate, salesBill?.dueDate) || '________________'}</span></div>
-            </div>
-          </div>
-
-          {/* Hospital Membership Extra Fields (only if hospital) */}
-          {(doctorType === 'hospital') && (
-            <div className="avoid-break section-start hospital-section">
-              <div className="section-title">Hospital Membership Details</div>
-              <div className="grid-compact">
-                <div>Type of Hospital: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.hospitalType || '________________'}</span></div>
-                <div>No. of Beds: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.beds || '________________'}</span></div>
-                <div>Regi No Pan Number: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.hospitalPanNumber || '________________'}</span></div>
-                <div>Year of Establishment: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.establishmentYear || '________________'}</span></div>
-                <div>Hospital Contact: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.director?.contact || '________________'}</span></div>
-                <div>WhatsApp No.: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.admin?.contact || '________________'}</span></div>
-                <div>Email: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.director?.email || '________________'}</span></div>
-                <div>Website: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.website || '________________'}</span></div>
-                <div>Ownership Type: <span className="underline-dotted-thick">{doctor.originalDoctor?.hospitalDetails?.ownershipType || '________________'}</span></div>
-                <div className="col-span-2 long-text-field">
-                  Departments: <span className="underline-dotted-thick long-underline">
-                    {doctor.originalDoctor?.hospitalDetails?.departments && Array.isArray(doctor.originalDoctor.hospitalDetails.departments) && doctor.originalDoctor.hospitalDetails.departments.length > 0
-                      ? doctor.originalDoctor.hospitalDetails.departments.join(', ')
-                      : '________________'}
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Medical Registration No.:</span>
+                    <span className="field-value">{primaryDoctor.licenseNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Regi. Year:</span>
+                    <span className="field-value">{primaryDoctor.registrationYear}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Date of Birth:</span>
+                    <span className="field-value">{formatDate(primaryDoctor.dateOfBirth)}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Mobile:</span>
+                    <span className="field-value">{primaryDoctor.phoneNumber}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Mobile (Wa):</span>
+                    <span className="field-value">{primaryDoctor.whatsappNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Email:</span>
+                    <span className="field-value">{primaryDoctor.email}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Aadhar Number:</span>
+                    <span className="field-value">{primaryDoctor.aadharNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Pan Number:</span>
+                    <span className="field-value uppercase">{primaryDoctor.panNumber}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <span className="field-label">Residential Address:</span>
+                  <span className="field-value">
+                    {primaryDoctor.contactDetails?.currentAddress?.address || '________________'},
+                    {primaryDoctor.contactDetails?.currentAddress?.taluka || '________________'},
+                    {primaryDoctor.contactDetails?.currentAddress?.district || '________________'},
+                        {primaryDoctor.contactDetails?.currentAddress?.city || '________________'},
+                    {primaryDoctor.contactDetails?.currentAddress?.state || '________________'},
+                    {primaryDoctor.contactDetails?.currentAddress?.country || '________________'},
+                
+                    {primaryDoctor.contactDetails?.currentAddress?.pinCode && (
+                      <span className="font-bold ml-2">, {primaryDoctor.contactDetails.currentAddress.pinCode}</span>
+                    )}
                   </span>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Authorized Person Details (only hospital) */}
-          {(doctorType === 'hospital') && (
-            <div className="section-start authorized-person-section">
-              <div className="section-title">Authorized Person Details (Owner/Admin)</div>
-              <div className="mt-2 text-[12px] leading-[1.45]">
-                1. Medical Superintendent / Director :<br />
-                Name: {doctor.originalDoctor?.hospitalDetails?.director?.name || '________________'} Designation: ________________ Contact No: {doctor.originalDoctor?.hospitalDetails?.director?.contact || '________________'} Email ID: {doctor.originalDoctor?.hospitalDetails?.director?.email || '________________'}<br /><br />
-                2. Admin / Mgmt Officer Name {doctor.originalDoctor?.hospitalDetails?.admin?.name || '________________'} Contact No {doctor.originalDoctor?.hospitalDetails?.admin?.contact || '________________'} Email ID: {doctor.originalDoctor?.hospitalDetails?.admin?.email || '________________'}<br /><br />
-                Department Available:<br />
-                {doctor.originalDoctor?.hospitalDetails?.departments && Array.isArray(doctor.originalDoctor.hospitalDetails.departments) &&
-                  doctor.originalDoctor.hospitalDetails.departments.map((dept, index) => (
-                    <div key={index} className="dept-list-item">{index + 1}. {dept || '________________'}<br /></div>
+            {/* Doctor 2 Details (Spouse) */}
+            {isLinked && (
+              <div className="section-group">
+                <div className="section-header">DOCTOR DETAILS _2</div>
+                <div className="field-row">
+                  <span className="field-label">Full Name:</span>
+                  <span className="field-value font-bold">{linkedDoctor.fullName}</span>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Qualification:</span>
+                    <span className="field-value">{linkedDoctor.qualification}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Speciality:</span>
+                    <span className="field-value">{Array.isArray(linkedDoctor.specialization) ? linkedDoctor.specialization.join(', ') : linkedDoctor.specialization}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Medical Registration No.:</span>
+                    <span className="field-value font-semibold">{linkedDoctor.licenseNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Regi. Year:</span>
+                    <span className="field-value">{linkedDoctor.registrationYear}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Date of Birth:</span>
+                    <span className="field-value">{formatDate(linkedDoctor.dateOfBirth)}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Mobile:</span>
+                    <span className="field-value">{linkedDoctor.phoneNumber}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Mobile (Wa):</span>
+                    <span className="field-value">{linkedDoctor.whatsappNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Email:</span>
+                    <span className="field-value">{linkedDoctor.email}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Aadhar Number:</span>
+                    <span className="field-value">{linkedDoctor.aadharNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Pan Number:</span>
+                    <span className="field-value uppercase">{linkedDoctor.panNumber}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <span className="field-label">Residential Address:</span>
+                  <span className="field-value">
+                    {linkedDoctor.contactDetails?.currentAddress?.address || '________________'}
+                    {linkedDoctor.contactDetails?.currentAddress?.pinCode && (
+                      <span className="font-bold ml-2">, Pin Code: {linkedDoctor.contactDetails.currentAddress.pinCode}</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Hospital Details */}
+            {isHospital && (
+              <div className="section-group">
+                <div className="section-header">HOSPITAL DETAILS:</div>
+                <div className="field-row">
+                  <span className="field-label">Hospital / Clinic Name:</span>
+                  <span className="field-value font-bold">{primaryDoctor.hospitalName}</span>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Type Of Hospital:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.hospitalType}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">No. of Beds:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.beds}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Registration No.:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.licenseNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Year of Establishment:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.establishmentYear}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Hospital pan no:</span>
+                    <span className="field-value uppercase">{primaryDoctor.hospitalDetails?.hospitalPanNumber}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Mobile:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.contact}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">Mobile (Wa):</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.contact}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">Email:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.email}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <span className="field-label">Hospital Address</span>
+                  <span className="field-value">
+                    {primaryDoctor.hospitalAddress?.address}
+                    {primaryDoctor.hospitalAddress?.pinCode && (
+                      <span className="font-bold ml-2">, Pin Code: {primaryDoctor.hospitalAddress.pinCode}</span>
+                    )}
+                  </span>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">City:</span>
+                    <span className="field-value">{primaryDoctor.hospitalAddress?.city}</span>
+                  </div>
+                  <div className="field-half">
+                    <span className="field-label">District :</span>
+                    <span className="field-value">{primaryDoctor.hospitalAddress?.district}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-half">
+                    <span className="field-label">State:</span>
+                    <span className="field-value">{primaryDoctor.hospitalAddress?.state}</span>
+                  </div>
+                </div>
+
+                <div className="section-header">AUTHORIZED PERSON DETAILS (OWNER/ADMIN):</div>
+                <div className="mt-2 pl-2">
+                  <div className="field-row">
+                    <span className="mr-2">1.</span>
+                    <span className="field-label">Director Name/ Medical Superintendent:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.name}</span>
+                  </div>
+                  <div className="field-row ml-6">
+                    <span className="field-label">Designation:</span>
+                    <span className="field-value">________________</span>
+                  </div>
+                  <div className="field-row ml-6">
+                    <span className="field-label">Director contact no..:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.contact}</span>
+                  </div>
+                  <div className="field-row ml-6">
+                    <span className="field-label">Email:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.director?.email}</span>
+                  </div>
+
+                  <div className="field-row mt-2">
+                    <span className="mr-2">2.</span>
+                    <span className="field-label">Admin / Mgmt Officer Name:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.name}</span>
+                  </div>
+                  <div className="field-row ml-6">
+                    <span className="field-label">Contact no..:</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.contact}</span>
+                  </div>
+                  <div className="field-row ml-6">
+                    <span className="field-label">Email :</span>
+                    <span className="field-value">{primaryDoctor.hospitalDetails?.admin?.email}</span>
+                  </div>
+                </div>
+
+                <div className="section-header">AVAILABLE DEPARTMENT:</div>
+                <div className="grid grid-cols-3 gap-x-6 gap-y-2 mt-2 pl-4">
+                  {(primaryDoctor.hospitalDetails?.departments || ['________________', '________________', '________________']).map((dept, i) => (
+                    <div key={i} className="flex items-center">
+                      <span className="font-bold">{i+1}.</span>
+                      <div className="dept-line">{dept}</div>
+                    </div>
                   ))}
-                {(!doctor.originalDoctor?.hospitalDetails?.departments ||
-                  !Array.isArray(doctor.originalDoctor.hospitalDetails.departments) ||
-                  doctor.originalDoctor.hospitalDetails.departments.length === 0) &&
-                  <>
-                    1. ________________<br />
-                    2. ________________<br />
-                    3. ________________<br />
-                  </>
-                }
+                </div>
+              </div>
+            )}
+
+            {/* Membership Details */}
+            <div className="section-group">
+              <div className="section-header">MEMBERSHIP DETAILS:</div>
+              <div className="field-row">
+                <span className="field-label">Membership Type:</span>
+                <span className="field-value font-semibold uppercase">{primaryDoctor.doctorType}</span>
+              </div>
+              <div className="field-row">
+                <span className="field-label">Memberhsip plan:</span>
+                <span className="field-value font-bold text-blue-700">{salesBill.membershipType}</span>
+              </div>
+              <div className="field-row">
+                <span className="field-label">Start Date:</span>
+                <span className="field-value">{formatDate(salesBill.billDate)}</span>
+              </div>
+              {isMonthly ? (
+                <>
+                  <div className="field-row">
+                    <span className="field-label">Membership End Date:</span>
+                    <span className="field-value text-red-600 font-bold leading-tight">A Mandatory Lock-in Period of one year Applies; Thereafter membership continues until terminated by Doctor.</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="field-row">
+                    <span className="field-label">End Date:</span>
+                    <span className="field-value">{formatDate(salesBill.dueDate)}</span>
+                  </div>
+                  <div className="field-row">
+                    <span className="field-label">Membership Period:</span>
+                    <span className="field-value font-bold">{membershipYears} Year(s)</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Payment Details */}
+            <div className="section-group">
+              <div className="section-header">PAYMENT DETAILS:</div>
+              <table className="payment-table">
+                <tbody>
+                  <tr>
+                    <td className="payment-label">Payment Date</td>
+                    <td className="payment-val">{formatDate(firstPayment?.paymentDate || salesBill.billDate)}</td>
+                    <td className="payment-label">Service Charges</td>
+                    <td className="payment-val">
+                      ₹{isMonthly 
+                        ? (salesBill.items?.find(i => i.serviceType === 'consultation')?.amount || salesBill.subTotal)?.toLocaleString('en-IN')
+                        : salesBill.subTotal?.toLocaleString('en-IN')}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="payment-label">Payment Mode</td>
+                    <td className="payment-val uppercase">{firstPayment?.paymentMethod || '---'}</td>
+                    <td className="payment-label">GST</td>
+                    <td className="payment-val">₹{(salesBill.totalAmount - salesBill.subTotal)?.toLocaleString('en-IN')}</td>
+                  </tr>
+                  {firstPayment?.paymentMethod?.toLowerCase() === 'cheque' && (
+                    <>
+                      <tr>
+                        <td className="payment-label">Cheque No.</td>
+                        <td className="payment-val">
+                          {firstPayment?.paymentId?.chequeNo || 
+                           firstPayment?.paymentId?.bankDetails?.chequeNumber || 
+                           firstPayment?.referenceNumber || '---'}
+                        </td>
+                        <td className="payment-label">Cheque Date</td>
+                        <td className="payment-val">
+                          {formatDate(firstPayment?.paymentId?.chequeDate || 
+                                      firstPayment?.paymentId?.bankDetails?.chequeDate || 
+                                      firstPayment?.paymentDate)}
+                        </td>
+                      </tr>
+                    </>
+                  )}
+                  <tr>
+                    <td className="payment-label">Ref / Tr No.</td>
+                    <td className="payment-val">{firstPayment?.referenceNumber || 'PAYMENTS ONLINE TRANSFER'}</td>
+                    <td className="payment-label">Indemnity Premium</td>
+                    <td className="payment-val text-xs font-bold uppercase">{indemnityPremiumDisplay}</td>
+                  </tr>
+                  <tr>
+                    <td className="payment-label">Drawn On</td>
+                    <td className="payment-val">{firstPayment?.paymentId?.drawnOnBank || firstPayment?.paymentId?.bankDetails?.bankName || '-'}</td>
+                    <td className="payment-label">Total</td>
+                    <td className="payment-val font-bold text-blue-800">
+                      {isMonthly ? monthlyAmount : salesBill.totalAmount?.toLocaleString('en-IN')}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Declaration */}
+            <div className="mt-8 italic text-gray-700">
+              I / We hereby declare that we have fully understood the policy coverage details, services, rules, and regulations of Rapid Medicolegal Services India Ltd.
+            </div>
+
+            <div className="signature-section">
+              <div className="sig-box">
+                <div className="sig-line"></div>
+                <span className="font-bold">Doctor 1 Signature</span>
+              </div>
+              {isLinked && (
+                <div className="sig-box">
+                  <div className="sig-line"></div>
+                  <span className="font-bold">Doctor 2 Signature</span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-12 mb-4">
+              <span className="font-bold">Name of Executive/Officer:</span>
+              <div className="flex items-end gap-3 mt-4">
+                 <div className="border-b border-black w-64 h-6 px-2 font-bold uppercase">
+                   {primaryDoctor.createdBy?.fullName || '________________'}
+                 </div>
+                 <span className="text-[11px] font-medium text-gray-500 uppercase">(Sales Person Name)</span>
               </div>
             </div>
-          )}
-
-          <hr className="divider" />
-
-          {/* Payment Details */}
-          <div className="avoid-break section-start payment-section">
-            <div className="section-title">Payment Details</div>
-            <div className="grid-compact mt-2">
-              {firstPayment ? (
-                <>
-                  <div>Payment Date: <span className="font-bold">{formatDate(firstPayment.paymentDate)}</span></div>
-                  <div>Payment Mode: <span className="font-bold">{firstPayment.paymentMethod || '________________'}</span></div>
-                  <div>Cheque No.: <span className="font-bold">{firstPayment.paymentMethod === 'cheque' ? (firstPayment.paymentId?.chequeNumber || firstPayment.referenceNumber) : '—'}</span></div>
-                  <div>Drawn On (Bank): <span className="font-bold">{firstPayment.paymentMethod === 'cheque' ? (firstPayment.paymentId?.drawnOnBank || '________________') : '________________'}</span></div>
-                  <div>Amount Paid: <span className="font-bold">₹{firstPayment.amount?.toLocaleString('en-IN') || '________________'}</span></div>
-                </>
-              ) : (
-                <>
-                  <div>Cheque Date: ________________</div>
-                  <div>Cheque No.: ________________</div>
-                  <div>Drawn On (Bank): ________________</div>
-                  <div>Service Charges: ________________</div>
-                  <div>GST: ________________</div>
-                  <div>Indemnity Premium: ₹{indemnityPremium?.toLocaleString('en-IN') || '________________'}</div>
-                  <div>Total Amount: <span className="font-bold">₹{salesBill.totalAmount?.toLocaleString('en-IN') || '________'}</span></div>
-                </>
-              )}
-              <div>Service Charges: <span className="font-bold">₹{salesBill.subTotal?.toLocaleString('en-IN') || '________________'}</span></div>
-              <div>GST: <span className="font-bold">₹{(salesBill.totalAmount - salesBill.subTotal)?.toLocaleString('en-IN') || '________________'}</span></div>
-              <div>Indemnity Premium: <span className="font-bold">₹{indemnityPremium?.toLocaleString('en-IN') || '________________'}</span></div>
-              <div>Total Amount: <span className="font-bold">₹{salesBill.totalAmount?.toLocaleString('en-IN') || '________'}</span></div>
-              <div className="col-span-2 long-text-field">Note: {salesBill.notes || '________________'}</div>
-            </div>
           </div>
 
-          <hr className="divider" />
-
-          {/* Declaration & Signatures */}
-          <div className="avoid-break declaration-section mt-6 text-center">
-            <p className="font-bold text-[14px] mb-3">Declaration</p>
-            <p className="text-[12px] leading-[1.45] mb-6">
-              I/We hereby declare that we have fully understood the policy coverage details, services, rules, and regulations of Rapid Medicolegal Services India Ltd.
-            </p>
-
-            <div className="signature-grid">
-              {doctorType === 'hospital' ? (
-                <div className="col-span-2">
-                  <div className="sig-line"></div>
-                  <div>Hospital Representative Signature</div>
-                  <div className="text-[10px]">(Name & Designation)</div>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <div className="sig-line"></div>
-                    <div>Doctor 1 Signature</div>
-                    <div className="text-[10px]">(Name: {doctor.fullName})</div>
-                  </div>
-                  {isLinked && (
-                    <div>
-                      <div className="sig-line"></div>
-                      <div>Doctor 2 Signature</div>
-                      <div className="text-[10px]">(Name: {linkedDoctor?.fullName || '________________'})</div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="mt-10 text-center">
-              Name of Executive/Officer: <span className="underline-dotted long-underline">________________</span> (sales person name)
-            </div>
-          </div>
-
-          {/* Company Footer */}
-          <div className="mt-10 pt-4 border-t border-black text-center text-[10px]">
-            <Footer />
+          {/* FOOTER - ONLY AT THE VERY BOTTOM OF THE LAST PAGE */}
+          <div className="form-footer-wrapper">
+             <Footer />
           </div>
         </div>
-
-        {/* Visual Page Break (screen only) */}
-        <div className="page-break-dotted print:hidden" />
       </div>
     </>
   );
 };
 
-export default MembershipForm;
+export default NewMembershipForm;
