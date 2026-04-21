@@ -196,6 +196,8 @@ const useServiceAgreementData = (type, salesBillId) => {
           policyCover: `₹${(p.coverageAmount || 0).toLocaleString('en-IN')}`,
           policyDuration: calculatePolicyDuration(p.startDate, p.endDate, p.premiumFrequency || 'Yearly'),
           policyPremium: (p.paidBy === 'by_company' ? 'Paid By Rapid' : `₹${(p.premiumAmount || 0).toLocaleString('en-IN')}`).toUpperCase(),
+          paidBy: p.paidBy,
+          premiumAmount: p.premiumAmount,
           policyStartDate: p.startDate ? new Date(p.startDate).toLocaleDateString('en-GB') : '-',
           policyEndDate: p.endDate ? new Date(p.endDate).toLocaleDateString('en-GB') : '-',
           holderName: p.policyHolderName || p.holderName || 'N/A',
