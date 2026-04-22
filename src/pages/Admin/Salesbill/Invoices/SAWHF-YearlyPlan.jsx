@@ -139,13 +139,13 @@ const SAWHFYearlyPlan = () => {
 
         <div className="a4-container">
           {/* Header nahi dikhega lekin same height ka space chhodna hai - SAWHF */}
-          <div className="header-spacing h-[95px] print:h-[95px] mb-4 print:mb-0 invisible print:visible"></div>
+          <div className="header-spacing h-[125px] print:h-[125px] mb-4 print:mb-0 invisible print:visible"></div>
 
           <div className="break-inside-avoid">
             <div className="section-box">
               {/* SAWHF Title */}
               <div className="text-center mb-6 border-b-2 border-gray-800 pb-2">
-                <h1 className="text-lg font-bold uppercase print:mt-2 ">SERVICE AGREEMENT (SAWHF)</h1>
+                {/* <h1 className="text-lg font-bold uppercase print:mt-2 ">SERVICE AGREEMENT (SAWHF)</h1> */}
               </div>
 
               <SectionBox title="SERVICE AGREEMENT">

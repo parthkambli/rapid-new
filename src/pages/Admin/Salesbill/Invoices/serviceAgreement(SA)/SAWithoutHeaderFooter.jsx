@@ -365,18 +365,19 @@ const SAWithoutHeaderFooter = () => {
         <div className="a4-container no-header-footer">
           {/* SAWHF: Header nahi dikhega lekin same height ka space chhodna hai */}
           {/* This div creates the same height as the header would take */}
-          <div className="header-spacing h-[95px] print:h-[95px] mb-4 print:mb-0 invisible print:visible"></div>
+          <div className="header-spacing h-[125px] print:h-[125px] mb-4 print:mb-0 invisible print:visible"></div>
 
           {/* PAGE 1 - SERVICE AGREEMENT, PURPOSE OF AGREEMENT, MEMBERSHIP DETAILS */}
           <div className="break-inside-avoid print:break-inside-avoid">
             <div className="section-box print:break-inside-avoid">
               {/* SAWHF Title */}
               <div className="text-center mb-6 border-b-2 border-gray-800 pb-2">
-                <h1 className="text-lg font-bold uppercase print:mt-2 ">SERVICE AGREEMENT (SAWHF)</h1>
+                {/* <h1 className="text-lg font-bold uppercase print:mt-2 ">SERVICE AGREEMENT (SAWHF)</h1> */}
                 {/* <p className="text-sm italic">Header and Footer Removed Version</p> */}
               </div>
 
-              <SectionBox title="SERVICE AGREEMENT">
+              <SectionBox >
+                <p className='text-center font-bold text-[14px] mb-4 print:mb-4'>SERVICE AGREEMENT</p>
                 <p className="mb-2 print:mb-2">This Agreement for providing professional services is made at <b>{salesBill.city || 'Kolhapur'}</b> on this day of <b>{agreementDate}</b></p>
                 {/* {doctor.hasSpouse && doctor.spouseInfo ? (
                   <p className="mb-2 print:mb-2"><b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.</p>

@@ -220,7 +220,7 @@ const YearlySA = () => {
 
             {/* Note section if available */}
             {salesBill.notes && (
-              <div className="bg-gray-100 p-3 my-4 text-[12px] print:bg-gray-100 print:p-3 print:my-4">
+              <div className="bg-yellow-300 p-3 my-4 text-[12px] print:bg-red-500 print:p-3 print:my-4 ">
                 <strong>Note:</strong> {salesBill.notes}
               </div>
             )}
