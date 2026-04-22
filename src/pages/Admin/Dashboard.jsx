@@ -846,8 +846,6 @@ const AdminDashboard = () => {
   const [paymentDateTo, setPaymentDateTo] = useState('');
   const [paymentDateFilterType, setPaymentDateFilterType] = useState('expiry'); // 'expiry' or 'sbDate'
 
-  const API_BASE_URL = import.meta.env.VITE_API_URI;
-
   // Helper function to format date for input fields (YYYY-MM-DD)
   const formatDateForInput = (dateString) => {
     if (!dateString || dateString === 'N/A') return '';
@@ -914,13 +912,7 @@ const AdminDashboard = () => {
         monthlyPaymentRemindersRes,
         renewalRemindersRes
       ] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/dashboard`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }),
+        apiClient.get(apiEndpoints.adminDashboard.dashboard),
         apiClient.get(apiEndpoints.adminDashboard.monthlyDoctors),
         apiClient.get(apiEndpoints.adminDashboard.yearlyDoctors),
         apiClient.get(apiEndpoints.adminDashboard.salesmanDoctors),
@@ -930,11 +922,7 @@ const AdminDashboard = () => {
       ]);
 
       // Handle Main Dashboard Data
-      if (!dashboardRes.ok) {
-        throw new Error(`HTTP error! status: ${dashboardRes.status}`);
-      }
-      const dashboardResult = await dashboardRes.json();
-      if (dashboardResult.success) {
+      if (dashboardRes.data?.success) {
         // Override the monthlyPaymentReminder data with data from the receipt module
         const monthlyPaymentReminderData = monthlyPaymentRemindersRes.data?.success
           ? monthlyPaymentRemindersRes.data.data
@@ -947,12 +935,12 @@ const AdminDashboard = () => {
 
         // Update the dashboard data with both monthly payment reminders and renewal reminders
         setDashboardData({
-          ...dashboardResult.data,
+          ...dashboardRes.data.data,
           monthlyPaymentReminder: monthlyPaymentReminderData,
           renewalReminder: renewalReminderData
         });
       } else {
-        throw new Error(dashboardResult.message || 'Failed to fetch dashboard data');
+        throw new Error(dashboardRes.data?.message || 'Failed to fetch dashboard data');
       }
 
       // Handle Concurrent API Data

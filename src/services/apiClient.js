@@ -549,6 +549,7 @@ export const apiEndpoints = {
 
   // Admin Dashboard
   adminDashboard: {
+    dashboard: '/admin/dashboard',
     monthlyDoctors: '/admin/dashboard/monthly-doctors',
     yearlyDoctors: '/admin/dashboard/yearly-doctors',
     salesmanDoctors: '/admin/dashboard/salesman-doctors',
