@@ -890,8 +890,10 @@ const predefinedRows = {
     { label: 'Hospital Name', key: 'hospitalName' },
     { label: 'Qualification', key: 'qualification' },
     { label: 'Specialization', key: 'specialization' },
-    { label: 'MCI Registration No', key: 'registrationNumber' },
-    { label: 'MCI Registration Year', key: 'registrationYear' },
+    // { label: 'MCI Registration No', key: 'registrationNumber' },
+    { label: 'Medical Registration No', key: 'registrationNumber' },
+    { label: 'Medical Registration Year', key: 'registrationYear' },
+    // { label: 'MCI Registration Year', key: 'registrationYear' },
     { label: 'Membership Type', key: 'doctorType' },
     { label: 'Membership Plan', key: 'membershipType' },
     { label: 'Membership Period', key: 'membershipPeriod', conditional: true },
@@ -943,6 +945,10 @@ const InfoTable = ({ title, tableType, data, salesBill, className = '' }) => {
     if (row.key === 'totalServiceCharge' && row.suffixKey === 'membershipType') {
       const membershipType = item?.[row.suffixKey]?.toUpperCase();
       return membershipType === 'MONTHLY' ? `${value || ''} /MONTH` : (value || '-');
+    }
+
+    if (row.key === 'doctorType' || row.key === 'membershipType') {
+      return value ? value.toString().toUpperCase() : '-';
     }
 
     return value || '-';
@@ -1006,6 +1012,10 @@ const InfoTable = ({ title, tableType, data, salesBill, className = '' }) => {
       const filteredRows = rows.filter(row => {
         if (row.conditional) {
           return data.some(member => member.membershipType?.toLowerCase() !== 'monthly');
+        }
+        // ✅ HIDE: 'Doctor Name' row if it's hospital only (no individual doctor items)
+        if (row.key === 'fullName' && doctorItems.length === 0) {
+          return false;
         }
         return true;
       });

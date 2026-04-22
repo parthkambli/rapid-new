@@ -37,6 +37,22 @@ const YearlySA = () => {
     window.print();
   };
 
+  const getCleanAddress = (doc) => {
+    if (!doc) return 'N/A';
+    const parts = [
+      doc.address,
+      doc.taluka,
+      doc.district,
+      doc.city,
+      doc.state,
+      doc.country
+    ];
+    
+    return parts
+      .filter(part => part && part !== 'N/A' && part.trim() !== '')
+      .join(', ');
+  };
+
   return (
     <>
       <div className="text-end max-w-[80vw] sm:mb-4 my-6 print:hidden">
@@ -157,36 +173,26 @@ const YearlySA = () => {
             <div className="section-box print:break-inside-avoid">
               <SectionBox title="SERVICE AGREEMENT">
                 <p className="mb-2 print:mb-2">This Agreement for providing professional services is made at <b>{salesBill.city || 'Kolhapur'}</b> on this day of <b>{agreementDate}</b></p>
-                {/* {doctor.hasSpouse && doctor.spouseInfo ? (
-                  <p className="mb-2 print:mb-2"><b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.</p>
-                ) : doctor.doctorType === 'hospital' ? (
-                  <p className="mb-2 print:mb-2"><b>{doctor.hospitalName}</b> having its registered office at {doctor.hospitalAddress}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} Herein after referred as the doctor the one part.</p>
-                ) : doctor.doctorType === 'hospital_individual' && !doctor.hasSpouse ? (
-                  <p className="mb-2 print:mb-2"><b>{doctor.fullName}</b> (representing {doctor.hospitalName}) residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.</p>
-                ) : (
-                  <p className="mb-2 print:mb-2"><b>{doctor.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.</p>
-                )}
-                <p className="mb-2 text-center uppercase font-bold print:mb-2">AND</p>
-                <p className="print:text-[12px]">RAPID MEDICOLEGAL SERVICES INDIA LTD. A COMPANY REGISTERED UNDER THE COMPANIES ACT 2013, THROUGH ITS GENERAL MANAGER HAVING HEAD AND CORPORATE OFFICE AT OFFICE NO. 5 & 6, 3RD FLOOR, STAR TOWER, 1113/1, PANCH BUNGLOW, SHAHUPURI, KOLHAPUR, MAHARASHTRA, INDIA. 416001 herein after referred to as the service of the other part.</p> */}
                 {doctor.hasSpouse && doctor.spouseInfo ? (
                   // ✅ Case 1: Spouse case - show both doctors with personal addresses
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
+                    <b>{doctor.fullName} & {doctor.spouseInfo.fullName}</b> residing at {getCleanAddress(doctor)}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber} & {doctor.spouseInfo.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
                   </p>
-                ) : doctor.doctorType === 'hospital' ? (
+                ) : doctor.doctorType?.toLowerCase() === 'hospital' ? (
                   // ✅ Case 2: Hospital only - show hospital address
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.hospitalName}</b> having its registered office at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} Herein after referred as the doctor the one part.
+                    {/* <b>{doctor.hospitalName}</b> having its registered office at {getCleanAddress(doctor)}, PIN CODE-{doctor.pincode} Herein after referred as the doctor the one part. */}
+                    <b>{doctor.hospitalName}</b> having its registered hospital at {getCleanAddress(doctor)}, PIN CODE-{doctor.pincode} Herein after referred as the doctor the one part.
                   </p>
-                ) : doctor.doctorType === 'hospital_individual' && !doctor.hasSpouse ? (
+                ) : doctor.doctorType?.toLowerCase() === 'hospital_individual' && !doctor.hasSpouse ? (
                   // ✅ Case 3: Hospital_individual without spouse - show doctor's personal address
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.fullName}</b> (representing {doctor.hospitalName}) residing at {doctor.address}, {doctor.city}, {doctor.state}, {doctor.country}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
+                    <b>{doctor.fullName}</b> (representing {doctor.hospitalName}) residing at {getCleanAddress(doctor)}, PIN CODE-{doctor.pincode} with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
                   </p>
                 ) : (
                   // ✅ Case 4: Individual doctor - show doctor's personal address
                   <p className="mb-2 print:mb-2">
-                    <b>{doctor.fullName}</b> residing at {doctor.address}, {doctor.city},{doctor.state}, {doctor.country},  PIN CODE - {doctor.pincode}, with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
+                    <b>{doctor.fullName}</b> residing at {getCleanAddress(doctor)}, PIN CODE - {doctor.pincode}, with medical council number <b>{doctor.medicalCouncilNumber}</b> Herein after referred as the doctor the one part.
                   </p>
                 )}
                   <p className="mb-2 text-center uppercase font-bold print:mb-2">AND</p>
@@ -214,7 +220,7 @@ const YearlySA = () => {
 
             {/* Note section if available */}
             {salesBill.notes && (
-              <div className="bg-gray-100 p-3 my-4 text-[12px] print:bg-gray-100 print:p-3 print:my-4">
+              <div className="bg-yellow-300 p-3 my-4 text-[12px] print:bg-red-500 print:p-3 print:my-4 ">
                 <strong>Note:</strong> {salesBill.notes}
               </div>
             )}

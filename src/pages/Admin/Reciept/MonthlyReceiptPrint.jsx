@@ -334,9 +334,10 @@ const MonthlyPremiumReceipt = () => {
     hospitalAddress: [
       doctor.hospitalAddress?.address || "",
       doctor.hospitalAddress?.city || "",
+      doctor.hospitalAddress?.district || "",
       doctor.hospitalAddress?.state || "",
-      doctor.hospitalAddress?.pinCode || "",
-      "INDIA"
+       "INDIA",
+       doctor.hospitalAddress?.pinCode || ""
     ].filter(Boolean).join(", "),
     registrationNo: doctor.licenseNumber || doctor.doctorId || null,
 
@@ -345,12 +346,13 @@ const MonthlyPremiumReceipt = () => {
     receiptDate: formatDate(receipt.receiptDate),
 
     paymentModeDisplay,
-    membershipDisplay: paymentModeDisplay.includes("NACH") 
-      ? "Monthly (By NACH)" 
+    membershipDisplay: paymentModeDisplay.includes("NACH")
+      ? "Monthly (By NACH)"
       : `Monthly (${paymentModeDisplay.replace("By ", "")})`,
 
     paymentDate: formatDate(receipt.paymentDate || receipt.receiptDate),
     chequeNo: receipt.bankDetails?.chequeNumber || null,
+    chequeDate: receipt.bankDetails?.chequeDate ? formatDate(receipt.bankDetails.chequeDate) : null,
     drawnOn: receipt.drawnOnBank || null,
 
     amountPaid: receipt.monthlyPremium || receipt.amount || receipt.installmentAmount || 0,
@@ -385,6 +387,11 @@ const MonthlyPremiumReceipt = () => {
     { 
       label: "Cheque No.", 
       value: template.chequeNo,
+      condition: () => template.paymentModeDisplay.toLowerCase().includes("cheque")
+    },
+    { 
+      label: "Cheque Date", 
+      value: template.chequeDate,
       condition: () => template.paymentModeDisplay.toLowerCase().includes("cheque")
     },
     // { 

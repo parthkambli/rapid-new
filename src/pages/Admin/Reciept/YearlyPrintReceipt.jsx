@@ -102,9 +102,11 @@ const formatDate = (isoString) => {
     hospitalAddress: [
       doctor.hospitalAddress?.address || "",
       doctor.hospitalAddress?.city || "",
+      doctor.hospitalAddress?.district || "",
       doctor.hospitalAddress?.state || "",
+      
+      "INDIA",
       doctor.hospitalAddress?.pinCode || "",
-      "INDIA"
     ].filter(Boolean).join(", "),
     registrationNo: doctor.licenseNumber || doctor.doctorId || "--",
 
@@ -122,6 +124,7 @@ const formatDate = (isoString) => {
     paymentMode: (receipt.paymentMethod || "CASH").toUpperCase(),
     paymentDate: formatDate(receipt.receiptDate),
     chequeNo: receipt.bankDetails?.chequeNumber || "--",
+    chequeDate: receipt.bankDetails?.chequeDate ? formatDate(receipt.bankDetails.chequeDate) : "--",
     // drawnOn: receipt.bankDetails?.bankName || receipt.drawnOnBank || "--",
     drawnOn: receipt.drawnOnBank || "--",
     paymentType: receipt.paymentType === "installment" ? "PART PAYMENT" : "FULL PAYMENT",
@@ -226,10 +229,18 @@ membershipYearDisplay: (() => {
                 <td className="py-3 px-4 font-semibold bg-gray-100 border-r">Payment Date</td>
                 <td className="py-3 px-4">{template.paymentDate}</td>
               </tr>
-              <tr className="border-b">
-                <td className="py-3 px-4 font-semibold bg-gray-100 border-r">Cheque No.</td>
-                <td className="py-3 px-4">{template.chequeNo}</td>
-              </tr>
+              {(receipt.paymentMethod || '').toLowerCase() === 'cheque' && (
+                <>
+                  <tr className="border-b">
+                    <td className="py-3 px-4 font-semibold bg-gray-100 border-r">Cheque No.</td>
+                    <td className="py-3 px-4">{template.chequeNo}</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-3 px-4 font-semibold bg-gray-100 border-r">Cheque Date</td>
+                    <td className="py-3 px-4">{template.chequeDate}</td>
+                  </tr>
+                </>
+              )}
               <tr className="border-b">
                 <td className="py-3 px-4 font-semibold bg-gray-100 border-r">Drawn On</td>
                 <td className="py-3 px-4">{template.drawnOn}</td>
@@ -248,9 +259,9 @@ membershipYearDisplay: (() => {
  <tr className="border-b">
                 <td className="py-3 px-4 font-semibold bg-gray-100 border-r">Balance</td>
                 <td className="py-3 px-4 font-bold text-lg">
-             
-             {currentYearData.actualRemainingBalance <= 0 
-  ? "0" 
+
+             {currentYearData.actualRemainingBalance <= 0
+  ? "0"
   : `₹${(currentYearData.actualRemainingBalance ?? 0).toLocaleString("en-IN")}`}
                 {/* {currentYearData.balanceForThisYear <= 0 ? "0" : `₹${currentYearData.balance.toLocaleString("en-IN")}`} */}
                 </td>

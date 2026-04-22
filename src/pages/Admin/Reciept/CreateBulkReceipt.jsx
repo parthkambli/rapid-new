@@ -2575,6 +2575,7 @@ const CreateBulkReceipt = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [banks, setBanks] = useState([]);
+  const [results, setResults] = useState({ success: [], failed: [] });
 
   // Pagination and filtering states
   const [page, setPage] = useState(1);
@@ -2834,7 +2835,7 @@ const CreateBulkReceipt = () => {
           paymentAgainst: { type: 'bill', referenceId: bill._id },
           referenceNumber: bill.billNumber,
           relatedDocuments: { billId: bill._id },
-          remarks: `Payment against monthly bill ${bill.billNumber} via NACH`,
+          remarks: '',
           billDetails: {
             totalAmount: bill.totalAmount,
             outstandingAmount: bill.outstandingAmount,
@@ -2892,25 +2893,50 @@ const CreateBulkReceipt = () => {
     setLoading(true);
     setError('');
     setMessage('');
+    setResults({ success: [], failed: [] });
 
     try {
       const prepared = receiptData.map(r => ({
         ...r,
         bankDetails: {
           referenceNumber: r.referenceNumber || '',
-          // Add other NACH specific fields if needed
         }
       }));
 
       const promises = prepared.map(receipt => apiClient.post('/receipts', receipt));
-      const results = await Promise.allSettled(promises);
+      const responseResults = await Promise.allSettled(promises);
 
-      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      const successItems = [];
+      const failedItems = [];
 
-      if (successCount === prepared.length) {
-        setMessage(`Successfully created ${successCount} NACH receipts!`);
+      responseResults.forEach((res, index) => {
+        const doctorName = receiptData[index]?.payer?.name || `Receipt ${index + 1}`;
+        const billNo = receiptData[index]?.referenceNumber || 'N/A';
+
+        if (res.status === 'fulfilled') {
+          successItems.push({
+            doctor: doctorName,
+            bill: billNo,
+            data: res.value.data
+          });
+        } else {
+          failedItems.push({
+            doctor: doctorName,
+            bill: billNo,
+            reason: res.reason?.response?.data?.message || res.reason?.message || 'Unknown error'
+          });
+        }
+      });
+
+      setResults({
+        success: successItems,
+        failed: failedItems
+      });
+
+      if (failedItems.length === 0) {
+        setMessage(`Successfully created all ${successItems.length} NACH receipts!`);
       } else {
-        setError(`Created ${successCount} receipts. Some failed.`);
+        setError(`${successItems.length} succeeded, ${failedItems.length} failed.`);
       }
       setStep(6);
     } catch (err) {
@@ -3327,7 +3353,52 @@ const CreateBulkReceipt = () => {
               {error}
             </div>
           )}
-          <h3 className="text-xl font-bold mb-4">Receipts Processing Complete!</h3>
+
+          {/* Detailed Results Summary */}
+          <div className="max-w-4xl mx-auto mb-8 text-left grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Success List */}
+            {results.success.length > 0 && (
+              <div className="border border-green-200 rounded-lg overflow-hidden">
+                <div className="bg-green-50 px-4 py-2 font-bold text-green-700 border-b border-green-200">
+                  Successful ({results.success.length})
+                </div>
+                <div className="max-h-60 overflow-y-auto p-2 text-sm">
+                  {results.success.map((s, i) => (
+                    <div key={i} className="py-1 px-2 border-b border-gray-100 last:border-0 flex justify-between">
+                      <span className="font-medium">{s.doctor}</span>
+                      <span className="text-gray-500">{s.bill}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Failed List */}
+            {results.failed.length > 0 && (
+              <div className="border border-red-200 rounded-lg overflow-hidden">
+                <div className="bg-red-50 px-4 py-2 font-bold text-red-700 border-b border-red-200">
+                  Failed ({results.failed.length})
+                </div>
+                <div className="max-h-60 overflow-y-auto p-2 text-sm">
+                  {results.failed.map((f, i) => (
+                    <div key={i} className="py-2 px-2 border-b border-gray-100 last:border-0">
+                      <div className="flex justify-between font-medium">
+                        <span>{f.doctor}</span>
+                        <span className="text-gray-500">{f.bill}</span>
+                      </div>
+                      <div className="text-red-600 text-xs mt-1">{f.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <h3 className="text-xl font-bold mb-4 text-gray-800">Receipts Processing Complete!</h3>
+          <p className="text-gray-600 mb-6">
+            You can now view the created receipts in the Receipt List.
+          </p>
+
           <div className="flex justify-center gap-4">
             <button
               onClick={resetProcess}

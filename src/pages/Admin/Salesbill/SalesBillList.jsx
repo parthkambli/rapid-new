@@ -2239,7 +2239,8 @@ const SalesBill = () => {
     const diffMs = expiry - today;
     const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-    return daysUntilExpiry <= 7;
+    // Visible if: already expired OR expires today OR expires in ≤ 30 days (1 month)
+    return daysUntilExpiry <= 30;
   };
 
   const actions = [
@@ -2268,7 +2269,7 @@ const SalesBill = () => {
       label: 'Renewed',
       useDropdown: true,
       onClick: (row) => {
-        if (row.sbType !== 'Renewal') {
+        if (row.sbType !== 'Renewal' && row.sbType !== 'Renew') {
           toast.warn('This action is only available for Renewal bills');
           return;
         }
@@ -2279,14 +2280,8 @@ const SalesBill = () => {
       label: 'Renewal letter',
       useDropdown: true,
       onClick: (row) => {
-        if (row.oldSBNo) {
-          toast.warn('Renewal letter is only available for the original (source) bill.');
-          return;
-        }
-        if (row.sbType === 'Renewal') {
-          toast.warn('This is a renewed bill. Letter is attached to the original.');
-          return;
-        }
+        // Removed oldSBNo and sbType blocks to allow renewal letters for any membership bill 
+        // that is approaching its expiry date.
         if (!isRenewalNear(row.expiryDate)) {
           toast.info(`Renewal letter is not yet available.\nExpiry: ${row.expiryDate}`);
           return;

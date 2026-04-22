@@ -31,11 +31,6 @@ const NewMembershipForm = () => {
       return;
     }
 
-    if (isSingleDoctor || isSpouseOnly) {
-      setPrintFooterSpacer(0);
-      return;
-    }
-
     const measure = document.createElement('div');
     measure.style.width = '1mm';
     measure.style.height = '1mm';
@@ -76,14 +71,9 @@ const NewMembershipForm = () => {
   const isLinked = !!doctor?.hasSpouse;
   const doctorType = primaryDoctor.doctorType || 'individual';
   const isHospital = doctorType === 'hospital' || doctorType === 'hospital_individual';
-  const isSingleDoctor = !isLinked && !isHospital;
-  const isSpouseOnly = isLinked && !isHospital;
-  const isSpouseHospitalIndividual = isLinked && doctorType === 'hospital_individual';
-  const isHospitalOnly = !isLinked && doctorType === 'hospital';
   const forceBreakAfterSpouse = isLinked;
-  const forceBreakAfterHospitalAuth = !isLinked && doctorType === 'hospital_individual';
-  const hospitalAuthBreakClass = '';
-  const spouseOnlyPrintClass = isSpouseOnly ? 'spouse-only-print' : '';
+  const forceBreakAfterHospitalAuth = !isLinked && isHospital;
+  const forceBreakAfterMembership = !isLinked && !isHospital;
 
   const handlePrint = () => {
     calculatePrintFooterSpacer();
@@ -154,10 +144,6 @@ const NewMembershipForm = () => {
       indemnityPremiumDisplay = 'INCLUDING SERVICES CHARGES';
     }
   }
-
-  const membershipBreakClass =
-    isSingleDoctor || isSpouseHospitalIndividual ? 'print-page-break-before' : '';
-  const availableDepartmentBreakClass = isHospitalOnly ? 'print-page-break-before' : '';
 
   return (
     <>
@@ -284,35 +270,6 @@ const NewMembershipForm = () => {
                 page-break-after: always !important;
             }
 
-            .print-page-break-before {
-                break-before: page !important;
-                page-break-before: always !important;
-            }
-
-            .spouse-only-print .section-group {
-                margin-top: 18px;
-            }
-
-            .spouse-only-print .signature-section {
-                margin-top: 32px;
-            }
-
-            .spouse-only-print .mt-12 {
-                margin-top: 1.5rem !important;
-            }
-
-            .spouse-only-print .content-wrapper {
-                padding-top: 0 !important;
-            }
-
-            .spouse-only-print .form-footer-wrapper {
-                padding-top: 6mm !important;
-            }
-
-            .spouse-only-print .form-footer-wrapper img {
-                height: 28mm !important;
-            }
-
             /* Fix for content lines */
             .field-row {
                 border-color: #d4d4d4 !important;
@@ -339,7 +296,7 @@ const NewMembershipForm = () => {
           }
         `}</style>
 
-        <div ref={pageRef} className={`a4-container ${spouseOnlyPrintClass}`}>
+        <div ref={pageRef} className="a4-container">
           {/* HEADER - ONLY ONCE AT THE VERY TOP */}
           <div ref={headerRef}>
             <Header />
@@ -512,67 +469,6 @@ const NewMembershipForm = () => {
               </div>
             )}
 
-            {!isHospital && (
-              <div className="section-group">
-                <div className="section-header">HOSPITAL / CLINIC DETAILS:</div>
-                <div className="field-row">
-                  <span className="field-label">Hospital Name:</span>
-                  <span className="field-value">
-                    {primaryDoctor.hospitalName || primaryDoctor.hospitalDetails?.hospitalName || '________________'}
-                  </span>
-                </div>
-                <div className="field-row">
-                  <span className="field-label">Hospital Address:</span>
-                  <span className="field-value">
-                    {primaryDoctor.hospitalAddress?.address ||
-                      primaryDoctor.contactDetails?.clinicAddress?.address ||
-                      primaryDoctor.contactDetails?.currentAddress?.address ||
-                      '________________'}
-                  </span>
-                </div>
-                <div className="field-row">
-                  <div className="field-half">
-                    <span className="field-label">City:</span>
-                    <span className="field-value">
-                      {primaryDoctor.hospitalAddress?.city ||
-                        primaryDoctor.contactDetails?.clinicAddress?.city ||
-                        primaryDoctor.contactDetails?.currentAddress?.city ||
-                        '________________'}
-                    </span>
-                  </div>
-                  <div className="field-half">
-                    <span className="field-label">District:</span>
-                    <span className="field-value">
-                      {primaryDoctor.hospitalAddress?.district ||
-                        primaryDoctor.contactDetails?.clinicAddress?.district ||
-                        primaryDoctor.contactDetails?.currentAddress?.district ||
-                        '________________'}
-                    </span>
-                  </div>
-                </div>
-                <div className="field-row">
-                  <div className="field-half">
-                    <span className="field-label">State:</span>
-                    <span className="field-value">
-                      {primaryDoctor.hospitalAddress?.state ||
-                        primaryDoctor.contactDetails?.clinicAddress?.state ||
-                        primaryDoctor.contactDetails?.currentAddress?.state ||
-                        '________________'}
-                    </span>
-                  </div>
-                  <div className="field-half">
-                    <span className="field-label">Pin code:</span>
-                    <span className="field-value">
-                      {primaryDoctor.hospitalAddress?.pinCode ||
-                        primaryDoctor.contactDetails?.clinicAddress?.pinCode ||
-                        primaryDoctor.contactDetails?.currentAddress?.pinCode ||
-                        '________________'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Hospital Details */}
             {isHospital && (
               <div className="section-group">
@@ -647,7 +543,7 @@ const NewMembershipForm = () => {
                   </div>
                 </div>
 
-                <div className={`hospital-auth-section ${hospitalAuthBreakClass} ${forceBreakAfterHospitalAuth ? 'print-page-break-after' : ''}`}>
+                <div className={`hospital-auth-section ${forceBreakAfterHospitalAuth ? 'print-page-break-after' : ''}`}>
                   <div className="section-header">AUTHORIZED PERSON DETAILS (OWNER/ADMIN):</div>
                   <div className="mt-2">
                     <div className="field-row auth-field-row">
@@ -689,9 +585,8 @@ const NewMembershipForm = () => {
                   </div>
                 </div>
 
-                <div className={availableDepartmentBreakClass}>
-                  <div className="section-header">AVAILABLE DEPARTMENT:</div>
-                  <div className="grid grid-cols-3 gap-x-6 gap-y-2 mt-2 pl-4">
+                <div className="section-header">AVAILABLE DEPARTMENT:</div>
+                <div className="grid grid-cols-3 gap-x-6 gap-y-2 mt-2 pl-4">
                   {(primaryDoctor.hospitalDetails?.departments || ['________________', '________________', '________________']).map((dept, i) => (
                     <div key={i} className="flex items-center">
                       <span className="font-bold">{i+1}.</span>
@@ -699,12 +594,11 @@ const NewMembershipForm = () => {
                     </div>
                   ))}
                 </div>
-                </div>
               </div>
             )}
 
             {/* Membership Details */}
-            <div className={`section-group ${membershipBreakClass}`}>
+            <div className={`section-group ${forceBreakAfterMembership ? 'print-page-break-after' : ''}`}>
               <div className="section-header">MEMBERSHIP DETAILS:</div>
               <div className="field-row">
                 <span className="field-label">Membership Type:</span>
@@ -789,7 +683,7 @@ const NewMembershipForm = () => {
                     <td className="payment-val">{firstPayment?.paymentId?.drawnOnBank || firstPayment?.paymentId?.bankDetails?.bankName || '-'}</td>
                     <td className="payment-label">Total</td>
                     <td className="payment-val font-bold text-blue-800">
-                      {isMonthly ? `${monthlyAmount} per month` : salesBill.totalAmount?.toLocaleString('en-IN')}
+                      {isMonthly ? monthlyAmount : salesBill.totalAmount?.toLocaleString('en-IN')}
                     </td>
                   </tr>
                 </tbody>
