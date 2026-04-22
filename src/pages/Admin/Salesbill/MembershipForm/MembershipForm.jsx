@@ -31,7 +31,7 @@ const NewMembershipForm = () => {
       return;
     }
 
-    if (isSingleDoctor || isSpouseOnly) {
+    if (isSingleDoctor || isSpouseOnly || isSpouseHospitalIndividual) {
       setPrintFooterSpacer(0);
       return;
     }
@@ -129,11 +129,20 @@ const NewMembershipForm = () => {
     if (!start || !end) return '______';
     const s = new Date(start);
     const e = new Date(end);
+
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) {
+      return '______';
+    }
+
+    // Treat membership end date as inclusive so 1 Jan 2024 to 31 Dec 2024 counts as 1 year.
+    e.setDate(e.getDate() + 1);
+
     let years = e.getFullYear() - s.getFullYear();
     if (e.getMonth() < s.getMonth() || (e.getMonth() === s.getMonth() && e.getDate() < s.getDate())) {
       years--;
     }
-    return years > 0 ? years : '______';
+
+    return years >= 1 ? years : '______';
   };
 
   const membershipYears = calculateYears(salesBill.billDate, salesBill.dueDate);
@@ -156,8 +165,9 @@ const NewMembershipForm = () => {
   }
 
   const membershipBreakClass =
-    isSingleDoctor || isSpouseHospitalIndividual ? 'print-page-break-before' : '';
+    isSingleDoctor ? 'print-page-break-before' : '';
   const availableDepartmentBreakClass = isHospitalOnly ? 'print-page-break-before' : '';
+  const membershipSectionBreakAfterClass = isSpouseHospitalIndividual ? 'print-page-break-after' : '';
 
   return (
     <>
@@ -185,16 +195,18 @@ const NewMembershipForm = () => {
           }
           
           .section-header { background-color: #999; color: white; padding: 6px 12px; font-weight: bold; text-transform: uppercase; margin-top: 25px; margin-bottom: 10px; font-size: 14px; }
-          .field-row { display: flex; border: 1px solid #d4d4d4; border-top: none; align-items: stretch; }
-          .field-label { color: red; font-weight: 500; min-width: 160px; padding: 7px 10px; border-right: 1px solid #d4d4d4; display: flex; align-items: center; }
-          .field-value { flex: 1; padding: 7px 10px; color: #000; display: flex; align-items: center; }
+          .field-row { display: flex; border: 1px solid #d4d4d4; border-top: none; align-items: stretch; min-width: 0; }
+          .field-label { color: red; font-weight: 500; min-width: 118px; padding: 7px 8px; border-right: 1px solid #d4d4d4; display: flex; align-items: center; flex-shrink: 0; font-size: 12px; }
+          .field-value { flex: 1; min-width: 0; padding: 7px 8px; color: #000; display: flex; align-items: center; white-space: nowrap; overflow: hidden; font-size: 11px; letter-spacing: -0.15px; }
+          .field-value1 { flex: 1; min-width: 0; padding: 7px 8px; color: #000; display: flex; align-items: center; white-space: wrap; overflow: hidden; font-size: 10px; letter-spacing: -0.15px; }
           .dept-line { border-bottom: 1px solid #333; flex: 1; margin-left: 5px; min-height: 20px; }
-          .field-half { width: 50%; display: flex; align-items: stretch; }
+          .field-half { width: 50%; min-width: 0; display: flex; align-items: stretch; flex: 1 1 0; }
           .field-half + .field-half { border-left: 1px solid #d4d4d4; }
           .auth-field-row { display: flex; align-items: stretch; }
           .auth-field-number { width: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center; font-weight: 700; border-right: 1px solid #d4d4d4; }
           .auth-field-number.is-empty { color: transparent; }
-          .auth-field-row .field-label { min-width: 220px; }
+          .auth-field-row .field-label { min-width: 165px; }
+          .field-value.allow-wrap { white-space: normal; overflow: visible; line-height: 1.3; }
           .form-title { text-align: center; font-size: 20px; font-weight: bold; text-decoration: underline; margin: 15px 0; }
           .intro-text { margin-bottom: 15px; text-align: justify; font-size: 14px; }
           .section-group .field-row:first-of-type { border-top: 1px solid #d4d4d4;  }
@@ -204,7 +216,7 @@ const NewMembershipForm = () => {
           .payment-label { font-weight: bold; width: 22%; background-color: #f3f4f6 !important; }
           .payment-val { width: 28%; }
           
-          .signature-section { display: flex; justify-content: space-between; margin-top: 50px; padding: 0 30px; }
+          .signature-section { display: flex; justify-content: space-between; margin-top: 80px; padding: 0 30px; }
           .sig-box { text-align: center; width: 220px; }
           .sig-line { border-top: 1px solid #000; margin-bottom: 5px; }
           .print-footer-spacer { display: none; }
@@ -381,7 +393,7 @@ const NewMembershipForm = () => {
                   </div>
                   <div className="field-half">
                     <span className="field-label">Speciality:</span>
-                    <span className="field-value">{Array.isArray(primaryDoctor.specialization) ? primaryDoctor.specialization.join(', ') : primaryDoctor.specialization}</span>
+                    <span className="field-value1">{Array.isArray(primaryDoctor.specialization) ? primaryDoctor.specialization.join(', ') : primaryDoctor.specialization}</span>
                   </div>
                 </div>
                 <div className="field-row">
@@ -426,18 +438,30 @@ const NewMembershipForm = () => {
                 </div>
                 <div className="field-row">
                   <span className="field-label">Residential Address:</span>
-                  <span className="field-value">
-                    {primaryDoctor.contactDetails?.currentAddress?.address || '________________'},
-                    {primaryDoctor.contactDetails?.currentAddress?.taluka || '________________'},
-                    {primaryDoctor.contactDetails?.currentAddress?.district || '________________'},
-                        {primaryDoctor.contactDetails?.currentAddress?.city || '________________'},
-                    {primaryDoctor.contactDetails?.currentAddress?.state || '________________'},
-                    {primaryDoctor.contactDetails?.currentAddress?.country || '________________'},
-                
+                  {/* <span className="field-value allow-wrap">
+                    {primaryDoctor.contactDetails?.currentAddress?.address || '-'} , 
+                    {primaryDoctor.contactDetails?.currentAddress?.city || '-'} , 
+                    {primaryDoctor.contactDetails?.currentAddress?.taluka || '-'} , 
+                    {primaryDoctor.contactDetails?.currentAddress?.district || '-'} , 
+                    {primaryDoctor.contactDetails?.currentAddress?.state || '-'} , 
+                    {primaryDoctor.contactDetails?.currentAddress?.country || '-'} ,                 
                     {primaryDoctor.contactDetails?.currentAddress?.pinCode && (
                       <span className="font-bold ml-2">, {primaryDoctor.contactDetails.currentAddress.pinCode}</span>
                     )}
-                  </span>
+                  </span> */}
+                  <span className="field-value allow-wrap">
+  {[
+    primaryDoctor.contactDetails?.currentAddress?.address,
+    primaryDoctor.contactDetails?.currentAddress?.city,
+    primaryDoctor.contactDetails?.currentAddress?.taluka,
+    primaryDoctor.contactDetails?.currentAddress?.district,
+    primaryDoctor.contactDetails?.currentAddress?.state,
+    primaryDoctor.contactDetails?.currentAddress?.country,
+    primaryDoctor.contactDetails?.currentAddress?.pinCode
+  ]
+    .filter(Boolean)
+    .join(' , ') || '-'}
+</span>
                 </div>
               </div>
             )}
@@ -457,7 +481,7 @@ const NewMembershipForm = () => {
                   </div>
                   <div className="field-half">
                     <span className="field-label">Speciality:</span>
-                    <span className="field-value">{Array.isArray(linkedDoctor.specialization) ? linkedDoctor.specialization.join(', ') : linkedDoctor.specialization}</span>
+                    <span className="field-value1">{Array.isArray(linkedDoctor.specialization) ? linkedDoctor.specialization.join(', ') : linkedDoctor.specialization}</span>
                   </div>
                 </div>
                 <div className="field-row">
@@ -502,12 +526,27 @@ const NewMembershipForm = () => {
                 </div>
                 <div className="field-row">
                   <span className="field-label">Residential Address:</span>
-                  <span className="field-value">
-                    {linkedDoctor.contactDetails?.currentAddress?.address || '________________'}
+                  {/* <span className="field-value allow-wrap">
+                    {linkedDoctor.contactDetails?.currentAddress?.address || '_'}
                     {linkedDoctor.contactDetails?.currentAddress?.pinCode && (
                       <span className="font-bold ml-2">, Pin Code: {linkedDoctor.contactDetails.currentAddress.pinCode}</span>
                     )}
-                  </span>
+                  </span> */}
+
+ <span className="field-value allow-wrap">
+  {[
+    linkedDoctor.contactDetails?.currentAddress?.address,
+    linkedDoctor.contactDetails?.currentAddress?.city,
+    linkedDoctor.contactDetails?.currentAddress?.taluka,
+    linkedDoctor.contactDetails?.currentAddress?.district,
+    linkedDoctor.contactDetails?.currentAddress?.state,
+    linkedDoctor.contactDetails?.currentAddress?.country,
+    linkedDoctor.contactDetails?.currentAddress?.pinCode
+  ]
+    .filter(Boolean)
+    .join(' , ') || '-'}
+</span>
+
                 </div>
               </div>
             )}
@@ -523,7 +562,7 @@ const NewMembershipForm = () => {
                 </div>
                 <div className="field-row">
                   <span className="field-label">Hospital Address:</span>
-                  <span className="field-value">
+                  <span className="field-value allow-wrap">
                     {primaryDoctor.hospitalAddress?.address ||
                       primaryDoctor.contactDetails?.clinicAddress?.address ||
                       primaryDoctor.contactDetails?.currentAddress?.address ||
@@ -623,7 +662,7 @@ const NewMembershipForm = () => {
                 </div>
                 <div className="field-row">
                   <span className="field-label">Hospital Address</span>
-                  <span className="field-value">
+                  <span className="field-value allow-wrap">
                     {primaryDoctor.hospitalAddress?.address}
                     {primaryDoctor.hospitalAddress?.pinCode && (
                       <span className="font-bold ml-2">, Pin Code: {primaryDoctor.hospitalAddress.pinCode}</span>
@@ -704,7 +743,7 @@ const NewMembershipForm = () => {
             )}
 
             {/* Membership Details */}
-            <div className={`section-group ${membershipBreakClass}`}>
+            <div className={`section-group ${membershipBreakClass} ${membershipSectionBreakAfterClass}`}>
               <div className="section-header">MEMBERSHIP DETAILS:</div>
               <div className="field-row">
                 <span className="field-label">Membership Type:</span>
@@ -815,13 +854,18 @@ const NewMembershipForm = () => {
             </div>
 
             <div className="mt-12 mb-4">
-              <span className="font-bold">Name of Executive/Officer:</span>
-              <div className="flex items-end gap-3 mt-4">
+              <p className="font-bold">Name of Executive/Officer:
+              <span className="border-b border-black w-64 h-6 px-2 font-bold uppercase">
+                   {primaryDoctor.createdBy?.fullName || '________________'}
+                 </span>
+                 </p>
+                 <span className="text-[11px] font-medium text-gray-500 uppercase ml-[13rem]">(Sales Person Name)</span>
+              {/* <div className=" gap-3 mt-4">
                  <div className="border-b border-black w-64 h-6 px-2 font-bold uppercase">
                    {primaryDoctor.createdBy?.fullName || '________________'}
                  </div>
                  <span className="text-[11px] font-medium text-gray-500 uppercase">(Sales Person Name)</span>
-              </div>
+              </div> */}
             </div>
           </div>
 
