@@ -41,9 +41,9 @@ const YearlySA = () => {
     if (!doc) return 'N/A';
     const parts = [
       doc.address,
+       doc.city,
       doc.taluka,
       doc.district,
-      doc.city,
       doc.state,
       doc.country
     ];

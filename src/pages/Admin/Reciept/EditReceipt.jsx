@@ -2152,7 +2152,8 @@ chequeDate: data.bankDetails?.chequeDate
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Payment Mode *</label>
         <div className="flex flex-wrap gap-6">
-          {["cash", "cheque", "nach", "neft_rtgs", "online", "other"].map((mode) => (
+          {/* {["cash", "cheque", "nach", "neft_rtgs", "online", "other"].map((mode) => ( */}
+          {["cash", "cheque", "nach", "neft/rtgs", "online", "other"].map((mode) => (
             <label key={mode} className="flex items-center space-x-2 cursor-pointer">
               <input type="radio" name="paymentMode" value={mode} checked={formData.paymentMethod === mode} onChange={(e) => handleInputChange('paymentMethod', e.target.value)} className="text-[#398C89] focus:ring-[#398C89]" />
               <span className="text-sm text-gray-700 capitalize">{mode.replace('_', '/')}</span>

@@ -159,6 +159,7 @@ import CaseDetail from './pages/Advocate/CaseDetail';
 import UpdateCase from './pages/Advocate/UpdateCase';
 import CaseHistory from './pages/Advocate/CaseHistory';
 import CloseCase from './pages/Advocate/CloseCase';
+import AdvocateReportPanel from './pages/Advocate/Reports';
 
 
 // Expert Pages
@@ -168,6 +169,7 @@ import ExpertCaseDetail from './pages/Expert/CaseDetail';
 import ExpertUpdateCase from './pages/Expert/UpdateCase';
 import ExpertCaseHistory from './pages/Expert/CaseHistory';
 import ExpertCloseCase from './pages/Expert/CloseCase';
+import ExpertReportPanel from './pages/Expert/Reports';
 
 
 
@@ -1116,7 +1118,7 @@ const AppContent = () => {
               <Route path="/advocate/cases/history" element={<div className="p-6"><h1 className="text-2xl font-bold">Case History</h1><p>Case history management page for advocate cases.</p></div>} />
               <Route path="/advocate/cases/close" element={<div className="p-6"><h1 className="text-2xl font-bold">Close Case</h1><p>Case closing page for advocate cases.</p></div>} />
 
-              <Route path="/advocate/reports" element={<AdvocateReportPage />} /> 
+              <Route path="/advocate/reports" element={<AdvocateReportPanel />} /> 
               <Route path="/advocate/profile" element={<ProfileAdvocate />} />
             </Route>
 
@@ -1131,7 +1133,7 @@ const AppContent = () => {
               <Route path="/expert/case/:id/history" element={<ExpertCaseHistory />} />
               <Route path="/expert/case/:id/close" element={<ExpertCloseCase />} />
 
-              <Route path="/expert/reports" element={<ExpertReportPage />} />
+              <Route path="/expert/reports" element={<ExpertReportPanel />} />
               <Route path="/expert/profile" element={<ProfileExpert />} />
             </Route>
 

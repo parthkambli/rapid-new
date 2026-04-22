@@ -144,7 +144,7 @@ const useServiceAgreementData = (type, salesBillId) => {
             isSpouse: !isPrimary,
             isHospitalOnly: isHospitalOnly,
             formattedHospitalAddress: d.hospitalName && d.hospitalAddress ?
-              `${d.hospitalName}, ${d.hospitalAddress.address || ''}, ${d.hospitalAddress.taluka || ''}, ${d.hospitalAddress.district || ''}, ${d.hospitalAddress.city || ''}, ${d.hospitalAddress.state || ''}, ${(d.hospitalAddress.country || 'India').toUpperCase()} - ${d.hospitalAddress.pinCode || ''}`.replace(/, ,/g, ',').replace(/,,/g, ',') :
+              `${d.hospitalName}, ${d.hospitalAddress.address || ''}, ${d.hospitalAddress.city || ''}, ${d.hospitalAddress.taluka || ''}, ${d.hospitalAddress.district || ''}, ${d.hospitalAddress.state || ''}, ${(d.hospitalAddress.country || 'India').toUpperCase()} - ${d.hospitalAddress.pinCode || ''}`.replace(/, ,/g, ',').replace(/,,/g, ',') :
               d.hospitalName || 'N/A'
           };
         };
@@ -168,6 +168,36 @@ const useServiceAgreementData = (type, salesBillId) => {
           members.push(mapToMember(linkedDoctor, false));
         }
 
+        const normalizePaymentMode = (paymentMethod, referenceNumber) => {
+          const method = paymentMethod?.toLowerCase()?.trim();
+
+          if (!method) {
+            return 'N/A';
+          }
+
+          if (method === 'cheque') {
+            return `CHEQUE${referenceNumber ? ` (${referenceNumber})` : ''}`;
+          }
+
+          if (['online', 'online_transfer', 'upi'].includes(method)) {
+            return 'ONLINE TRANSFER';
+          }
+
+          if (['nach', 'auto_debit'].includes(method)) {
+            return 'BY NACH (AUTO DEBIT)';
+          }
+
+          if (['neft/rtgs', 'neft', 'rtgs', 'bank_transfer', 'bank transfer', 'imps'].includes(method)) {
+            return method === 'imps' ? 'IMPS' : 'NEFT/RTGS';
+          }
+
+          if (method === 'cash') {
+            return 'CASH';
+          }
+
+          return paymentMethod.toString().toUpperCase();
+        };
+
         // Process Payment Data
         const payments = bill.payments || [];
         const lastPayment = payments.length > 0 ? payments[payments.length - 1] : null;
@@ -180,13 +210,10 @@ const useServiceAgreementData = (type, salesBillId) => {
           lastPayment?.paymentMethod === 'online' ||
           lastPayment?.paymentId?.debitType;
 
-        let paymentMode = (isAutomated ? 'By Nach (Auto Debit)' : 'N/A').toUpperCase();
-        
+        let paymentMode = (isAutomated ? 'BY NACH (AUTO DEBIT)' : 'N/A');
+
         if (lastPayment) {
-          const method = lastPayment.paymentMethod?.toLowerCase();
-          paymentMode = (method === 'cheque' ? `Cheque (${lastPayment.referenceNumber || '-'})` :
-                         (method === 'online' || method === 'online_transfer' || method === 'upi') ? 'Online Transfer' : 
-                         (method === 'nach' || method === 'auto_debit') ? 'By Nach (Auto Debit)' : 'Cash').toUpperCase();
+          paymentMode = normalizePaymentMode(lastPayment.paymentMethod, lastPayment.referenceNumber);
         }
 
         const formattedPolicies = saPolicies.map(p => ({
