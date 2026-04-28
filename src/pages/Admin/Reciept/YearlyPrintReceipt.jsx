@@ -31,6 +31,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { apiHelpers, apiEndpoints } from "../../../services/apiClient";
+import header from "../../../assets/Salesbill/Header.png"
 
 import Right from "../../../assets/Salesbill/WNright.png";
 import left from "../../../assets/Salesbill/Logo.png";

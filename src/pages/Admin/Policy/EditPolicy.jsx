@@ -866,7 +866,7 @@ const EditPolicy = () => {
 
       // Fetch all doctors with pagination and filter for closed typeOfEnquiry
       try {
-        const doctorsResponse = await apiHelpers.getList(apiEndpoints.doctors.forpolicy, { page: 1, limit: 1000 });
+        const doctorsResponse = await apiHelpers.getList(apiEndpoints.doctors.forpolicy, { page: 1, limit: 20000 });
         console.log('Doctors received:', doctorsResponse.data);
         const closedDoctors = doctorsResponse.data.filter(doctor =>
           doctor.typeOfEnquiry === 'closed' ||

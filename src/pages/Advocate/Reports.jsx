@@ -77,14 +77,18 @@ const AdvocateReports = () => {
     }
 
     if (filters.dateFrom) {
+      const startDate = new Date(filters.dateFrom);
+      startDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter(report =>
-        new Date(report.createdAt) >= new Date(filters.dateFrom)
+        new Date(report.createdAt) >= startDate
       );
     }
 
     if (filters.dateTo) {
+      const endDate = new Date(filters.dateTo);
+      endDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter(report =>
-        new Date(report.createdAt) <= new Date(filters.dateTo)
+        new Date(report.createdAt) <= endDate
       );
     }
 

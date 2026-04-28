@@ -120,6 +120,7 @@ export const apiEndpoints = {
   // Doctors
   doctors: {
     list: "/doctors",
+    listfortotallist: "/doctors/total-for-list",
     forpolicy: "/doctors/for-policy-add",
     foreceipt: "/doctors/for-receipt",
     create: "/doctors",
@@ -330,6 +331,7 @@ export const apiEndpoints = {
     doctorDob: "/reports/doctors/dob",
     accountStatement: "/reports/account-statement",
     master: "/reports/master",
+    masterVendors: "/reports/master/vendors",
     salesBills: "/reports/sales-bills",
     receipts: "/reports/receipts",
     attendance: "/reports/attendance",

@@ -1,15 +1,69 @@
 // src/pages/superadmin/Report/MasterReportPage.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import apiClient, { apiEndpoints } from '../../../services/apiClient';
 import { Calendar, Download, Printer } from 'lucide-react';
 import ReactApexCharts from 'react-apexcharts';
 import * as XLSX from 'xlsx';
 import { useReactToPrint } from 'react-to-print';
+import AsyncSelect from 'react-select/async';
+
+// Memoized chart component to prevent ApexCharts from re-initializing on every render
+const MemoizedCashflowChart = React.memo(({ dailyCashflow, formatCurrency, formatDate }) => {
+  const series = useMemo(() => ([{
+    name: 'Cashflow',
+    data: dailyCashflow.map(item => item.amount || 0)
+  }]), [dailyCashflow]);
+
+  const options = useMemo(() => ({
+    chart: { toolbar: { show: false }, animations: { enabled: true } },
+    plotOptions: { bar: { horizontal: false, columnWidth: '50%', borderRadius: 4, distributed: true } },
+    dataLabels: { enabled: false },
+    stroke: { show: false },
+    colors: dailyCashflow.map(item => item.amount >= 0 ? '#10B981' : '#EF4444'),
+    xaxis: {
+      categories: dailyCashflow.map(item =>
+        new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+      ),
+      labels: { style: { fontSize: '10px', colors: '#6B7280' }, rotate: -45, rotateAlways: false },
+      axisBorder: { show: true, color: '#E5E7EB' },
+      axisTicks: { show: false }
+    },
+    yaxis: {
+      labels: {
+        formatter: (val) => {
+          if (val >= 1000000) return (val / 1000000).toFixed(1) + 'L';
+          if (val >= 100000) return (val / 100000).toFixed(1) + 'L';
+          if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+          return val.toString();
+        },
+        style: { fontSize: '10px', colors: '#6B7280' }
+      },
+      opposite: false,
+      tickAmount: 3
+    },
+    grid: { borderColor: '#F3F4F6', strokeDashArray: 4, yaxis: { lines: { show: true } } },
+    tooltip: {
+      theme: 'light',
+      y: { formatter: (val) => formatCurrency(val), title: { formatter: () => '' } },
+      x: {
+        formatter: (val, opts) => {
+          const date = dailyCashflow[opts.dataPointIndex]?.date;
+          return date ? formatDate(date) : '';
+        }
+      }
+    },
+    legend: { show: false },
+    states: { hover: { filter: { type: 'darken', value: 0.8 } } }
+  }), [dailyCashflow, formatCurrency, formatDate]);
+
+  return <ReactApexCharts type="bar" height="100%" series={series} options={options} />;
+});
 
 export default function MasterReportPage() {
   const printRef = useRef(null);
   const [activeTab, setActiveTab] = useState('owner-snapshot');
+  const [vendorSelectKey, setVendorSelectKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
 
@@ -27,7 +81,7 @@ export default function MasterReportPage() {
     dateFrom: '',
     dateTo: '',
     category: 'All',
-    companyVendor: 'All',
+    companyVendor: '',
     paymentMode: 'All'
   });
 
@@ -47,23 +101,47 @@ export default function MasterReportPage() {
   const [transactionsPage, setTransactionsPage] = useState(1);
   const [transactionsRows, setTransactionsRows] = useState(10);
 
-  const fetchMasterReport = async (tab = activeTab) => {
+  const resetOwnerPagination = () => {
+    setDoctorInflowsPage(1);
+    setPayoutsPage(1);
+    setAllItemsPage(1);
+  };
+
+  const resetFinancePagination = () => {
+    setInsurancePage(1);
+    setSalaryPage(1);
+    setTransactionsPage(1);
+  };
+
+  const applyOwnerFilters = () => {
+    resetOwnerPagination();
+    fetchMasterReport('owner-snapshot');
+  };
+
+  const applyFinanceFilters = () => {
+    resetFinancePagination();
+    fetchMasterReport('finance-dashboard');
+  };
+
+  const fetchMasterReport = async (tab = activeTab, filterOverrides = {}) => {
     setLoading(true);
     try {
       const params = { tab };
+      const effectiveOwnerFilters = { ...ownerFilters, ...(filterOverrides.owner || {}) };
+      const effectiveFinanceFilters = { ...financeFilters, ...(filterOverrides.finance || {}) };
 
       if (tab === 'owner-snapshot') {
-        if (ownerFilters.dateFrom) params.dateFrom = ownerFilters.dateFrom;
-        if (ownerFilters.dateTo) params.dateTo = ownerFilters.dateTo;
-        if (ownerFilters.paymentType !== 'All') params.paymentType = ownerFilters.paymentType;
-        if (ownerFilters.mode !== 'All') params.mode = ownerFilters.mode;
-        if (ownerFilters.searchName) params.searchName = ownerFilters.searchName;
+        if (effectiveOwnerFilters.dateFrom) params.dateFrom = effectiveOwnerFilters.dateFrom;
+        if (effectiveOwnerFilters.dateTo) params.dateTo = effectiveOwnerFilters.dateTo;
+        if (effectiveOwnerFilters.paymentType !== 'All') params.paymentType = effectiveOwnerFilters.paymentType;
+        if (effectiveOwnerFilters.mode !== 'All') params.mode = effectiveOwnerFilters.mode;
+        if (effectiveOwnerFilters.searchName) params.searchName = effectiveOwnerFilters.searchName;
       } else if (tab === 'finance-dashboard') {
-        if (financeFilters.dateFrom) params.dateFrom = financeFilters.dateFrom;
-        if (financeFilters.dateTo) params.dateTo = financeFilters.dateTo;
-        if (financeFilters.category !== 'All') params.category = financeFilters.category;
-        if (financeFilters.companyVendor !== 'All') params.companyVendor = financeFilters.companyVendor;
-        if (financeFilters.paymentMode !== 'All') params.paymentMode = financeFilters.paymentMode;
+        if (effectiveFinanceFilters.dateFrom) params.dateFrom = effectiveFinanceFilters.dateFrom;
+        if (effectiveFinanceFilters.dateTo) params.dateTo = effectiveFinanceFilters.dateTo;
+        if (effectiveFinanceFilters.category !== 'All') params.category = effectiveFinanceFilters.category;
+        if (effectiveFinanceFilters.companyVendor?.trim()) params.companyVendor = effectiveFinanceFilters.companyVendor.trim();
+        if (effectiveFinanceFilters.paymentMode !== 'All') params.paymentMode = effectiveFinanceFilters.paymentMode;
       }
 
       const response = await apiClient.get(apiEndpoints.reports.master, { params });
@@ -80,9 +158,11 @@ export default function MasterReportPage() {
     }
   };
 
+  // Initial fetch on mount only – tab-switch buttons handle their own fetch
   useEffect(() => {
     fetchMasterReport();
-  }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleOwnerFilterChange = (field, value) => {
     setOwnerFilters(prev => ({ ...prev, [field]: value }));
@@ -93,24 +173,107 @@ export default function MasterReportPage() {
   };
 
   const handleResetOwner = () => {
-    setOwnerFilters({
+    const resetFilters = {
       dateFrom: '',
       dateTo: '',
       paymentType: 'All',
       mode: 'All',
       searchName: ''
-    });
+    };
+    setOwnerFilters(resetFilters);
+    resetOwnerPagination();
+    return resetFilters;
   };
 
   const handleResetFinance = () => {
-    setFinanceFilters({
+    const resetFilters = {
       dateFrom: '',
       dateTo: '',
       category: 'All',
-      companyVendor: 'All',
+      companyVendor: '',
       paymentMode: 'All'
-    });
+    };
+    setFinanceFilters(resetFilters);
+    resetFinancePagination();
+    return resetFilters;
   };
+
+  useEffect(() => {
+    if (!reportData?.doctorInflows?.length) {
+      setDoctorInflowsPage(1);
+    } else {
+      const totalPages = Math.max(1, Math.ceil(reportData.doctorInflows.length / doctorInflowsRows));
+      if (doctorInflowsPage > totalPages) {
+        setDoctorInflowsPage(totalPages);
+      }
+    }
+  }, [reportData?.doctorInflows?.length, doctorInflowsRows, doctorInflowsPage]);
+
+  useEffect(() => {
+    const totalPayouts =
+      (reportData?.payouts?.advocates?.length || 0) +
+      (reportData?.payouts?.experts?.length || 0) +
+      (reportData?.payouts?.insurance?.length || 0);
+
+    if (!totalPayouts) {
+      setPayoutsPage(1);
+    } else {
+      const totalPages = Math.max(1, Math.ceil(totalPayouts / payoutsRows));
+      if (payoutsPage > totalPages) {
+        setPayoutsPage(totalPages);
+      }
+    }
+  }, [
+    reportData?.payouts?.advocates?.length,
+    reportData?.payouts?.experts?.length,
+    reportData?.payouts?.insurance?.length,
+    payoutsRows,
+    payoutsPage
+  ]);
+
+  useEffect(() => {
+    if (!reportData?.allItems?.length) {
+      setAllItemsPage(1);
+    } else {
+      const totalPages = Math.max(1, Math.ceil(reportData.allItems.length / allItemsRows));
+      if (allItemsPage > totalPages) {
+        setAllItemsPage(totalPages);
+      }
+    }
+  }, [reportData?.allItems?.length, allItemsRows, allItemsPage]);
+
+  useEffect(() => {
+    if (!reportData?.insuranceByCompany?.length) {
+      setInsurancePage(1);
+    } else {
+      const totalPages = Math.max(1, Math.ceil(reportData.insuranceByCompany.length / insuranceRows));
+      if (insurancePage > totalPages) {
+        setInsurancePage(totalPages);
+      }
+    }
+  }, [reportData?.insuranceByCompany?.length, insuranceRows, insurancePage]);
+
+  useEffect(() => {
+    if (!reportData?.salaryByRole?.length) {
+      setSalaryPage(1);
+    } else {
+      const totalPages = Math.max(1, Math.ceil(reportData.salaryByRole.length / salaryRows));
+      if (salaryPage > totalPages) {
+        setSalaryPage(totalPages);
+      }
+    }
+  }, [reportData?.salaryByRole?.length, salaryRows, salaryPage]);
+
+  useEffect(() => {
+    if (!reportData?.transactions?.length) {
+      setTransactionsPage(1);
+    } else {
+      const totalPages = Math.max(1, Math.ceil(reportData.transactions.length / transactionsRows));
+      if (transactionsPage > totalPages) {
+        setTransactionsPage(totalPages);
+      }
+    }
+  }, [reportData?.transactions?.length, transactionsRows, transactionsPage]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -125,6 +288,76 @@ export default function MasterReportPage() {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB');
   };
+
+  const formatPaymentMode = (mode) => {
+    const paymentModeLabels = {
+      online_transfer: 'Bank',
+      bank_transfer: 'Bank',
+      online: 'Online',
+      upi: 'UPI',
+      cash: 'Cash',
+      cheque: 'Cheque',
+      neft: 'NEFT',
+      rtgs: 'RTGS',
+      'neft/rtgs': 'NEFT/RTGS',
+      credit_card: 'Credit Card',
+      debit_card: 'Debit Card',
+      demand_draft: 'Demand Draft',
+      nach: 'NACH',
+      petty_cash: 'Petty Cash',
+      other: 'Other'
+    };
+
+    return paymentModeLabels[mode] || mode || '-';
+  };
+
+  const financeCategoryOptions = useMemo(() => Array.from(new Set([
+    'All',
+    'Revenue',
+    'Salary',
+    'Office Expense',
+    'Marketing',
+    'Insurance Payment',
+    'Commission',
+    'Advocate Payment',
+    'Expert Payment',
+    'Professional Fees',
+    'Bank Charges',
+    'Travel',
+    'Communication',
+    'Training',
+    'Meals',
+    'Other Expense',
+    ...(reportData?.transactions?.map(item => item.category).filter(Boolean) || [])
+  ])), [reportData?.transactions]);
+
+  // Fetch vendor names from lightweight API (not from heavy reportData)
+  const loadVendorOptions = useCallback((inputValue, callback) => {
+    apiClient.get(apiEndpoints.reports.masterVendors, { params: { search: inputValue || '' } })
+      .then(res => {
+        const vendors = (res.data?.data || []).slice(0, 30).map(v => ({ value: v, label: v }));
+        callback(vendors);
+      })
+      .catch(() => callback([]));
+  }, []);
+
+  const financePaymentModeOptions = [
+    'All',
+    'Cash',
+    'Cheque',
+    'Online Transfer',
+    'Online',
+    'Bank Transfer',
+    'Credit Card',
+    'Debit Card',
+    'UPI',
+    'Demand Draft',
+    'RTGS',
+    'NEFT',
+    'NEFT/RTGS',
+    'NACH',
+    'Other'
+  ];
 
   // ============ Excel Export Function ============
   const handleExportToExcel = () => {
@@ -302,7 +535,7 @@ export default function MasterReportPage() {
             item.category,
             item.companyVendor,
             item.details,
-            item.mode,
+            formatPaymentMode(item.mode),
             item.amount
           ]);
         });
@@ -358,6 +591,7 @@ export default function MasterReportPage() {
           <button
             onClick={() => {
               setActiveTab('owner-snapshot');
+              resetOwnerPagination();
               fetchMasterReport('owner-snapshot');
             }}
             className={`px-6 py-3 font-medium text-sm ${
@@ -371,6 +605,7 @@ export default function MasterReportPage() {
           <button
             onClick={() => {
               setActiveTab('finance-dashboard');
+              resetFinancePagination();
               fetchMasterReport('finance-dashboard');
             }}
             className={`px-6 py-3 font-medium text-sm ${
@@ -436,11 +671,20 @@ export default function MasterReportPage() {
                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                     >
                       <option>All</option>
-                      <option>Bank</option>
-                      <option>UPI</option>
                       <option>Cash</option>
+                      <option>Cheque</option>
+                      <option>Online Transfer</option>
+                      <option>Online</option>
+                      <option>Bank Transfer</option>
+                      <option>Credit Card</option>
+                      <option>Debit Card</option>
+                      <option>UPI</option>
+                      <option>Demand Draft</option>
+                      <option>RTGS</option>
                       <option>NEFT</option>
-                      <option>Card</option>
+                      <option>NEFT/RTGS</option>
+                      <option>NACH</option>
+                      <option>Other</option>
                     </select>
                   </div>
                   <div>
@@ -456,13 +700,16 @@ export default function MasterReportPage() {
                 </div>
                 <div className="flex gap-2 mt-4">
                   <button
-                    onClick={() => fetchMasterReport('owner-snapshot')}
+                    onClick={applyOwnerFilters}
                     className="px-4 py-2 bg-[#398C89] text-white rounded text-sm font-medium hover:bg-[#2d6f6c]"
                   >
                     Apply
                   </button>
                   <button
-                    onClick={handleResetOwner}
+                    onClick={() => {
+                      const resetFilters = handleResetOwner();
+                      fetchMasterReport('owner-snapshot', { owner: resetFilters });
+                    }}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300"
                   >
                     Reset
@@ -537,7 +784,7 @@ export default function MasterReportPage() {
                           <td className="px-4 py-2 text-sm text-gray-700">{formatDate(item.date)}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{item.doctor}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{item.reason}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{item.mode}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">{formatPaymentMode(item.mode)}</td>
                           <td className="px-4 py-2 text-sm text-right font-medium text-green-600">+{formatCurrency(item.amount)}</td>
                         </tr>
                       ))}
@@ -784,24 +1031,28 @@ export default function MasterReportPage() {
                       onChange={(e) => handleFinanceFilterChange('category', e.target.value)}
                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                     >
-                      <option>All</option>
-                      <option>Revenue</option>
-                      <option>Salary</option>
-                      <option>Office Expense</option>
-                      <option>Marketing</option>
-                      <option>Insurance Payment</option>
-                      <option>Commission</option>
-                      <option>Refund</option>
+                      {financeCategoryOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Company/Vendor</label>
-                    <input
-                      type="text"
-                      placeholder="ICICI, Rent,..."
-                      value={financeFilters.companyVendor}
-                      onChange={(e) => handleFinanceFilterChange('companyVendor', e.target.value)}
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    <AsyncSelect
+                      key={vendorSelectKey}
+                      loadOptions={loadVendorOptions}
+                      defaultOptions
+                      cacheOptions
+                      value={financeFilters.companyVendor ? { value: financeFilters.companyVendor, label: financeFilters.companyVendor } : null}
+                      onChange={(selected) => handleFinanceFilterChange('companyVendor', selected?.value || '')}
+                      isClearable
+                      placeholder="Type to search vendor..."
+                      noOptionsMessage={() => 'Type to search...'}
+                      styles={{
+                        control: (base) => ({ ...base, minHeight: '38px', fontSize: '0.875rem', borderColor: '#d1d5db' }),
+                        menu: (base) => ({ ...base, zIndex: 50, fontSize: '0.875rem' }),
+                        placeholder: (base) => ({ ...base, color: '#9ca3af' }),
+                      }}
                     />
                   </div>
                   <div>
@@ -811,24 +1062,25 @@ export default function MasterReportPage() {
                       onChange={(e) => handleFinanceFilterChange('paymentMode', e.target.value)}
                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                     >
-                      <option>All</option>
-                      <option>Bank</option>
-                      <option>UPI</option>
-                      <option>Cash</option>
-                      <option>NEFT</option>
-                      <option>Card</option>
+                      {financePaymentModeOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
                   <button
-                    onClick={() => fetchMasterReport('finance-dashboard')}
+                    onClick={applyFinanceFilters}
                     className="px-4 py-2 bg-[#398C89] text-white rounded text-sm font-medium hover:bg-[#2d6f6c]"
                   >
                     Apply
                   </button>
                   <button
-                    onClick={handleResetFinance}
+                    onClick={() => {
+                      const resetFilters = handleResetFinance();
+                      setVendorSelectKey(prev => prev + 1);
+                      fetchMasterReport('finance-dashboard', { finance: resetFilters });
+                    }}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300"
                   >
                     Reset
@@ -895,89 +1147,7 @@ export default function MasterReportPage() {
                       )}
                     </div>
                     <div className="h-64">
-                      <ReactApexCharts
-                        type="bar"
-                        height="100%"
-                        series={[
-                          {
-                            name: 'Cashflow',
-                            data: reportData.dailyCashflow.map(item => item.amount || 0)
-                          }
-                        ]}
-                        options={{
-                          chart: {
-                            toolbar: { show: false },
-                            animations: { enabled: true }
-                          },
-                          plotOptions: {
-                            bar: {
-                              horizontal: false,
-                              columnWidth: '50%',
-                              borderRadius: 4,
-                              distributed: true
-                            }
-                          },
-                          dataLabels: { enabled: false },
-                          stroke: { show: false },
-                          colors: reportData.dailyCashflow.map(item => item.amount >= 0 ? '#10B981' : '#EF4444'),
-                          xaxis: {
-                            categories: reportData.dailyCashflow.map(item =>
-                              new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
-                            ),
-                            labels: {
-                              style: { fontSize: '10px', colors: '#6B7280' },
-                              rotate: -45,
-                              rotateAlways: false
-                            },
-                            axisBorder: { show: true, color: '#E5E7EB' },
-                            axisTicks: { show: false }
-                          },
-                          yaxis: {
-                            labels: {
-                              formatter: (val) => {
-                                if (val >= 1000000) return (val/1000000).toFixed(1) + 'L';
-                                if (val >= 100000) return (val/100000).toFixed(1) + 'L';
-                                if (val >= 1000) return (val/1000).toFixed(0) + 'K';
-                                return val.toString();
-                              },
-                              style: { fontSize: '10px', colors: '#6B7280' }
-                            },
-                            opposite: false,
-                            tickAmount: 3
-                          },
-                          grid: {
-                            borderColor: '#F3F4F6',
-                            strokeDashArray: 4,
-                            yaxis: {
-                              lines: { show: true }
-                            }
-                          },
-                          tooltip: {
-                            theme: 'light',
-                            y: {
-                              formatter: (val) => formatCurrency(val),
-                              title: {
-                                formatter: () => ''
-                              }
-                            },
-                            x: {
-                              formatter: (val, opts) => {
-                                const date = reportData.dailyCashflow[opts.dataPointIndex]?.date;
-                                return date ? formatDate(date) : '';
-                              }
-                            }
-                          },
-                          legend: { show: false },
-                          states: {
-                            hover: {
-                              filter: {
-                                type: 'darken',
-                                value: 0.8
-                              }
-                            }
-                          }
-                        }}
-                      />
+                      <MemoizedCashflowChart dailyCashflow={reportData.dailyCashflow} formatCurrency={formatCurrency} formatDate={formatDate} />
                     </div>
                     <div className="mt-2 flex items-center gap-3 text-xs text-gray-600">
                       <div className="flex items-center gap-1">
