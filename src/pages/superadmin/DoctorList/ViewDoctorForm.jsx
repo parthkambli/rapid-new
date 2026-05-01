@@ -15,7 +15,7 @@ const getApiBaseUrl = () => {
     // Fallback if import.meta is not available
   }
   // Default fallback
-  return 'http://localhost:3000';
+  return 'https://rapidapis.stellarabodes.in';
 };
 
 const ViewDoctorForm = () => {

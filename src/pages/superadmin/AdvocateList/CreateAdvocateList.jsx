@@ -12,7 +12,7 @@
 // const ImagePreviewModal = ({ isOpen, onClose, preview }) => {
 //   if (!isOpen || !preview) return null;
 
-//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in';
 
 //   const getUrl = (path) => {
 //     if (!path) return '';
@@ -557,7 +557,7 @@ import LocationInput from "../../../components/LocationInput";
 const ImagePreviewModal = ({ isOpen, onClose, preview }) => {
   if (!isOpen || !preview) return null;
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in';
 
   const getUrl = (path) => {
     if (!path) return '';

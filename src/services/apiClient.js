@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // API Base URL - change this for different environments
-const API_BASE_URL = import.meta.env.VITE_API_URI || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URI || 'https://rapidapis.stellarabodes.in/api';
 
 // Create axios instance
 const apiClient = axios.create({

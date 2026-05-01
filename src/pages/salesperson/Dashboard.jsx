@@ -405,7 +405,7 @@
 //                       <div className="mt-2 flex flex-wrap gap-1">
 //                         {task.images.slice(0, 3).map((img, imgIdx) => {
 //                           // Construct image URL properly using the API base URL from environment
-//                           const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'; // Default fallback
+//                           const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'; // Default fallback
 //                           const imageUrl = img.startsWith('http') ? img : `${API_BASE_URL}${img}`;
 
 //                           return (

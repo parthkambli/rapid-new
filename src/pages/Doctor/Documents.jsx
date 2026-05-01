@@ -110,7 +110,7 @@ const DoctorDocuments = () => {
     }
 
     // Ensure there's only one slash between base URL and path
-    const baseUrl = import.meta.env.VITE_API_URI?.replace('/api', '') || 'http://localhost:3000';
+    const baseUrl = import.meta.env.VITE_API_URI?.replace('/api', '') || 'https://rapidapis.stellarabodes.in';
     const url = `${baseUrl}/${cleanPath}`.replace(/([^:]\/)\/+/g, '$1'); // Replace multiple slashes with single slash, except in protocol
     window.open(url, '_blank');
   };

@@ -44,7 +44,7 @@
 //     // Fallback if import.meta is not available
 //   }
 //   // Default fallback
-//   return 'http://localhost:3000';
+//   return 'https://rapidapis.stellarabodes.in';
 // };
 
 // // ================= IMAGE PREVIEW MODAL =================
@@ -3447,7 +3447,7 @@
 //     .substring(index)
 //     .replace(/\\/g, '/'); // Windows → URL
 
-//   return `http://localhost:3000/${relativePath}`;
+//   return `https://rapidapis.stellarabodes.in/${relativePath}`;
 // };
 
 
@@ -3761,7 +3761,7 @@
 //                   )}
 //                   {doctor.documents?.pan && (
 //                     <a
-//                       // href={`${'http://localhost:3000'}/uploads/${doctor.documents.pan.split('/').pop()}`}
+//                       // href={`${'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.pan.split('/').pop()}`}
 //                       href={buildFileUrl(doctor.documents.pan)}
 
 //                       target="_blank"
@@ -3775,7 +3775,7 @@
 //                     <a
 //                                             href={buildFileUrl(doctor.documents.medicalRegistration)}
 
-//                       // href={`${'http://localhost:3000'}/uploads/${doctor.documents.medicalRegistration.split('/').pop()}`}
+//                       // href={`${'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.medicalRegistration.split('/').pop()}`}
 //                       target="_blank"
 //                       rel="noopener noreferrer"
 //                       className="p-2 bg-yellow-50 border border-yellow-300 rounded text-yellow-700 hover:bg-yellow-100 text-left"
@@ -3787,7 +3787,7 @@
 //                     doctor.documents.otherDocs.map((doc, idx) => (
 //                       <a
 //                         key={idx}
-//                         // href={`${'http://localhost:3000'}/uploads/${doc.split('/').pop()}`}
+//                         // href={`${'https://rapidapis.stellarabodes.in'}/uploads/${doc.split('/').pop()}`}
 //                           href={buildFileUrl(doc)}
 
 //                         target="_blank"
@@ -3853,7 +3853,7 @@
 //                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 //                   {doctor.linkedDoctor.documents?.aadhar && (
 //                     <a
-//                       // href={`${'http://localhost:3000'}/uploads/${doctor.linkedDoctor.documents.aadhar.split('/').pop()}`}
+//                       // href={`${'https://rapidapis.stellarabodes.in'}/uploads/${doctor.linkedDoctor.documents.aadhar.split('/').pop()}`}
 //    href={buildFileUrl(doctor.linkedDoctor.documents.aadhar)}
 //                       target="_blank"
 //                       rel="noopener noreferrer"
@@ -3864,7 +3864,7 @@
 //                   )}
 //                   {doctor.linkedDoctor.documents?.pan && (
 //                     <a
-//                       // href={`${'http://localhost:3000'}/uploads/${doctor.linkedDoctor.documents.pan.split('/').pop()}`}
+//                       // href={`${'https://rapidapis.stellarabodes.in'}/uploads/${doctor.linkedDoctor.documents.pan.split('/').pop()}`}
 //                        href={buildFileUrl(doctor.linkedDoctor.documents.pan)}
 
 //                       target="_blank"
@@ -3876,7 +3876,7 @@
 //                   )}
 //                   {doctor.linkedDoctor.documents?.medicalRegistration && (
 //                     <a
-//                       // href={`${'http://localhost:3000'}/uploads/${doctor.linkedDoctor.documents.medicalRegistration.split('/').pop()}`}
+//                       // href={`${'https://rapidapis.stellarabodes.in'}/uploads/${doctor.linkedDoctor.documents.medicalRegistration.split('/').pop()}`}
 //                                            href={buildFileUrl(doctor.linkedDoctor.documents.medicalRegistration)}
 //                       target="_blank"
 //                       rel="noopener noreferrer"
@@ -5004,7 +5004,7 @@ const ViewDoctor = () => {
   // const getDocumentUrl = (fileName) => {
   //   if (!fileName) return null;
   //   if (fileName.startsWith('http')) return fileName;
-  //   return `${'http://localhost:3000'}/uploads/${fileName.split('/').pop()}`;
+  //   return `${'https://rapidapis.stellarabodes.in'}/uploads/${fileName.split('/').pop()}`;
   // };
 
 
@@ -5019,7 +5019,7 @@ const ViewDoctor = () => {
     .substring(index)
     .replace(/\\/g, '/'); // Windows → URL
 
-  return `http://localhost:3000/${relativePath}`;
+  return `https://rapidapis.stellarabodes.in/${relativePath}`;
 };
 
   // Function to download document
@@ -6018,17 +6018,17 @@ export default ViewDoctor;
     
 //   //   // Check if it starts with 'uploads/'
 //   //   if (cleanPath.toLowerCase().startsWith('uploads/')) {
-//   //     return `http://localhost:3000/${cleanPath}`;
+//   //     return `https://rapidapis.stellarabodes.in/${cleanPath}`;
 //   //   }
     
 //   //   // If it's just a filename, assume it's in uploads folder
 //   //   if (!cleanPath.includes('/') && cleanPath.includes('.')) {
-//   //     return `http://localhost:3000/uploads/${cleanPath}`;
+//   //     return `https://rapidapis.stellarabodes.in/uploads/${cleanPath}`;
 //   //   }
     
 //   //   // Try to extract filename if path is complex
 //   //   const filename = cleanPath.split('/').pop();
-//   //   return `http://localhost:3000/uploads/${filename}`;
+//   //   return `https://rapidapis.stellarabodes.in/uploads/${filename}`;
 //   // };
 
 
@@ -6044,7 +6044,7 @@ export default ViewDoctor;
 //     .substring(index)
 //     .replace(/\\/g, '/'); // Windows → URL
 
-//   return `http://localhost:3000/${relativePath}`;
+//   return `https://rapidapis.stellarabodes.in/${relativePath}`;
 // };
 
 

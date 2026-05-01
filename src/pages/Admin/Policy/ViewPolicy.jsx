@@ -11,11 +11,11 @@ const formatBackendPath = (path) => {
     const uploadsIndex = cleanPath.indexOf('uploads/');
     if (uploadsIndex !== -1) {
         const relativePath = cleanPath.substring(uploadsIndex);
-        const apiBase = import.meta.env.VITE_API_URI || 'http://localhost:3000';
+        const apiBase = import.meta.env.VITE_API_URI || 'https://rapidapis.stellarabodes.in';
         const baseUrl = apiBase.replace(/\/api\/?$/, ''); // Remove trailing /api
         return `${baseUrl}/${relativePath}`;
     }
-    return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URI || 'http://localhost:3000'}/${path}`;
+    return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URI || 'https://rapidapis.stellarabodes.in'}/${path}`;
 };
 
 const ViewPolicy = () => {

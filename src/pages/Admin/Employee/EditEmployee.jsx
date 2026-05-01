@@ -15,7 +15,7 @@
 //     // Fallback if import.meta is not available
 //   }
 //   // Default fallback
-//   return 'http://localhost:3000';
+//   return 'https://rapidapis.stellarabodes.in';
 // };
 
 // const getDocumentUrl = (filePath) => {
@@ -25,7 +25,7 @@
 
 //     // Convert server path to URL
 //     // Server stores: C:\Users\User\OneDrive\Desktop\rapid-main\rapid-apis\uploads\aadhar-cards\file.png
-//     // Should map to: http://localhost:3000/uploads/aadhar-cards/file.png
+//     // Should map to: https://rapidapis.stellarabodes.in/uploads/aadhar-cards/file.png
 //     if (filePath.includes("uploads\\")) {
 //       // Extract the path after 'uploads\'
 //       const uploadsIndex = filePath.indexOf("uploads\\");
@@ -1027,7 +1027,7 @@ const getApiBaseUrl = () => {
     // Fallback if import.meta is not available
   }
   // Default fallback
-  return 'http://localhost:3000';
+  return 'https://rapidapis.stellarabodes.in';
 };
 
 const getDocumentUrl = (filePath) => {
@@ -1037,7 +1037,7 @@ const getDocumentUrl = (filePath) => {
 
     // Convert server path to URL
     // Server stores: C:\Users\User\OneDrive\Desktop\rapid-main\rapid-apis\uploads\aadhar-cards\file.png
-    // Should map to: http://localhost:3000/uploads/aadhar-cards/file.png
+    // Should map to: https://rapidapis.stellarabodes.in/uploads/aadhar-cards/file.png
     if (filePath.includes("uploads\\")) {
       // Extract the path after 'uploads\'
       const uploadsIndex = filePath.indexOf("uploads\\");

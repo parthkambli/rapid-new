@@ -39,7 +39,7 @@ const TaskCard = ({ task, isEditable = false, onEdit, onStatusChange, allowStatu
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {task.images.map((img, idx) => {
               // Construct image URL properly using the API base URL from environment
-              const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'; // Default fallback
+              const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'; // Default fallback
               const imageUrl = img.startsWith('http') ? img : `${API_BASE_URL}${img}`;
 
               return (

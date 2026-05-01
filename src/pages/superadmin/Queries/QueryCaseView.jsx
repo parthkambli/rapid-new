@@ -28,7 +28,7 @@
 
 //   const getFileUrl = (filePath) => {
 //     if (!filePath) return null;
-//     let baseURL = apiClient.defaults.baseURL || 'http://localhost:3000/api';
+//     let baseURL = apiClient.defaults.baseURL || 'https://rapidapis.stellarabodes.in/api';
 //     baseURL = baseURL.replace(/\/api$/, '');
 //     if (filePath.startsWith('/uploads')) return `${baseURL}${filePath}`.replace(/([^:]\/)\/+/g, '$1'); // Replace multiple slashes with single slash, except in protocol
 //     if (filePath.startsWith('http')) return filePath;
@@ -177,10 +177,10 @@ const ViewQueries = () => {
   const getFileUrl = (filePath) => {
     if (!filePath) return null;
     // Get base URL from apiClient (removes /api if present) or use default
-    let baseURL = 'http://localhost:3000/api'; // Default fallback
+    let baseURL = 'https://rapidapis.stellarabodes.in/api'; // Default fallback
     try {
       // Try to get the base URL from environment or apiClient
-      baseURL = import.meta.env.VITE_API_URI || 'http://localhost:3000/api';
+      baseURL = import.meta.env.VITE_API_URI || 'https://rapidapis.stellarabodes.in/api';
       baseURL = baseURL.replace(/\/api$/, ''); // Remove /api suffix if present
     } catch (err) {
       // Fallback to default

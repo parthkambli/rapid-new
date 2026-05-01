@@ -13,10 +13,10 @@ const ViewQueries = () => {
   const getFileUrl = (filePath) => {
     if (!filePath) return null;
     // Get base URL from apiClient (removes /api if present) or use default
-    let baseURL = 'http://localhost:3000/api'; // Default fallback
+    let baseURL = 'https://rapidapis.stellarabodes.in/api'; // Default fallback
     try {
       // Try to get the base URL from environment or apiClient
-      baseURL = import.meta.env.VITE_API_URI || 'http://localhost:3000/api';
+      baseURL = import.meta.env.VITE_API_URI || 'https://rapidapis.stellarabodes.in/api';
       baseURL = baseURL.replace(/\/api$/, ''); // Remove /api suffix if present
     } catch (err) {
       // Fallback to default

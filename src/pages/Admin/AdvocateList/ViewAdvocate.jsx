@@ -14,7 +14,7 @@
 //     // Fallback if import.meta is not available
 //   }
 //   // Default fallback
-//   return 'http://localhost:3000';
+//   return 'https://rapidapis.stellarabodes.in';
 // };
 
 // const getDocumentUrl = (filePath) => {
@@ -24,7 +24,7 @@
 
 //     // Convert server path to URL
 //     // Server stores: /home/khalid/production-pj/rapid/rapid-apis/uploads/advocates/file.png
-//     // Should map to: http://localhost:3000/uploads/advocates/file.png
+//     // Should map to: https://rapidapis.stellarabodes.in/uploads/advocates/file.png
 //     if (filePath.startsWith("/home")) {
 //       // Extract the path after 'uploads'
 //       const uploadsIndex = filePath.indexOf("/uploads");
@@ -640,7 +640,7 @@ const getApiBaseUrl = () => {
     // Fallback
   }
   // Default fallback
-  return 'http://localhost:3000';
+  return 'https://rapidapis.stellarabodes.in';
 };
 
 // Function to convert server file path to accessible URL

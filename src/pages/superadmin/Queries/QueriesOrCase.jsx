@@ -58,7 +58,7 @@
 //   const getFileUrl = (filePath) => {
 //     if (!filePath) return null;
 //     // Get base URL from apiClient (removes /api if present) or use default
-//     let baseURL = apiClient.defaults.baseURL || 'http://localhost:3000/api';
+//     let baseURL = apiClient.defaults.baseURL || 'https://rapidapis.stellarabodes.in/api';
 //     // Remove /api suffix for static file serving
 //     baseURL = baseURL.replace(/\/api$/, '');
 
@@ -849,7 +849,7 @@ const QueriesOrCase = () => {
   const getFileUrl = (filePath) => {
     if (!filePath) return null;
     // Get base URL from apiClient (removes /api if present) or use default
-    let baseURL = apiClient.defaults.baseURL || 'http://localhost:3000/api';
+    let baseURL = apiClient.defaults.baseURL || 'https://rapidapis.stellarabodes.in/api';
     // Remove /api suffix for static file serving
     baseURL = baseURL.replace(/\/api$/, '');
 

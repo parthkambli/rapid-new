@@ -17,7 +17,7 @@ const TaskModal = ({ isOpen, onClose, employee, task, isEditMode: initialEditMod
   const [selectedTask, setSelectedTask] = useState(null);
   
   // ✅ Environment variable for base URL
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in';
   console.log("API Base URL:", API_BASE_URL);
 
   const isViewMode = task && !initialEditMode;

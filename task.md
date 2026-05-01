@@ -45,4 +45,4 @@ Follow the pattern from `AddPolicy.jsx`:
 
 ## Existing Logs & Reference Data
 
-http://localhost:3000/api/doctors/followups/all?page=1&limit=1000
+https://rapidapis.stellarabodes.in/api/doctors/followups/all?page=1&limit=1000

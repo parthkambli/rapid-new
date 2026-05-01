@@ -163,10 +163,10 @@ const TaskSummary = () => {
                       {task.images.map((img, idx) => (
                         <img
                           key={idx}
-                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${img}`}
+                          src={`${import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'}${img}`}
                           className="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-80"
                           alt={`Task attachment ${idx+1}`}
-                          onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${img}`, '_blank')}
+                          onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'}${img}`, '_blank')}
                         />
                       ))}
                     </div>

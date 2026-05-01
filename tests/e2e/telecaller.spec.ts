@@ -5,7 +5,7 @@ const TELE_PASS = 'Tele@12345';
 
 async function loginAsTelecaller(page) {
   // Prefer programmatic login to avoid brittle selectors
-  const resp = await page.request.post('http://localhost:3000/api/users/login', {
+  const resp = await page.request.post('https://rapidapis.stellarabodes.in/api/users/login', {
     data: { email: TELE_EMAIL, password: TELE_PASS }
   });
   if (!resp.ok()) throw new Error('Backend login failed');

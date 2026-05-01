@@ -264,7 +264,7 @@ const ViewDoctor = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {doctor.documents?.aadhar && (
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.aadhar.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.aadhar.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left"
@@ -274,7 +274,7 @@ const ViewDoctor = () => {
                   )}
                   {doctor.documents?.pan && (
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.pan.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.pan.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left"
@@ -284,7 +284,7 @@ const ViewDoctor = () => {
                   )}
                   {doctor.documents?.medicalRegistration && (
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.medicalRegistration.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.medicalRegistration.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-yellow-50 border border-yellow-300 rounded text-yellow-700 hover:bg-yellow-100 text-left"
@@ -296,7 +296,7 @@ const ViewDoctor = () => {
                     doctor.documents.otherDocs.map((doc, idx) => (
                       <a
                         key={idx}
-                        href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doc.split('/').pop()}`}
+                        href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doc.split('/').pop()}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 bg-gray-50 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 text-left"
@@ -360,7 +360,7 @@ const ViewDoctor = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {doctor.linkedDoctor.documents?.aadhar && (
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.linkedDoctor.documents.aadhar.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.linkedDoctor.documents.aadhar.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left"
@@ -370,7 +370,7 @@ const ViewDoctor = () => {
                   )}
                   {doctor.linkedDoctor.documents?.pan && (
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.linkedDoctor.documents.pan.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.linkedDoctor.documents.pan.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left"
@@ -380,7 +380,7 @@ const ViewDoctor = () => {
                   )}
                   {doctor.linkedDoctor.documents?.medicalRegistration && (
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.linkedDoctor.documents.medicalRegistration.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.linkedDoctor.documents.medicalRegistration.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-yellow-50 border border-yellow-300 rounded text-yellow-700 hover:bg-yellow-100 text-left"
@@ -392,7 +392,7 @@ const ViewDoctor = () => {
                     doctor.linkedDoctor.documents.otherDocs.map((doc, idx) => (
                       <a
                         key={idx}
-                        href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doc.split('/').pop()}`}
+                        href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doc.split('/').pop()}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 bg-gray-50 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 text-left"
@@ -761,7 +761,7 @@ const ViewDoctor = () => {
                       Aadhar
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.aadhar.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.aadhar.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -778,7 +778,7 @@ const ViewDoctor = () => {
                       PAN
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.pan.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.pan.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -795,7 +795,7 @@ const ViewDoctor = () => {
                       Medical Registration
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.medicalRegistration.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.medicalRegistration.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -812,7 +812,7 @@ const ViewDoctor = () => {
                       Additional Qualification
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.additionalQualification.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.additionalQualification.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -829,7 +829,7 @@ const ViewDoctor = () => {
                       Visiting Card
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.visitingCard.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.visitingCard.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -846,7 +846,7 @@ const ViewDoctor = () => {
                       Bank Details
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.bankDetails.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.bankDetails.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -864,7 +864,7 @@ const ViewDoctor = () => {
                       License/Registration
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.license.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.license.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -881,7 +881,7 @@ const ViewDoctor = () => {
                       Qualification Document
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.qualificationDoc.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.qualificationDoc.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-blue-50 border border-blue-300 rounded text-blue-700 hover:bg-blue-100 text-left block"
@@ -906,7 +906,7 @@ const ViewDoctor = () => {
                       Hospital PAN Document
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.hospitalPanDocument.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.hospitalPanDocument.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left block"
@@ -923,7 +923,7 @@ const ViewDoctor = () => {
                       Registration Certificate
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.registrationCertificate.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.registrationCertificate.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left block"
@@ -940,7 +940,7 @@ const ViewDoctor = () => {
                       Hospital GST Document
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.hospitalGstDocument.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.hospitalGstDocument.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left block"
@@ -957,7 +957,7 @@ const ViewDoctor = () => {
                       Owner PAN Card
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.ownerPanCard.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.ownerPanCard.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left block"
@@ -974,7 +974,7 @@ const ViewDoctor = () => {
                       Owner Aadhaar Card
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.ownerAadhaarCard.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.ownerAadhaarCard.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left block"
@@ -992,7 +992,7 @@ const ViewDoctor = () => {
                       License/Registration
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.license.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.license.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left block"
@@ -1009,7 +1009,7 @@ const ViewDoctor = () => {
                       Qualification Document
                     </label>
                     <a
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doctor.documents.qualificationDoc.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doctor.documents.qualificationDoc.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 bg-green-50 border border-green-300 rounded text-green-700 hover:bg-green-100 text-left block"
@@ -1054,7 +1054,7 @@ const ViewDoctor = () => {
                   .map((doc, idx) => (
                     <a
                       key={idx}
-                      href={`${process.env.REACT_APP_API_URI || 'http://localhost:3000'}/uploads/${doc.split('/').pop()}`}
+                      href={`${process.env.REACT_APP_API_URI || 'https://rapidapis.stellarabodes.in'}/uploads/${doc.split('/').pop()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-3 bg-gray-50 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 text-left block"

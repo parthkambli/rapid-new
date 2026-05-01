@@ -196,7 +196,7 @@ const ViewSalesmanTasks = () => {
                             {task.images.map((img, idx) => (
                               <div key={idx} className="relative group">
                                 <img
-                                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${img}`}
+                                  src={`${import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'}${img}`}
                                   className="w-full h-48 object-cover rounded-lg border shadow hover:shadow-lg transition-shadow"
                                   alt={`Task ${index+1} - Image ${idx+1}`}
                                   onError={(e) => {
@@ -207,7 +207,7 @@ const ViewSalesmanTasks = () => {
                                 />
 
                                 <a
-                                  href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${img}`}
+                                  href={`${import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'}${img}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-lg"
@@ -289,7 +289,7 @@ const ViewSalesmanTasks = () => {
                             {task.images.map((img, idx) => (
                               <div key={idx} className="relative group">
                                 <img
-                                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${img}`}
+                                  src={`${import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'}${img}`}
                                   className="w-full h-48 object-cover rounded-lg border shadow hover:shadow-lg transition-shadow"
                                   alt={`Task ${index+1} - Image ${idx+1}`}
                                   onError={(e) => {
@@ -300,7 +300,7 @@ const ViewSalesmanTasks = () => {
                                 />
 
                                 <a
-                                  href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${img}`}
+                                  href={`${import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'}${img}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-lg"

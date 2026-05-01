@@ -19,7 +19,7 @@
 //     // Fallback if import.meta is not available
 //   }
 //   // Default fallback
-//   return 'http://localhost:3000';
+//   return 'https://rapidapis.stellarabodes.in';
 // };
 
 // // ================= IMAGE PREVIEW MODAL =================
@@ -3268,7 +3268,7 @@ const ViewDoctor = () => {
   // const getDocumentUrl = (fileName) => {
   //   if (!fileName) return null;
   //   if (fileName.startsWith('http')) return fileName;
-  //   return `${'http://localhost:3000'}/uploads/${fileName.split('/').pop()}`;
+  //   return `${'https://rapidapis.stellarabodes.in'}/uploads/${fileName.split('/').pop()}`;
   // };
 
 
@@ -3283,7 +3283,7 @@ const ViewDoctor = () => {
     .substring(index)
     .replace(/\\/g, '/'); // Windows → URL
 
-  return `http://localhost:3000/${relativePath}`;
+  return `https://rapidapis.stellarabodes.in/${relativePath}`;
 };
 
   // Function to download document

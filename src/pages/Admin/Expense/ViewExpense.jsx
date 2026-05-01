@@ -122,7 +122,7 @@ export default function ViewExpense() {
 
     // If it starts with /uploads, it's already a relative path
     if (filePath.startsWith('/uploads')) {
-      const baseURL = apiClient.defaults.baseURL?.replace(/\/api$/, '') || 'http://localhost:3000';
+      const baseURL = apiClient.defaults.baseURL?.replace(/\/api$/, '') || 'https://rapidapis.stellarabodes.in';
       return `${baseURL}${filePath}`;
     }
 
@@ -131,13 +131,13 @@ export default function ViewExpense() {
       const uploadsIndex = filePath.lastIndexOf('uploads');
       if (uploadsIndex !== -1) {
         const relativePath = filePath.substring(uploadsIndex).replace(/\\/g, '/');
-        const baseURL = apiClient.defaults.baseURL?.replace(/\/api$/, '') || 'http://localhost:3000';
+        const baseURL = apiClient.defaults.baseURL?.replace(/\/api$/, '') || 'https://rapidapis.stellarabodes.in';
         return `${baseURL}/${relativePath}`;
       }
     }
 
     // Default: assume it's a relative path from uploads
-    const baseURL = apiClient.defaults.baseURL?.replace(/\/api$/, '') || 'http://localhost:3000';
+    const baseURL = apiClient.defaults.baseURL?.replace(/\/api$/, '') || 'https://rapidapis.stellarabodes.in';
     return `${baseURL}/uploads/${filePath}`;
   };
 

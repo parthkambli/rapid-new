@@ -173,7 +173,7 @@ const CaseHistory = () => {
                                         {followUp.attachment && (
                                             <div className="mt-3 pt-3 border-t border-gray-200">
                                                 <a
-                                                    href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${followUp.attachment}`}
+                                                    href={`${import.meta.env.VITE_API_URL || 'https://rapidapis.stellarabodes.in'}${followUp.attachment}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center gap-2 text-sm text-[#18B4A5] hover:text-[#149f91]"

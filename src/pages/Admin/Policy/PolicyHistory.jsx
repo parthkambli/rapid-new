@@ -31,14 +31,14 @@ const PolicyHistory = () => {
       const relativePath = cleanPath.substring(uploadsIndex);
 
       // Get base URL (remove /api if it exists in the env var)
-      const apiBase = import.meta.env.VITE_API_URI || 'http://localhost:3000';
+      const apiBase = import.meta.env.VITE_API_URI || 'https://rapidapis.stellarabodes.in';
       const baseUrl = apiBase.replace(/\/api\/?$/, ''); // Remove trailing /api
 
       return `${baseUrl}/${relativePath}`;
     }
 
     // Fallback for paths that might not contain 'uploads/'
-    return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URI || 'http://localhost:3000'}/${path}`;
+    return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URI || 'https://rapidapis.stellarabodes.in'}/${path}`;
   };
 
   const formatDate = (dateString) => {

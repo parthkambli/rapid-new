@@ -1009,7 +1009,7 @@
 
 //       // Step 1: Fetch receipt details
 //       const response = await fetch(`
-// http://localhost:3000/api/receipts/${receipt._id}`, {
+// https://rapidapis.stellarabodes.in/api/receipts/${receipt._id}`, {
 //         headers: {
 //           'Authorization': `Bearer ${token}`,
 //           'Content-Type': 'application/json'
@@ -1031,7 +1031,7 @@
 
 //         // Fetch bill details to get membership type
 //         const billResponse = await fetch(`
-// http://localhost:3000/api/receipts/bill-details/${billNumber}`, {
+// https://rapidapis.stellarabodes.in/api/receipts/bill-details/${billNumber}`, {
 //           headers: {
 //             'Authorization': `Bearer ${token}`,
 //             'Content-Type': 'application/json'
@@ -1420,7 +1420,7 @@ const ReceiptList = () => {
 
       // Step 1: Fetch receipt details
       const response = await fetch(
-        `http://localhost:3000/api/receipts/${receipt._id}`,
+        `https://rapidapis.stellarabodes.in/api/receipts/${receipt._id}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1443,7 +1443,7 @@ const ReceiptList = () => {
         const billNumber = receiptData.data.referenceNumber;
 
         const billResponse = await fetch(
-          `http://localhost:3000/api/receipts/bill-details/${billNumber}`,
+          `https://rapidapis.stellarabodes.in/api/receipts/bill-details/${billNumber}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
