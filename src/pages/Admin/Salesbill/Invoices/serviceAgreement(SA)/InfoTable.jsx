@@ -1124,15 +1124,15 @@ const InfoTable = ({ title, tableType, data, salesBill, className = '' }) => {
                         if (row.key === 'fullName') displayValue = '-';
                         else if (row.key === 'qualification') displayValue = '-';
                         else if (row.key === 'specialization') {
-                          displayValue = itemData?.specialization ||
-                                         itemData?.hospitalDetails?.hospitalType ||
+                          displayValue = itemData?.hospitalDetails?.hospitalType || 
+                                         itemData?.specialization || 
                                          'Hospital Management';
                         } else if (row.key === 'registrationNumber') {
-                          displayValue = itemData?.registrationNumber ||
-                                         itemData?.hospitalDetails?.licenseNumber || '-';
+                          displayValue = itemData?.hospitalDetails?.licenseNumber || 
+                                         itemData?.registrationNumber || '-';
                         } else if (row.key === 'registrationYear') {
-                          displayValue = itemData?.registrationYear ||
-                                         itemData?.hospitalDetails?.establishmentYear || '-';
+                          displayValue = itemData?.hospitalDetails?.establishmentYear || 
+                                         itemData?.registrationYear || '-';
                         } else if (row.key === 'hospitalName') {
                           displayValue = itemData?.hospitalName || '-';
                         } else {
