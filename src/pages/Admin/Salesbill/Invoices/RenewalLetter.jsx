@@ -1501,8 +1501,12 @@ const RenewalContractLetter = () => {
 
         if (!bill.client) throw new Error("Client information not found in bill");
 
-        let primaryDoctorId = bill.client?.entityId?._id || bill.client?.entityId || bill.client?._id;
-        if (!primaryDoctorId) throw new Error("Doctor ID not found in bill");
+        let primaryDoctorId = bill.client?.entityId?._id || bill.client?.entityId;
+        // If entityId is a populated object, extract the _id string
+        if (typeof primaryDoctorId === 'object' && primaryDoctorId !== null) {
+          primaryDoctorId = primaryDoctorId._id || primaryDoctorId;
+        }
+        if (!primaryDoctorId || typeof primaryDoctorId === 'object') throw new Error("Doctor ID not found in bill");
 
         // 2. Fetch primary doctor details
         let primaryDoctor = {};
@@ -1587,17 +1591,33 @@ const RenewalContractLetter = () => {
         // 6. Spouse name for display
         let spouseName = "";
         if (primaryDoctor.linkedDoctorId && primaryDoctor.relationshipType === 'spouse') {
-          try {
-            const spouseRes = await apiClient.get(apiEndpoints.doctors.get(primaryDoctor.linkedDoctorId));
-            spouseName = spouseRes.data.data?.fullName || "Spouse";
-          } catch (err) {
-            spouseName = "Spouse";
+          // If linkedDoctorId is already an object with fullName
+          if (typeof primaryDoctor.linkedDoctorId === 'object' && primaryDoctor.linkedDoctorId.fullName) {
+            spouseName = primaryDoctor.linkedDoctorId.fullName;
+          } else {
+            try {
+              const spouseId = primaryDoctor.linkedDoctorId._id || primaryDoctor.linkedDoctorId.toString();
+              const spouseRes = await apiClient.get(apiEndpoints.doctors.get(spouseId));
+              spouseName = spouseRes.data.data?.fullName || "";
+            } catch (err) {
+              console.warn("Could not fetch spouse name:", err);
+            }
           }
         }
 
-        const doctorsName = spouseName
-          ? `${primaryDoctor.fullName || "Dr."} & ${spouseName}`
-          : primaryDoctor.fullName || bill.client?.name || "DOCTOR NAME NOT FOUND";
+        // Combined doctor name logic:
+        // 1. If bill.client.name already has " & ", use it (it's the most reliable saved billing name)
+        // 2. If we have a spouseName, combine it with primaryDoctor.fullName
+        // 3. Fallback to primaryDoctor.fullName or bill.client.name
+        let doctorsName = bill.client?.name || "";
+        
+        if (!doctorsName.includes(" & ")) {
+          if (spouseName) {
+            doctorsName = `${primaryDoctor.fullName || "Dr."} & ${spouseName}`;
+          } else {
+            doctorsName = primaryDoctor.fullName || bill.client?.name || "DOCTOR NAME NOT FOUND";
+          }
+        }
 
         // 7. Calculate membership period (dynamic)
         const calculateMembershipPeriod = (billDate, dueDate) => {
@@ -1636,22 +1656,34 @@ const RenewalContractLetter = () => {
         const policyEntry = matchedPolicyEntry || (primaryDoctor.policies && primaryDoctor.policies.length > 0 ? primaryDoctor.policies[0] : null);
         
         const policyDetails = policyEntry?.policyId || {};
+
+        // If policyId is just a string (not populated), fetch full policy details
+        let fetchedPolicy = null;
+        if (policyEntry && typeof policyEntry.policyId === 'string') {
+          try {
+            const policyRes = await apiClient.get(`/api/policies/${policyEntry.policyId}`);
+            fetchedPolicy = policyRes.data.data || {};
+          } catch (err) {
+            console.warn("Could not fetch policy details:", err);
+          }
+        }
+        const actualPolicyDetails = fetchedPolicy || (typeof policyDetails === 'object' ? policyDetails : {});
         
-        const insuranceCo = policyDetails.insuranceCompany?.companyName || "-";
-        const insuranceType = policyDetails.insuranceType?.typeName || "-";
+        const insuranceCo = actualPolicyDetails.insuranceCompany?.companyName || "-";
+        const insuranceType = actualPolicyDetails.insuranceType?.typeName || "-";
         
         // Use coverageAmount from the matched policy entry or its details
-        const coverageAmount = policyEntry?.coverageAmount || policyDetails.coverageAmount;
+        const coverageAmount = policyEntry?.coverageAmount || actualPolicyDetails.coverageAmount;
         const formattedIndemnity = coverageAmount ? `₹${coverageAmount.toLocaleString('en-IN')}` : "-";
 
         // Amount to be paid logic: based on paidBy field of the matched policy
-        const paidByRaw = policyDetails.paidBy || policyEntry?.paidBy;
-        const premiumAmount = policyEntry?.premiumAmount || policyDetails.premiumAmount;
+        const paidByRaw = actualPolicyDetails.paidBy || policyEntry?.paidBy;
+        const premiumAmount = policyEntry?.premiumAmount || actualPolicyDetails.premiumAmount;
         const formattedPremium = premiumAmount ? ` (₹${premiumAmount.toLocaleString('en-IN')})` : "";
 
         let amountToBePaidText = "-";
         if (paidByRaw) {
-          if (paidByRaw === 'by_rapid' || paidByRaw === 'rapid') {
+          if (paidByRaw === 'by_rapid' || paidByRaw === 'rapid' || paidByRaw === 'by_company') {
             amountToBePaidText = "BY RAPID";
           } else {
             amountToBePaidText = `BY DOCTOR${formattedPremium}`;
