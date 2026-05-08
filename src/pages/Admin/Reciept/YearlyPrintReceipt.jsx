@@ -95,14 +95,15 @@ const formatDate = (isoString) => {
 
   // Template Data
   const template = {
-    doctorName: (doctor.fullName || "N/A").toUpperCase(),
-    // doctorName: (payer.name || "N/A").toUpperCase(),
+    // doctorName: (doctor.fullName || "N/A").toUpperCase(),
+    doctorName: (payer.name || "N/A").toUpperCase(),
     qualification: doctor.qualification || "--",
     specialization: doctor.specialization?.join(", ") || "GENERAL PRACTITIONER",
     hospitalName: doctor.hospitalName || "--",
     hospitalAddress: [
       doctor.hospitalAddress?.address || "",
       doctor.hospitalAddress?.city || "",
+      doctor.hospitalAddress?.taluka || "",
       doctor.hospitalAddress?.district || "",
       doctor.hospitalAddress?.state || "",
       
