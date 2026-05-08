@@ -326,14 +326,15 @@ const MonthlyPremiumReceipt = () => {
   const paymentModeDisplay = getPaymentModeDisplay(receipt.paymentMethod);
 
   const template = {
-    // doctorName: (receipt.payer.name || "N/A").toUpperCase(),
-       doctorName: (doctor.fullName || "N/A").toUpperCase(),
+    doctorName: (receipt.payer.name || "N/A").toUpperCase(),
+      //  doctorName: (doctor.fullName || "N/A").toUpperCase(),
     qualification: doctor.qualification || null,
     specialization: doctor.specialization?.join(", ") || "GENERAL PRACTITIONER",
     hospitalName: doctor.hospitalName || null,
     hospitalAddress: [
       doctor.hospitalAddress?.address || "",
       doctor.hospitalAddress?.city || "",
+      doctor.hospitalAddress?.taluka || "",
       doctor.hospitalAddress?.district || "",
       doctor.hospitalAddress?.state || "",
        "INDIA",
