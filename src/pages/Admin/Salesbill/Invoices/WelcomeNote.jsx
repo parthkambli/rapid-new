@@ -378,6 +378,7 @@ const WelcomeLetter = () => {
  const addressLine2 = [
   address.city || "",
   address?.district,
+  address?.taluka,
   address?.state,
   address?.country
 ].filter(Boolean).join(", ");
