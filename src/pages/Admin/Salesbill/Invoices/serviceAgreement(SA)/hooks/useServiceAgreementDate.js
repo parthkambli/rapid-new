@@ -109,8 +109,8 @@ const useServiceAgreementData = (type, salesBillId) => {
           if (monthlyItem) serviceChargeAmount = monthlyItem.amount || bill.totalAmount;
         }
 
-        const mapToMember = (d, isPrimary = true) => {
-          const isHospitalOnly = d.doctorType === 'hospital';
+        const mapToMember = (d, isPrimary = true, forceHospital = false) => {
+          const isHospitalOnly = forceHospital || d.doctorType === 'hospital';
           const addr = isHospitalOnly ? d.hospitalAddress : d.contactDetails?.currentAddress;
           
           return {
@@ -120,8 +120,12 @@ const useServiceAgreementData = (type, salesBillId) => {
             specialization: isHospitalOnly ? 
               (d.hospitalDetails?.hospitalType || 'Hospital Management') : 
               (Array.isArray(d.specialization) ? d.specialization.join(', ') : d.specialization || 'N/A'),
-            registrationNumber: d.licenseNumber || d.hospitalDetails?.licenseNumber || 'N/A',
-            registrationYear: d.registrationYear || d.hospitalDetails?.establishmentYear || 'N/A',
+            registrationNumber: isHospitalOnly ? 
+              (d.hospitalDetails?.licenseNumber || 'N/A') :
+              (d.licenseNumber || 'N/A'),
+            registrationYear: isHospitalOnly ? 
+              (d.hospitalDetails?.establishmentYear || 'N/A') :
+              (d.registrationYear || 'N/A'),
             membershipId: bill.billNumber || d.membershipId || 'N/A',
             membershipType: bill.membershipType.toUpperCase() || 'N/A',
             doctorType: d.doctorType ? d.doctorType.toLowerCase() : 'individual',
@@ -139,7 +143,7 @@ const useServiceAgreementData = (type, salesBillId) => {
             pincode: addr?.pinCode || 'N/A',
             country: (addr?.country || 'India').toUpperCase(),
             
-            medicalCouncilNumber: d.licenseNumber || 'N/A',
+            medicalCouncilNumber: isHospitalOnly ? (d.hospitalDetails?.licenseNumber || 'N/A') : (d.licenseNumber || 'N/A'),
             isPrimary: isPrimary,
             isSpouse: !isPrimary,
             isHospitalOnly: isHospitalOnly,
@@ -156,14 +160,8 @@ const useServiceAgreementData = (type, salesBillId) => {
           if (isSpouseCase && linkedDoctor) {
             members.push(mapToMember(linkedDoctor, false));
           }
-          // Add hospital as a member too
-          members.push({
-            ...primaryDocData,
-            fullName: '-',
-            doctorType: 'hospital',
-            isPrimary: false,
-            isHospitalOnly: true
-          });
+          // Add hospital as a member too - use forceHospital to ensure hospital details are picked
+          members.push(mapToMember(mainDoctor, false, true));
         } else if (isLinked && linkedDoctor) {
           members.push(mapToMember(linkedDoctor, false));
         }
