@@ -418,6 +418,8 @@ export default function ReceiptsPage() {
   const [displayedReceipts, setDisplayedReceipts] = useState([]); // filtered view
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [linkedDoctorId, setLinkedDoctorId] = useState(null);
+  const [doctorNames, setDoctorNames] = useState("Receipts");
 
   // Filter form state (temporary until View is clicked)
   const [filterForm, setFilterForm] = useState({
@@ -438,27 +440,50 @@ export default function ReceiptsPage() {
   });
 
   useEffect(() => {
-    fetchReceipts();
+    const initFetch = async () => {
+      let spouseId = null;
+      try {
+        // Fetch doctor info to check for linked spouse
+        const response = await apiClient.get(apiEndpoints.doctors.getWithSpouse(id));
+        if (response.data.success) {
+          const doctorInfo = response.data.data;
+          if (doctorInfo.isLinked && doctorInfo.linkedDoctor) {
+            spouseId = doctorInfo.linkedDoctor._id;
+            setLinkedDoctorId(spouseId);
+            setDoctorNames(`${doctorInfo.mainDoctor?.fullName || ''} & ${doctorInfo.linkedDoctor?.fullName || ''}`);
+          } else {
+            setLinkedDoctorId(null);
+            setDoctorNames(doctorInfo.mainDoctor?.fullName || doctorInfo.fullName || "Receipts");
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching doctor spouse info:", err);
+      }
+      // Fetch receipts with the spouse ID context
+      fetchReceipts(spouseId);
+    };
+
+    initFetch();
   }, [id]);
 
-  const fetchReceipts = async () => {
+  const fetchReceipts = async (currentSpouseId = null) => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await apiClient.get(apiEndpoints.receipts.list, {
-        params: { doctor: id, limit: 1000 },
+        params: { doctor: id, limit: 1000000 },
       });
 
       let receipts = response.data.data || response.data.receipts || [];
 
-      // Extra safety filter by doctor ID
+      // Extra safety filter by doctor ID or linked spouse ID
       receipts = receipts.filter((r) => {
+        const rPayerId = r.payer?.entityId?._id || r.payer?.entityId || r.doctor || r.doctorId || r.payerId;
         return (
-          r.payer?.entityId?._id === id ||
-          r.doctor === id ||
-          r.doctorId === id ||
-          r.payerId === id
+          rPayerId === id ||
+          (currentSpouseId && rPayerId === currentSpouseId) ||
+          (linkedDoctorId && rPayerId === linkedDoctorId)
         );
       });
 
@@ -676,7 +701,7 @@ export default function ReceiptsPage() {
         </style>
       </head>
       <body>
-        <h1>Receipts Report</h1>
+        <h1>Receipts Report - ${doctorNames}</h1>
         <div class="subtitle">
           ${isFiltered ? "Filtered View" : "All Receipts"} • 
           ${new Date().toLocaleDateString("en-IN")}
@@ -919,7 +944,7 @@ export default function ReceiptsPage() {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-900">
-          Receipts ({displayedReceipts.length})
+          {doctorNames} - Receipts ({displayedReceipts.length})
         </h3>
 
         <div className="flex gap-3">
