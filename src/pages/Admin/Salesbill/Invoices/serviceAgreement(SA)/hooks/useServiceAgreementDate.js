@@ -166,6 +166,17 @@ const useServiceAgreementData = (type, salesBillId) => {
           members.push(mapToMember(linkedDoctor, false));
         }
 
+        const getChequeNumber = (payment) => {
+          const receipt = payment?.paymentId;
+          return (
+            receipt?.bankDetails?.chequeNumber ||
+            receipt?.chequeNumber ||
+            payment?.bankDetails?.chequeNumber ||
+            payment?.chequeNumber ||
+            ''
+          );
+        };
+
         const normalizePaymentMode = (paymentMethod, referenceNumber) => {
           const method = paymentMethod?.toLowerCase()?.trim();
 
@@ -199,6 +210,7 @@ const useServiceAgreementData = (type, salesBillId) => {
         // Process Payment Data
         const payments = bill.payments || [];
         const lastPayment = payments.length > 0 ? payments[payments.length - 1] : null;
+        const chequeNumber = getChequeNumber(lastPayment);
         
         // Robust payment mode and debit type logic
         const isAutomated = 
@@ -271,7 +283,7 @@ const useServiceAgreementData = (type, salesBillId) => {
               paymentMode,
               paymentDate: lastPayment ? new Date(lastPayment.paymentDate).toLocaleDateString('en-GB') : 'N/A',
               amountPaid: lastPayment ? `₹${lastPayment.amount?.toLocaleString('en-IN')}` : 'N/A',
-              chequeNo: lastPayment?.paymentMethod?.toLowerCase() === 'cheque' ? lastPayment.referenceNumber : '-',
+              chequeNo: lastPayment?.paymentMethod?.toLowerCase() === 'cheque' ? (chequeNumber || '-') : '-',
               drawnOnBank: receipt?.drawnOnBank || '-'
             },
             upcomingPayments: bill.membershipType === 'monthly' ? {
