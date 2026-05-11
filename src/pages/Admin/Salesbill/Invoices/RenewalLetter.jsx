@@ -1727,15 +1727,18 @@ const RenewalContractLetter = () => {
         const formatted = {
           currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase(),
 
+          doctorType: primaryDoctor.doctorType,
           doctorsName: doctorsName || "-",
           clinicName: primaryDoctor.hospitalName ? `${primaryDoctor.hospitalName},` : "-",
           
           addressLine1: primaryDoctor.hospitalAddress?.address || "-",
           addressLine2: [
             primaryDoctor.hospitalAddress?.city,
+             primaryDoctor.hospitalAddress?.taluka,
+              primaryDoctor.hospitalAddress?.district,
             primaryDoctor.hospitalAddress?.state,
-            primaryDoctor.hospitalAddress?.district,
-            primaryDoctor.hospitalAddress?.taluka,
+           
+           
             primaryDoctor.hospitalAddress?.pinCode ? `PIN-${primaryDoctor.hospitalAddress.pinCode}` : ""
           ].filter(Boolean).join(', ') || "-",
 
@@ -1745,9 +1748,11 @@ const RenewalContractLetter = () => {
 
           idNumber: oldBillNumber || "-",
           insuranceCo: insuranceCo || "-",
-          specialization: Array.isArray(primaryDoctor.specialization)
-            ? primaryDoctor.specialization.join(', ')
-            : primaryDoctor.specialization || "-",
+          specialization: (primaryDoctor.doctorType === 'hospital' && primaryDoctor.hospitalDetails?.hospitalType)
+            ? primaryDoctor.hospitalDetails.hospitalType
+            : (Array.isArray(primaryDoctor.specialization)
+              ? primaryDoctor.specialization.join(', ')
+              : primaryDoctor.specialization || "-"),
           
           insuranceType: insuranceType || "-",
 
@@ -1761,6 +1766,8 @@ const RenewalContractLetter = () => {
           currentIndemnityCover: primaryDoctor.linkedDoctorId && primaryDoctor.relationshipType === 'spouse' 
             ? `${formattedIndemnity} FOR EACH DOCTOR` 
             : `${formattedIndemnity} `,
+
+          typeOfService: (coverageAmount && coverageAmount > 0) ? "SERVICE + INDEMNITY" : "SERVICE ONLY",
 
           amountToBePaid: amountToBePaidText || "-",
 
@@ -1847,7 +1854,7 @@ const RenewalContractLetter = () => {
               <div className="mb-4">
                 <strong>TO,</strong><br />
                 <div className="leading-8">
-                  {data.doctorsName}<br />
+                  {data.doctorType !== 'hospital' && <>{data.doctorsName}<br /></>}
                   {data.clinicName}<br />
                   {/* Only show address if it exists */}
                   {data.addressLine1 && <>{data.addressLine1}<br /></>}
@@ -1897,7 +1904,7 @@ const RenewalContractLetter = () => {
                   </tr>
                   <tr>
                     <td className="border border-black p-2 font-bold bg-gray-100 text-black">Type Of Service</td>
-                    <td className="border border-black p-2">SERVICE + INDEMNITY</td>
+                    <td className="border border-black p-2">{data.typeOfService}</td>
                     <td className="border border-black p-2 font-bold bg-gray-100 text-black">Service charge</td>
                     <td className="border border-black p-2 uppercase">{data.serviceCharge}</td>
                   </tr>
@@ -1963,7 +1970,7 @@ const RenewalContractLetter = () => {
               <div className="flex gap-12 mb-12 items-center">
                 <div className="flex-1 bg-gray-100 p-6 rounded text-sm font-medium">
                   <strong>BANK DETAILS :</strong><br />
-                  NAME : RAPID MEDICOLLEGAL SERVICES<br />
+                  NAME : RAPID MEDICOLEGAL SERVICES<br />
                   BANK NAME – ICICI BANK<br />
                   BRANCH – RAJARAMPURI, KOLHAPUR<br />
                   A/C NO. – 016605017904<br />
@@ -1976,7 +1983,7 @@ const RenewalContractLetter = () => {
 
               <div className="text-red-500 font-bold mt-16 text-base">
                 Regards,<br />
-                <strong className="mt-6">RAPID MEDICOLLEGAL SERVICES INDIA LTD.</strong><br />
+                <strong className="mt-6">RAPID MEDICOLEGAL SERVICES INDIA LTD.</strong><br />
                 24 x 7 ALL INDIA HELP LINE NO.<br />
                 +91-9422584275, +91-9421584275, +91-9405734275, +91-9665444275
               </div>
