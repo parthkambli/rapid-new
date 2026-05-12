@@ -664,9 +664,18 @@ const CreateQueryCase = () => {
     if (editData) {
       console.log('Edit data received:', editData); // Debug log
 
+      // Try to find doctor name and ID from various possible property names
+      // Some parts of the app might use 'doctor' while others use 'doctorName'
+      let docName = editData.doctorName || "";
+      if (!docName && editData.doctor && typeof editData.doctor === 'object') {
+        docName = editData.doctor.fullName;
+      }
+      
+      const docId = editData.doctorId || editData.doctor?.doctorId || "";
+
       setFormData({
-        doctorName: editData.doctorName || "",
-        doctorId: editData.doctorId || "",
+        doctorName: docName,
+        doctorId: docId,
         caseNo: editData.caseNo || "",
         queryType: editData.queryType || "",
         caseType: editData.caseType || "",
@@ -686,61 +695,113 @@ const CreateQueryCase = () => {
         tags: Array.isArray(editData.tags) ? editData.tags.join(', ') : (editData.tags || ""),
       });
 
-      console.log('Form data set:', {
-        doctorName: editData.doctorName,
-        patientName: editData.patientName || editData.patient,
-        opponentName: editData.opponentName || editData.opponent,
-        queryDescription: editData.queryDescription || editData.originalQuery
-      }); // Debug log
+      // ✅ Set initial selected option IMMEDIATELY so dropdown shows the name even before fetch
+      if (docName) {
+        setSelectedDoctorOption({
+          value: editData.doctor?._id || 'initial', 
+          label: `${docName} (ID: ${docId || 'N/A'})`,
+          doctorData: { fullName: docName, doctorId: docId }
+        });
+      }
     }
   }, [editData]);
 
-  // Fetch doctors whose typeOfEnquiry is "closed"
-  const fetchClosedEnquiryDoctors = async () => {
+  // Fetch initial data (closed doctors and specific doctor if in edit mode)
+  const initializeDoctors = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.get('/doctors', {
-        params: {
-          typeOfEnquiry: 'closed',
-          limit: 100 // Limit to 100 results to avoid too many options
+      
+      const promises = [
+        apiClient.get('/doctors', {
+          params: { typeOfEnquiry: 'closed', limit: 100 }
+        })
+      ];
+
+      // ✅ In edit mode, we need to find the doctor's LATEST record
+      if (isEditMode) {
+        // Search by doctorId if it exists, otherwise search by doctorName
+        const docName = editData.doctorName || editData.doctor;
+        const searchQuery = editData.doctorId || docName;
+        
+        if (searchQuery) {
+          promises.push(
+            apiClient.get('/doctors/search', {
+              params: { q: searchQuery, limit: 1 }
+            }).catch(err => {
+              console.warn('Error fetching doctor for edit mode:', err);
+              return { data: { data: [] } };
+            })
+          );
         }
+      }
+
+      const [closedResponse, specificResponse] = await Promise.all(promises);
+
+      const closedDoctors = closedResponse.data.data || [];
+      const specificResults = specificResponse?.data?.data || specificResponse?.data || [];
+      const fetchedDoctor = specificResults.length > 0 ? specificResults[0] : null;
+      
+      const allFetchedDoctors = fetchedDoctor ? [fetchedDoctor, ...closedDoctors] : closedDoctors;
+      
+      // Deduplicate
+      const uniqueDoctorsMap = new Map();
+      allFetchedDoctors.forEach(d => {
+        if (d && d._id) uniqueDoctorsMap.set(d._id.toString(), d);
       });
+      
+      const finalDoctorsList = Array.from(uniqueDoctorsMap.values());
+      setDoctors(finalDoctorsList);
 
-      const doctorsData = response.data.data || [];
-      setDoctors(doctorsData);
-
-      // ✅ Convert doctors to react-select options format
-      const options = doctorsData.map((doctor) => ({
+      const options = finalDoctorsList.map((doctor) => ({
         value: doctor._id,
-        label: `${doctor.fullName} (ID: ${doctor.doctorId})`,
+        label: `${doctor.fullName} (ID: ${doctor.doctorId || 'N/A'})`,
         doctorData: doctor,
       }));
 
       setDoctorOptions(options);
+
+      // ✅ Set initial selection and update missing doctorId in form
+      if (isEditMode && fetchedDoctor) {
+        const matchingOption = {
+          value: fetchedDoctor._id,
+          label: `${fetchedDoctor.fullName} (ID: ${fetchedDoctor.doctorId || 'N/A'})`,
+          doctorData: fetchedDoctor,
+        };
+        
+        setSelectedDoctorOption(matchingOption);
+        
+        // Update form with the LATEST data from fetchedDoctor
+        setFormData(prev => ({
+          ...prev,
+          doctorId: fetchedDoctor.doctorId || prev.doctorId,
+          doctorName: fetchedDoctor.fullName || prev.doctorName
+        }));
+      } else if (isEditMode) {
+        // Fallback: if doctor record not found, keep the initial selection we set in useEffect
+        const docName = editData.doctorName || editData.doctor || "";
+        const docId = editData.doctorId || "";
+        
+        if (docName) {
+          const dummyOption = {
+            value: 'unknown',
+            label: `${docName} (ID: ${docId || 'N/A'})`,
+            doctorData: { fullName: docName, doctorId: docId }
+          };
+          setSelectedDoctorOption(dummyOption);
+        }
+      }
     } catch (err) {
-      console.error('Error fetching doctors:', err);
-      setError('Failed to fetch doctors with closed enquiries');
+      console.error('Error initializing doctors:', err);
+      setError('Failed to load doctors');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchClosedEnquiryDoctors();
-  }, []);
-
-  // Set selected doctor option when doctors are loaded and we're in edit mode
-  useEffect(() => {
-    if (editData && doctorOptions.length > 0 && formData.doctorName) {
-      const matchingOption = doctorOptions.find(
-        (opt) => opt.doctorData.fullName === formData.doctorName || opt.doctorData.doctorId === formData.doctorId
-      );
-      if (matchingOption) {
-        setSelectedDoctorOption(matchingOption);
-      }
-    }
-  }, [doctorOptions, editData, formData.doctorName, formData.doctorId]);
+    initializeDoctors();
+  }, [isEditMode]); // Re-run if edit mode changes
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -749,9 +810,9 @@ const CreateQueryCase = () => {
 
   // ✅ Handle doctor selection from react-select
   const handleDoctorSelect = (selectedOption) => {
+    setSelectedDoctorOption(selectedOption);
+
     if (!selectedOption) {
-      // Reset if doctor is cleared
-      setSelectedDoctorOption(null);
       setFormData(prev => ({
         ...prev,
         doctorName: "",
@@ -760,10 +821,6 @@ const CreateQueryCase = () => {
       return;
     }
 
-    // Store full option so dropdown stays selected regardless of option list changes
-    setSelectedDoctorOption(selectedOption);
-
-    // Use doctorData directly from the option (no need to search doctors array)
     const doctor = selectedOption.doctorData;
     if (doctor) {
       setFormData(prev => ({
@@ -778,59 +835,50 @@ const CreateQueryCase = () => {
   const fetchDoctorsBySearch = useCallback(async (searchQuery) => {
     try {
       setLoading(true);
-      setError(null);
-
-      // If no search query, fetch from regular /doctors endpoint
+      
+      // If no search query, revert to initial list (closed doctors)
       if (!searchQuery || !searchQuery.trim()) {
-        // Fetch default closed enquiry doctors when search is empty
         const response = await apiClient.get('/doctors', {
-          params: {
-            typeOfEnquiry: 'closed',
-            limit: 100
-          }
+          params: { typeOfEnquiry: 'closed', limit: 100 }
         });
-
+        
         const doctorsData = response.data.data || [];
-        setDoctors(doctorsData);
-
         const options = doctorsData.map((doctor) => ({
           value: doctor._id,
           label: `${doctor.fullName} (ID: ${doctor.doctorId})`,
           doctorData: doctor,
         }));
-
+        
         setDoctorOptions(options);
         setLoading(false);
         return;
       }
 
-      // If search query exists, use /doctors/search endpoint with 'q' parameter
+      // Search with the query
       const response = await apiClient.get('/doctors/search', {
-        params: {
-          q: searchQuery.trim(),
-          typeOfEnquiry: 'closed',
-          limit: 50
-        }
+        params: { q: searchQuery.trim(), limit: 50 }
       });
 
       const doctorsData = response.data.data || response.data || [];
-      setDoctors(doctorsData);
-
-      // Convert doctors to react-select options format
       const options = doctorsData.map((doctor) => ({
         value: doctor._id,
         label: `${doctor.fullName} (ID: ${doctor.doctorId})`,
         doctorData: doctor,
       }));
 
-      setDoctorOptions(options);
+      // Make sure the currently selected doctor is always in the options list
+      // so the selection doesn't disappear visually
+      if (selectedDoctorOption && !options.some(opt => opt.value === selectedDoctorOption.value)) {
+        setDoctorOptions([selectedDoctorOption, ...options]);
+      } else {
+        setDoctorOptions(options);
+      }
     } catch (err) {
       console.error('Error searching doctors:', err);
-      setError('Failed to search doctors');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedDoctorOption]);
 
   // ✅ Debounced search handler — don't re-search after a selection is made
   const handleSearchChange = useCallback((value, { action }) => {

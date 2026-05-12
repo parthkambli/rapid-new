@@ -3376,7 +3376,7 @@
 
 
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient, { apiEndpoints } from '../../../services/apiClient';
 import { toast } from 'react-toastify';
@@ -3392,6 +3392,7 @@ const CreateQuotation = () => {
   const [selectedYears, setSelectedYears] = useState([]);
   const [priceMatrix, setPriceMatrix] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctorOptions, setDoctorOptions] = useState([]);
   const [doctorSearchText, setDoctorSearchText] = useState('');
   const [showDoctorResults, setShowDoctorResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -3418,17 +3419,6 @@ const CreateQuotation = () => {
   // Get doctorId from URL params
   const urlDoctorId = searchParams.get('doctorId');
 
-  // React Select ke liye doctors options format
-  const doctorOptions = useMemo(() => {
-    return doctors.map(doctor => ({
-      value: doctor._id,
-      label: `${doctor.fullName} (${doctor.doctorId})`,
-      doctorType: doctor.doctorType,
-      specialization: doctor.specialization,
-      rawData: doctor
-    }));
-  }, [doctors]);
-
   // Click outside handler for doctor search results
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -3440,89 +3430,73 @@ const CreateQuotation = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch Doctors Dropdown
-  useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        setLoadingDoctors(true);
-        const response = await apiClient.get(apiEndpoints.doctors.dropdown, { params: { limit: 10 } });
-        setDoctors(response.data.data || []);
+  // Fetch Doctors Dropdown with Search
+  const fetchDoctorsBySearch = useCallback(async (searchQuery = "") => {
+    try {
+      setLoadingDoctors(true);
+      const response = await apiClient.get(apiEndpoints.doctors.dropdown, { 
+        params: { 
+          limit: searchQuery ? 50 : 10,
+          search: searchQuery.trim() 
+        } 
+      });
+      
+      const doctorsData = response.data.data || [];
+      setDoctors(doctorsData);
 
-        // If there's a doctorId in the URL, auto-select that doctor
-        if (urlDoctorId) {
-          const doctorToSelect = response.data.data.find(doctor => doctor._id === urlDoctorId);
-          if (doctorToSelect) {
-            const selectedOption = {
-              value: doctorToSelect._id,
-              label: `${doctorToSelect.fullName} (${doctorToSelect.doctorId})`,
-              doctorType: doctorToSelect.doctorType,
-              specialization: doctorToSelect.specialization,
-              rawData: doctorToSelect
-            };
+      // React Select ke liye doctors options format
+      const options = doctorsData.map(doctor => {
+        // Individual/Spouse ke liye hospital name nahi dikhana hai
+        const isHospital = ['hospital', 'hospital_individual'].includes(doctor.doctorType);
+        
+        let label = doctor.fullName || "No Name";
+        if (doctor.doctorId) label += ` (${doctor.doctorId})`;
+        if (isHospital && doctor.hospitalName) label += ` - ${doctor.hospitalName}`;
 
-            setSelectedDoctor(selectedOption);
+        return {
+          value: doctor._id,
+          label: label,
+          doctorType: doctor.doctorType,
+          specialization: doctor.specialization,
+          rawData: doctor
+        };
+      });
+      setDoctorOptions(options);
 
-            // Determine membership type
-            const isHospitalType = ['hospital', 'hospital_individual'].includes(doctorToSelect.doctorType);
-            const membershipType = doctorToSelect.doctorType === 'hospital'
-              ? 'HOSPITAL MEMBERSHIP'
-              : doctorToSelect.doctorType === 'hospital_individual'
-                ? 'HOSPITAL + INDIVIDUAL MEMBERSHIP'
-                : 'INDIVIDUAL MEMBERSHIP';
-
-            // Set basic info immediately
-            setFormData(prev => ({
-              ...prev,
-              doctorId: doctorToSelect._id,
-              doctorName: selectedOption.label,
-              membershipType,
-              specialization: isHospitalType ? 'Loading...' : (doctorToSelect.specialization?.join(', ') || 'General Practitioner'),
-              beds: isHospitalType ? 'Loading...' : 'N/A'
-            }));
-            setMembershipTypeLocked(true);
-
-            // Fetch full doctor details for hospitalType & beds
-            if (isHospitalType) {
-              apiClient.get(`/doctors/${doctorToSelect._id}`)
-                .then(response => {
-                  const doctorDetails = response.data.data;
-
-                  const hospitalType = doctorDetails.hospitalDetails?.hospitalType || 'Not Specified';
-                  const bedsCount = doctorDetails.hospitalDetails?.beds || 'Not Specified';
-
-                  setFormData(prev => ({
-                    ...prev,
-                    specialization: hospitalType,
-                    beds: bedsCount
-                  }));
-                })
-                .catch(err => {
-                  console.error("Failed to load hospital details:", err);
-                  toast.warn("Hospital details not available");
-                  setFormData(prev => ({
-                    ...prev,
-                    specialization: 'Hospital (Details Unavailable)',
-                    beds: 'Not Specified'
-                  }));
-                });
-            }
-          }
+      // If there's a doctorId in the URL, auto-select that doctor
+      if (urlDoctorId && !selectedDoctor) {
+        const doctorToSelect = doctorsData.find(d => d._id === urlDoctorId);
+        if (doctorToSelect) {
+          const selectedOption = options.find(opt => opt.value === urlDoctorId);
+          handleDoctorSelect(selectedOption);
         }
-      } catch (error) {
-        console.error('Error fetching doctors:', error);
-        toast.error('Failed to load doctors list');
-        try {
-          const response = await apiClient.get('/doctors', { params: { limit: 10 } });
-          setDoctors(response.data.data || []);
-        } catch (fallbackError) {
-          console.error('Fallback failed:', fallbackError);
-        }
-      } finally {
-        setLoadingDoctors(false);
       }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+      toast.error('Failed to load doctors list');
+    } finally {
+      setLoadingDoctors(false);
+    }
+  }, [urlDoctorId, selectedDoctor]);
+
+  useEffect(() => {
+    fetchDoctorsBySearch("");
+  }, []);
+
+  // Debounced search for input
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    
+    if (doctorSearchText && doctorSearchText.length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        fetchDoctorsBySearch(doctorSearchText);
+      }, 500);
+    }
+    
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
-    fetchDoctors();
-  }, [urlDoctorId]); // Add urlDoctorId as dependency to trigger effect when it changes
+  }, [doctorSearchText, fetchDoctorsBySearch]);
 
   // Fetch Packages
   useEffect(() => {
