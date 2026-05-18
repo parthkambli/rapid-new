@@ -2316,6 +2316,7 @@ const TotalDoctorList = () => {
 
   const [fullData, setFullData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0); // Added for accurate count
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exportData, setExportData] = useState([]);
@@ -2360,6 +2361,10 @@ const TotalDoctorList = () => {
   // Enhanced filter function
   const applyFilters = useCallback(() => {
     let result = [...fullData];
+
+    if (sortByDoctorStatus && sortByDoctorStatus !== "all") {
+      result = result.filter(item => item.doctorStatus === sortByDoctorStatus);
+    }
 
     if (searchByName.trim()) {
       result = result.filter(item => 
@@ -2669,11 +2674,17 @@ const TotalDoctorList = () => {
         params.search = searchByName;
       }
 
-      const response = await apiClient.get(apiEndpoints.doctors.list, { params });
+      const response = await apiClient.get(apiEndpoints.doctors.list, { 
+        params: {
+          ...params,
+          mergeSpouse: 'false' // ✅ Get individual records for complete list
+        } 
+      });
       const doctorsData = response.data.data || response.data || [];
       const mappedData = mapDoctorData(doctorsData);
       setFullData(mappedData);
       setFilteredData(mappedData);
+      setTotalCount(response.data.pagination?.total || mappedData.length); // ✅ Accurate total from backend
     } catch (err) {
       console.error("Error fetching doctors:", err);
       setError("Failed to load doctors. Please try again.");
@@ -2996,7 +3007,7 @@ const TotalDoctorList = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Doctors</p>
-                <p className="text-2xl font-bold text-gray-800">{fullData.length}</p>
+                <p className="text-2xl font-bold text-gray-800">{totalCount}</p>
               </div>
               <div className="p-3 bg-blue-50 rounded-lg">
                 <FaUserMd className="text-blue-600" size={24} />
@@ -3192,6 +3203,7 @@ const TotalDoctorList = () => {
                   <option value="rejected">Rejected</option>
                   <option value="active">Active</option>
                   <option value="pending">Pending</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
 
