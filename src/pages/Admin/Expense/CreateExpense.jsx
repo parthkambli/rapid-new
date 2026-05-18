@@ -1854,6 +1854,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import apiClient, { apiEndpoints } from "../../../services/apiClient";
 
 // Simple debounce utility
@@ -2160,10 +2161,7 @@ const ExpenseForm = () => {
 
           const formattedDate = expense.expenseDate ? formatDateToDDMMYY(expense.expenseDate) : "";
           const officeExpenseType = expense.subCategory || "Stationery";
-          let paidByValue = expense.vendor?.name || expense.paidBy || "";
-          if (!paidByValue && expense.bankName) {
-            paidByValue = expense.bankName;
-          }
+          let paidByValue = expense.bankName || expense.paidBy || "";
 
           let initialCategory = "";
           if (expense.category === 'professional_fees') {
@@ -2174,12 +2172,16 @@ const ExpenseForm = () => {
             } else {
               initialCategory = expense.subCategory === 'expert' ? 'expert' : 'advocate';
             }
-          } else if (expense.category === 'office_supplies' || expense.category === 'office') {
+          } else if (expense.category === 'office_supplies' || expense.category === 'office' || expense.subCategory === 'Stationery' || expense.subCategory === 'Office Expenses') {
             initialCategory = 'office';
-          } else if (expense.category === 'utilities' || expense.category === 'bank_transfer' || expense.category === 'bank') {
+          } else if (expense.category === 'utilities' || expense.category === 'bank_transfer' || expense.category === 'bank' || expense.subCategory === 'bank' || expense.subCategory === 'Bank Charges') {
             initialCategory = 'bank';
+          } else {
+            // Fallback to miscellaneous or any other category as office
+            initialCategory = 'office';
           }
 
+          console.log("Detected category for edit:", initialCategory, "from backend category:", expense.category, "subCategory:", expense.subCategory);
           setCategory(initialCategory);
 
           const newFormData = {
@@ -2432,6 +2434,30 @@ const ExpenseForm = () => {
     }
   };
 
+  const customSelectStyles = {
+    control: (base) => ({
+      ...base,
+      borderColor: '#d1d5db',
+      borderRadius: '0.5rem',
+      padding: '0.125rem 0.25rem',
+      boxShadow: 'none',
+      '&:hover': { borderColor: '#9ca3af' },
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      padding: '0.375rem 0.75rem',
+    }),
+    input: (base) => ({
+      ...base,
+      padding: 0,
+      margin: 0,
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: '#9ca3af',
+    }),
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -2470,7 +2496,9 @@ const ExpenseForm = () => {
       }
 
       expenseData.append('category', backendCategory);
-      expenseData.append('subCategory', formData.officeExpenseType || category); // Use office expense type if available
+      // Fix: Use officeExpenseType as subCategory only for office expenses
+      const subCategory = category === 'office' ? (formData.officeExpenseType || category) : category;
+      expenseData.append('subCategory', subCategory); 
       // Calculate amount based on category
       let finalAmount = total.toString();
       if (category === 'office') {
@@ -2491,7 +2519,10 @@ const ExpenseForm = () => {
       }
       expenseData.append('expenseDate', formData.paymentDate);
       expenseData.append('paymentMethod', paymentMode.toLowerCase().replace(' ', '_'));
-      expenseData.append('voucherNo', formData.voucherNo);
+      
+      // Fix: Send bankTxnRef as voucherNo if category is bank
+      const finalVoucherNo = category === 'bank' ? (formData.bankTxnRef || formData.voucherNo) : formData.voucherNo;
+      expenseData.append('voucherNo', finalVoucherNo);
 
       // Handle bankName - if paidBy contains a bank name, use that regardless of category
       let finalBankName = formData.bankName;
@@ -2547,9 +2578,14 @@ const ExpenseForm = () => {
         formData.officeExpenseType === 'Incentive' ||
         formData.officeExpenseType === 'Other'
       ) && (formData.officeRecipient || formData.personId)) {
-        expenseData.append('personType', 'employee');
-        expenseData.append('personId', formData.personId || '');
-        expenseData.append('personName', formData.officeRecipient);
+        if (formData.personId) {
+          expenseData.append('personType', 'employee');
+          expenseData.append('personId', formData.personId);
+          expenseData.append('personName', formData.officeRecipient);
+        } else {
+          // Custom name, don't set personType/personId as employee
+          expenseData.append('personName', formData.officeRecipient);
+        }
       } else if (formData.personType && formData.personId) {
         // Use stored personType and personId if available (for office expenses where employee was selected)
         expenseData.append('personType', formData.personType);
@@ -2780,11 +2816,36 @@ const ExpenseForm = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-normal text-gray-700 mb-2">Employee / Recipient Name</label>
-                  {(formData.officeExpenseType === "Employee Salary" ||
+                  {formData.officeExpenseType === "Other" ? (
+                    <CreatableSelect
+                      name="officeRecipient"
+                      value={selectedEmployee}
+                      onInputChange={(inputValue) => {
+                        fetchEmployees(inputValue);
+                      }}
+                      onChange={(selectedOption) => {
+                        setSelectedEmployee(selectedOption);
+                        setFormData(prev => ({
+                          ...prev,
+                          officeRecipient: selectedOption ? selectedOption.value : "",
+                          personType: selectedOption && !selectedOption.__isNew__ ? 'employee' : '',
+                          personId: (selectedOption && !selectedOption.__isNew__) ? selectedOption._id : ''
+                        }));
+                      }}
+                      options={employeeOptions}
+                      isLoading={loadingEmployees}
+                      placeholder="Search employee or type custom name..."
+                      isSearchable={true}
+                      isClearable={true}
+                      formatCreateLabel={(inputValue) => `Use "${inputValue}" as custom name`}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      styles={customSelectStyles}
+                    />
+                  ) : (formData.officeExpenseType === "Employee Salary" ||
                     formData.officeExpenseType === "Travelling Allowance" ||
                     formData.officeExpenseType === "Advance" ||
-                    formData.officeExpenseType === "Incentive" ||
-                    formData.officeExpenseType === "Other") ? (
+                    formData.officeExpenseType === "Incentive") ? (
                     <Select
                       name="officeRecipient"
                       value={selectedEmployee}
@@ -2807,29 +2868,7 @@ const ExpenseForm = () => {
                       isClearable={true}
                       className="react-select-container"
                       classNamePrefix="react-select"
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          borderColor: '#d1d5db',
-                          borderRadius: '0.5rem',
-                          padding: '0.125rem 0.25rem',
-                          boxShadow: 'none',
-                          '&:hover': { borderColor: '#9ca3af' },
-                        }),
-                        valueContainer: (base) => ({
-                          ...base,
-                          padding: '0.375rem 0.75rem',
-                        }),
-                        input: (base) => ({
-                          ...base,
-                          padding: 0,
-                          margin: 0,
-                        }),
-                        placeholder: (base) => ({
-                          ...base,
-                          color: '#9ca3af',
-                        }),
-                      }}
+                      styles={customSelectStyles}
                     />
                   ) : (
                     <input
