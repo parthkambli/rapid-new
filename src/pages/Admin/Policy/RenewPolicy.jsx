@@ -186,7 +186,11 @@ const RenewPolicy = () => {
         // Prepare renewal data matching backend expectation
         const renewalData = {
           termYears: parseInt(formData.duration),
+          premiumAmount: parseFloat(formData.premiumAmount),
           premiumPaid: parseFloat(formData.premiumAmount),
+          paidBy: formData.premiumPaidBy === 'By Rapid' ? 'by_company' :
+                  formData.premiumPaidBy === 'By Doctor' ? 'by_doctor' :
+                  formData.premiumPaidBy === 'By Hospital' ? 'by_hospital' : 'by_company',
           paymentDate: formData.paymentDate,
           remarks: formData.narration,
           // Include these to allow changing them during renewal
@@ -224,7 +228,11 @@ const RenewPolicy = () => {
         const renewalPayload = {
           renewalData: {
             termYears: parseInt(formData.duration),
+            premiumAmount: parseFloat(formData.premiumAmount),
             premiumPaid: parseFloat(formData.premiumAmount),
+            paidBy: formData.premiumPaidBy === 'By Rapid' ? 'by_company' :
+                    formData.premiumPaidBy === 'By Doctor' ? 'by_doctor' :
+                    formData.premiumPaidBy === 'By Hospital' ? 'by_hospital' : 'by_company',
             paymentDate: formData.paymentDate,
             remarks: formData.narration,
             // Include these to allow changing them during renewal
