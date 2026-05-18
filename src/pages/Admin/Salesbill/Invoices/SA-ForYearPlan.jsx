@@ -220,7 +220,7 @@ const YearlySA = () => {
 
             {/* Note section if available */}
             {salesBill.notes && (
-              <div className="bg-yellow-300 p-3 my-4 text-[12px] print:bg-red-500 print:p-3 print:my-4 ">
+              <div className="bg-yellow-300 p-3 my-4 text-[12px] print:bg-yellow-300 print:p-3 print:my-4 ">
                 <strong>Note:</strong> {salesBill.notes}
               </div>
             )}
@@ -250,7 +250,18 @@ const YearlySA = () => {
           {/* PAGE 7 - SCOPE OF SERVICES + SIGNATURE (for yearly) */}
           <div className="break-before-page break-inside-avoid min-h-[140mm] flex flex-col justify-end print:break-before-page print:break-inside-avoid"> {/* min-h reserves space for bottom alignment */}
             <ScopeOfServices color="text-red-600" />
-            <SignatureBlock doctorName={doctor.fullName} date={agreementDate} />
+            <SignatureBlock 
+              doctorName={
+                doctor.hasSpouse && doctor.spouseInfo
+                  ? `${doctor.fullName} & ${doctor.spouseInfo.fullName}`
+                  : doctor.doctorType?.toLowerCase() === 'hospital_individual' && !doctor.hasSpouse
+                    ? `${doctor.fullName} (representing ${doctor.hospitalName})`
+                    : doctor.doctorType?.toLowerCase() === 'hospital'
+                      ? doctor.hospitalName
+                      : doctor.fullName
+              } 
+              date={agreementDate} 
+            />
           </div>
         </div>
       </div>
