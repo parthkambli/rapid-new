@@ -815,6 +815,8 @@ const AdminDashboard = () => {
   // Pagination states for Renewal Reminder
   const [renewalCurrentPage, setRenewalCurrentPage] = useState(1);
   const [renewalRowsPerPage, setRenewalRowsPerPage] = useState(5);
+  const [renewalTotalCount, setRenewalTotalCount] = useState(0);
+  const [renewalTotalPages, setRenewalTotalPages] = useState(0);
 
   // Pagination states for Monthly Payment Reminder
   const [paymentCurrentPage, setPaymentCurrentPage] = useState(1);
@@ -918,20 +920,25 @@ const AdminDashboard = () => {
         apiClient.get(apiEndpoints.adminDashboard.salesmanDoctors),
         apiClient.get(apiEndpoints.adminDashboard.telecallerDoctors),
         apiClient.get(apiEndpoints.adminDashboard.monthlyPaymentReminders),
-        apiClient.get(apiEndpoints.adminDashboard.renewalReminders) // Add the new renewal reminders endpoint
+        apiClient.get(`${apiEndpoints.adminDashboard.renewalReminders}?page=${renewalCurrentPage}&limit=${renewalRowsPerPage}`) // Add pagination params
       ]);
 
       // Handle Main Dashboard Data
       if (dashboardRes.data?.success) {
-        // Override the monthlyPaymentReminder data with data from the receipt module
+        // ... (existing code for monthly payment reminders)
         const monthlyPaymentReminderData = monthlyPaymentRemindersRes.data?.success
           ? monthlyPaymentRemindersRes.data.data
           : [];
 
-        // Get renewal reminder data from the separate API call
+        // Get renewal reminder data and pagination info from the separate API call
         const renewalReminderData = renewalRemindersRes.data?.success
           ? renewalRemindersRes.data.data
           : [];
+        
+        if (renewalRemindersRes.data?.success) {
+          setRenewalTotalCount(renewalRemindersRes.data.totalCount || 0);
+          setRenewalTotalPages(renewalRemindersRes.data.totalPages || 0);
+        }
 
         // Update the dashboard data with both monthly payment reminders and renewal reminders
         setDashboardData({
@@ -974,7 +981,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [token]);
+  }, [token, renewalCurrentPage, renewalRowsPerPage]);
 
   const handleRenewClick = (alert) => {
     // Logic for payment reminders (Pay button)
@@ -1102,10 +1109,9 @@ const AdminDashboard = () => {
   const salesBillOnlyData = renewalReminderData.filter(item => item.entityType === 'SalesBill');
 
   const filteredRenewalData = applyRenewalDateFilter(salesBillOnlyData);
-  const renewalTotalPages = Math.ceil(filteredRenewalData.length / renewalRowsPerPage);
-  const renewalStartIndex = (renewalCurrentPage - 1) * renewalRowsPerPage;
-  const renewalEndIndex = renewalStartIndex + renewalRowsPerPage;
-  const renewalCurrentData = filteredRenewalData.slice(renewalStartIndex, renewalEndIndex);
+  // Use server-side total pages if available, otherwise fallback to local calculation
+  const activeRenewalTotalPages = renewalTotalPages || Math.ceil(filteredRenewalData.length / renewalRowsPerPage);
+  const renewalCurrentData = filteredRenewalData; // Data is already paginated from server
 
   // Monthly Payment Reminder pagination logic with filtering
   const monthlyPaymentReminderData = dashboardData?.monthlyPaymentReminder || [];
@@ -1620,11 +1626,11 @@ const AdminDashboard = () => {
           {filteredRenewalData.length > 0 && (
             <Pagination
               currentPage={renewalCurrentPage}
-              totalPages={renewalTotalPages}
+              totalPages={activeRenewalTotalPages}
               onPageChange={handleRenewalPageChange}
               rowsPerPage={renewalRowsPerPage}
               onRowsPerPageChange={handleRenewalRowsPerPageChange}
-              totalItems={filteredRenewalData.length}
+              totalItems={renewalTotalCount || filteredRenewalData.length}
             />
           )}
         </div>
