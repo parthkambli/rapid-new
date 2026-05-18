@@ -1157,6 +1157,37 @@ const InfoTable = ({ title, tableType, data, salesBill, className = '' }) => {
 
     // ============================ NON-MEMBERSHIP ARRAY TABLES ============================
     else {
+      // ✅ Handle Empty Data: If no records (e.g. no policies), show N/A instead of blank
+      if (data.length === 0) {
+        return (
+          <div className={`my-4 ${className} break-inside-avoid overflow-x-auto print:overflow-visible`}>
+            {title && <strong className="text-[12px] block mb-2 print:pt-[10px]">{title}:</strong>}
+            <table className="w-full border-collapse border border-black text-[12px] print:text-[12px] min-w-full table-fixed">
+              <thead>
+                <tr>
+                  <th className="bg-blue-100 border border-black p-2 font-bold" style={{ width: '35%' }}>Particular</th>
+                  <th className="bg-blue-100 border border-black p-2 font-bold text-center" style={{ width: '65%' }}>
+                    Details
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    <td className="border border-black p-2 font-medium text-left align-top break-words" style={{ width: '35%' }}>
+                      {row.label}
+                    </td>
+                    <td className="border border-black p-2 text-left align-top break-words" style={{ width: '65%' }}>
+                      N/A
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
       const columnWidth = `${Math.floor(65 / data.length)}%`;
       const particularWidth = `${100 - Math.floor(65 / data.length) * data.length}%`;
 
