@@ -223,7 +223,7 @@ const MonthlySA = () => {
 
             {/* Note section if available */}
             {salesBill.notes && (
-              <div className="bg-yellow-300 p-3 my-4 text-[12px] print:bg-gray-100 print:p-3 print:my-4">
+              <div className="bg-yellow-300 p-3 my-4 text-[12px] print:bg-yellow-300 print:p-3 print:my-4">
                 <strong>Note:</strong> {salesBill.notes}
               </div>
             )}
@@ -262,9 +262,9 @@ const MonthlySA = () => {
               doctorName={
                 doctor.hasSpouse && doctor.spouseInfo
                   ? `${doctor.fullName} & ${doctor.spouseInfo.fullName}`
-                  : doctor.doctorType === 'hospital_individual' && !doctor.hasSpouse
+                  : doctor.doctorType?.toLowerCase() === 'hospital_individual' && !doctor.hasSpouse
                     ? `${doctor.fullName} (representing ${doctor.hospitalName})`
-                    : doctor.doctorType === 'hospital'
+                    : doctor.doctorType?.toLowerCase() === 'hospital'
                       ? doctor.hospitalName
                       : doctor.fullName
               }
