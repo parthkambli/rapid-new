@@ -185,7 +185,7 @@ const useServiceAgreementData = (type, salesBillId) => {
           }
 
           if (method === 'cheque') {
-            return `CHEQUE${referenceNumber ? ` (${referenceNumber})` : ''}`;
+            return 'CHEQUE';
           }
 
           if (['online', 'online_transfer', 'upi'].includes(method)) {
