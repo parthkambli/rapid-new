@@ -194,7 +194,9 @@ membershipYearDisplay: (() => {
                   {" "} | Receipt Number: {template.receiptNumber}
                 </span>
               </div>
-              <div><strong>Qualification :</strong> {template.qualification}</div>
+              {doctor.doctorType !== 'hospital' && (
+                <div><strong>Qualification :</strong> {template.qualification}</div>
+              )}
               <div><strong>Specialization :</strong> {template.specialization}</div>
               <div><strong>Hospital Name :</strong> {template.hospitalName}</div>
               <div><strong>Hospital Address :</strong> {template.hospitalAddress}</div>

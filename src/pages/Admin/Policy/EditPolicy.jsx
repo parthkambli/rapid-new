@@ -629,7 +629,8 @@ const EditPolicy = () => {
     endDate: '',
     duration: '',
     status: 'active',
-    narration: ''
+    narration: '',
+    relatedSalesBillId: null // Added field
   });
 
   // Helper functions for date calculations
@@ -761,12 +762,12 @@ const EditPolicy = () => {
           if (response.data.policyHolder.type === 'hospital') {
             entityName = response.data.policyHolder.entityId.hospitalName ||
               response.data.policyHolder.entityId.fullName ||
-              entityName;
+              response.data.policyHolder.name; // Fallback to existing name only if others missing
           } else {
             // For doctor/individual type, use fullName if available, otherwise hospitalName
             entityName = response.data.policyHolder.entityId.fullName ||
               response.data.policyHolder.entityId.hospitalName ||
-              entityName;
+              response.data.policyHolder.name;
           }
         } else if (typeof response.data.policyHolder.entityId === 'string') {
           entityIdValue = response.data.policyHolder.entityId;
@@ -821,7 +822,8 @@ const EditPolicy = () => {
 
         duration: calculatedDuration,
         status: response.data.status || 'active',
-        narration: response.data.narration || ''
+        narration: response.data.narration || '',
+        relatedSalesBillId: response.data.relatedSalesBillId?._id || response.data.relatedSalesBillId || null
       });
 
 
@@ -1006,6 +1008,11 @@ const EditPolicy = () => {
       formDataToSend.append('policyHolder[name]', formData.policyHolder.name || '');
       formDataToSend.append('policyHolder[entityId]', formData.policyHolder.entityId || '');
 
+      // Append relatedSalesBillId if exists
+      if (formData.relatedSalesBillId) {
+        formDataToSend.append('relatedSalesBillId', formData.relatedSalesBillId);
+      }
+
       // === Files append (only if new file selected) ===
       // Log files for debugging
       console.log('Files to upload:', files);
@@ -1164,6 +1171,44 @@ const EditPolicy = () => {
 
   const hospitalOptions = useMemo(() => formatHospitalOptions(filterHospitals()), [doctors]);
 
+  // Auto-fetch latest bill when entityId changes
+  useEffect(() => {
+    const fetchLatestBill = async () => {
+      if (formData.policyHolder.entityId && !formData.relatedSalesBillId) {
+        try {
+          // 1. Try finding bill for the policy holder directly
+          let billRes = await apiClient.get(apiEndpoints.salesBills.list, {
+            params: { "client.entityId": formData.policyHolder.entityId, limit: 1 }
+          });
+
+          if (billRes.data.success && billRes.data.data.length > 0) {
+            setFormData(prev => ({ ...prev, relatedSalesBillId: billRes.data.data[0]._id }));
+            console.log("Auto-linked latest bill on edit:", billRes.data.data[0]._id);
+            return;
+          }
+
+          // 2. Fallback: If no bill found, check if this doctor has a spouse/linked doctor
+          // Look for the doctor in our pre-loaded doctors list
+          const currentDoc = doctors.find(d => d._id === formData.policyHolder.entityId);
+          if (currentDoc && currentDoc.linkedDoctorId) {
+            console.log("No bill found for policy holder, checking spouse:", currentDoc.linkedDoctorId);
+            billRes = await apiClient.get(apiEndpoints.salesBills.list, {
+              params: { "client.entityId": currentDoc.linkedDoctorId, limit: 1 }
+            });
+
+            if (billRes.data.success && billRes.data.data.length > 0) {
+              setFormData(prev => ({ ...prev, relatedSalesBillId: billRes.data.data[0]._id }));
+              console.log("Auto-linked spouse bill on edit:", billRes.data.data[0]._id);
+            }
+          }
+        } catch (err) {
+          console.error("Error auto-fetching bill on edit:", err);
+        }
+      }
+    };
+    fetchLatestBill();
+  }, [formData.policyHolder.entityId, doctors]);
+
   useEffect(() => {
     fetchPolicy();
     fetchDropdownData();
@@ -1230,7 +1275,8 @@ const EditPolicy = () => {
                   handleChange('policyHolder', {
                     ...formData.policyHolder,
                     entityId: selectedOption?.value || '',
-                    name: selectedOption?.label || ''
+                    // STRICT PRIORITY FOR HOSPITAL
+                    name: selectedOption ? (selectedOption.hospitalName || selectedOption.fullName || selectedOption.label) : ''
                   });
                 }}
                 placeholder="Select Hospital"
@@ -1246,7 +1292,8 @@ const EditPolicy = () => {
                   handleChange('policyHolder', {
                     ...formData.policyHolder,
                     entityId: selectedOption?.value || '',
-                    name: selectedOption?.label || ''
+                    // STRICT PRIORITY FOR DOCTOR
+                    name: selectedOption ? (selectedOption.fullName || selectedOption.hospitalName || selectedOption.label) : ''
                   });
                 }}
                 placeholder="Select Doctor"

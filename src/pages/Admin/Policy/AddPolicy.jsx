@@ -678,9 +678,24 @@ const AddPolicy = () => {
                           if (index === 0) {
                             const doc = selectedOption; // Has all props spread
                             const isHospitalIndividual = doc.doctorType === 'hospital_individual';
+                            const isHospital = doc.doctorType === 'hospital';
                             const hasSpouse = doc.linkedDoctorId && doc.relationshipType === 'spouse';
 
-                            if (isHospitalIndividual || hasSpouse) {
+                            // Fetch latest bill for this doctor to auto-link
+                            let latestBillId = null;
+                            try {
+                              const billRes = await apiClient.get(apiEndpoints.salesBills.list, {
+                                params: { "client.entityId": doc._id, limit: 1 }
+                              });
+                              if (billRes.data.success && billRes.data.data.length > 0) {
+                                latestBillId = billRes.data.data[0]._id;
+                                console.log("Auto-found latest bill for linking:", latestBillId);
+                              }
+                            } catch (err) {
+                              console.error("Error auto-fetching bill:", err);
+                            }
+
+                            if (isHospitalIndividual || hasSpouse || isHospital) {
                               let newDoctorForms = [];
                               let newHospitalForms = [];
 
@@ -697,11 +712,22 @@ const AddPolicy = () => {
                                 endDate: formData.endDate || '',
                                 duration: formData.duration || '',
                                 selectedOption: opt,
+                                relatedSalesBillId: latestBillId, // AUTO-LINKED HERE
                                 narration: narrationSuffix
                                   ? (formData.narration ? `${formData.narration} (${narrationSuffix})` : narrationSuffix)
                                   : (formData.narration || ''),
                                 files: { policyDocument: null, proposalForm: null, otherDocuments: [] }
                               });
+
+                              if (isHospital) {
+                                // Case: Pure Hospital - switch to hospital forms only
+                                newHospitalForms.push(createForm('hospital', doc._id, doc.hospitalName || doc.fullName, selectedOption, ''));
+                                setSelectedTypes({ doctor: false, hospital: true });
+                                setHospitalForms(newHospitalForms);
+                                setNotification({ show: true, message: `Auto-switched to Hospital Policy ${latestBillId ? '(Linked to Bill)' : ''}`, type: 'info' });
+                                setTimeout(() => setNotification({ show: false, message: '', type: '' }), 5000);
+                                return;
+                              }
 
                               // Add Selected Doc
                               newDoctorForms.push(createForm('doctor', doc._id, doc.fullName || doc.hospitalName, selectedOption, ''));

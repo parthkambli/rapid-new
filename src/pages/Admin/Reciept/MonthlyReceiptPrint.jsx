@@ -365,13 +365,13 @@ const MonthlyPremiumReceipt = () => {
 
   // डॉक्टर डिटेल्स में केवल उन्हीं फ़ील्ड्स को शामिल करें जिनका डेटा है
   const doctorDetails = [
-    { label: "Qualification", value: template.qualification },
+    { label: "Qualification", value: template.qualification, hide: doctor.doctorType === 'hospital' },
     { label: "Specialization", value: template.specialization },
     { label: "Hospital Name", value: template.hospitalName },
     { label: "Hospital Address", value: template.hospitalAddress },
     { label: "Registration No", value: template.registrationNo },
     { label: "Membership", value: template.membershipDisplay }
-  ].filter(item => item.value && item.value !== "--");
+  ].filter(item => item.value && item.value !== "--" && !item.hide);
 
   // पेमेंट डिटेल्स में केवल उन्हीं फ़ील्ड्स को शामिल करें जिनका डेटा है
   const paymentDetails = [
