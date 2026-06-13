@@ -321,6 +321,7 @@ export const apiEndpoints = {
     doctorstelecaller: "/reports/doctors-telecaller",
     employees: "/reports/employees",
     policies: "/reports/policies",
+    policiesList: "/reports/policies-list",
     quotations: "/reports/quotations",
     financial: "/reports/financial",
     advocates: "/reports/advocates",

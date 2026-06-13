@@ -12,12 +12,19 @@ export default function ExpenseList() {
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  
+  // Pagination states
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const [filters, setFilters] = useState({
     name: "",
     mode: "",
     category: "",
     voucherNo: "",
-    date: "",
+    fromDate: "",
+    toDate: "",
   });
 
   // Helper function to format payment method
@@ -62,8 +69,8 @@ export default function ExpenseList() {
       setError(null);
 
       const params = {
-        page: 1,
-        limit: 1000, // Get all expenses for now
+        page: currentPage,
+        limit: pageSize,
       };
 
       // Apply filters
@@ -76,28 +83,30 @@ export default function ExpenseList() {
       if (filters.category) {
         params.category = filters.category.toLowerCase().replace(/\s+/g, "_");
       }
-      if (filters.date) {
-        params.fromDate = filters.date;
-        params.toDate = filters.date;
+      if (filters.voucherNo) {
+        params.voucherNo = filters.voucherNo;
+      }
+      if (filters.fromDate) {
+        params.fromDate = filters.fromDate;
+      }
+      if (filters.toDate) {
+        params.toDate = filters.toDate;
       }
 
       const response = await apiClient.get(apiEndpoints.expenses.list, { params });
-      const expensesData = response.data.data || response.data || [];
+      
+      const responseData = response.data;
+      const expensesData = responseData.data || [];
+      const paginationData = responseData.pagination || {};
+
+      setTotalItems(paginationData.totalItems || 0);
 
       // Store raw data for document access
       setExpensesRaw(expensesData);
 
       const mappedData = expensesData.map(mapExpenseData);
 
-      // Additional client-side filtering for voucherNo if needed
-      let filtered = mappedData;
-      if (filters.voucherNo) {
-        filtered = mappedData.filter((exp) =>
-          exp.voucherNo.toLowerCase().includes(filters.voucherNo.toLowerCase())
-        );
-      }
-
-      setExpenses(filtered);
+      setExpenses(mappedData);
     } catch (err) {
       console.error("Error fetching expenses:", err);
       setError(err.response?.data?.message || "Failed to load expenses. Please try again.");
@@ -105,15 +114,25 @@ export default function ExpenseList() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, currentPage, pageSize]);
 
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleEdit = (row) => {
@@ -193,7 +212,7 @@ export default function ExpenseList() {
       </div>
 
       {/* Filter Inputs */}
-      <div className="grid grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-6 gap-3 mb-6">
         <input
           name="name"
           placeholder="Search By name"
@@ -230,13 +249,26 @@ export default function ExpenseList() {
           onChange={handleFilterChange}
           className="border border-gray-300 rounded px-3 py-2 text-sm"
         />
-        <input
-          type="date"
-          name="date"
-          value={filters.date}
-          onChange={handleFilterChange}
-          className="border border-gray-300 rounded px-3 py-2 text-sm"
-        />
+        <div className="flex flex-col">
+          <label className="text-[10px] text-gray-500 ml-1">From Date</label>
+          <input
+            type="date"
+            name="fromDate"
+            value={filters.fromDate}
+            onChange={handleFilterChange}
+            className="border border-gray-300 rounded px-3 py-2 text-sm w-full"
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-[10px] text-gray-500 ml-1">To Date</label>
+          <input
+            type="date"
+            name="toDate"
+            value={filters.toDate}
+            onChange={handleFilterChange}
+            className="border border-gray-300 rounded px-3 py-2 text-sm w-full"
+          />
+        </div>
       </div>
 
       {/* Loading State */}
@@ -257,6 +289,13 @@ export default function ExpenseList() {
       {!loading && !error && (
         <Table
           data={expenses}
+          pagination={true}
+          serverPagination={true}
+          totalServerItems={totalItems}
+          currentServerPage={currentPage}
+          defaultPageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
           actions={[
             {
               label: "View",

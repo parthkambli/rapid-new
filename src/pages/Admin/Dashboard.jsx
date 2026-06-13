@@ -920,7 +920,7 @@ const AdminDashboard = () => {
         apiClient.get(apiEndpoints.adminDashboard.salesmanDoctors),
         apiClient.get(apiEndpoints.adminDashboard.telecallerDoctors),
         apiClient.get(apiEndpoints.adminDashboard.monthlyPaymentReminders),
-        apiClient.get(`${apiEndpoints.adminDashboard.renewalReminders}?page=${renewalCurrentPage}&limit=${renewalRowsPerPage}`) // Add pagination params
+        apiClient.get(`${apiEndpoints.adminDashboard.renewalReminders}?page=${renewalCurrentPage}&limit=${renewalRowsPerPage}&dateFrom=${renewalDateFrom}&dateTo=${renewalDateTo}&filterType=${renewalDateFilterType === 'expiry' ? 'expiryDate' : 'sbDate'}`) // Add pagination and date params
       ]);
 
       // Handle Main Dashboard Data
