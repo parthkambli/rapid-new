@@ -222,6 +222,10 @@ export default function PolicyReportPage() {
 
     const title = isFiltered ? "Policy Report - Filtered" : "Policy Report - Complete";
 
+    const dateRangeStr = (filters.fromDate || filters.toDate)
+      ? ` | Period: ${filters.fromDate ? new Date(filters.fromDate).toLocaleDateString("en-IN") : "Start"} to ${filters.toDate ? new Date(filters.toDate).toLocaleDateString("en-IN") : "End"}`
+      : "";
+
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -241,7 +245,7 @@ export default function PolicyReportPage() {
       </head>
       <body>
         <h1>Policy Report</h1>
-        <div class="subtitle">${isFiltered ? "Filtered View" : "All Policies"} • ${new Date().toLocaleDateString("en-IN")}</div>
+        <div class="subtitle">${isFiltered ? "Filtered View" : "All Policies"}${dateRangeStr} • Printed: ${new Date().toLocaleDateString("en-IN")}</div>
         <table>
           <thead>
             <tr>
