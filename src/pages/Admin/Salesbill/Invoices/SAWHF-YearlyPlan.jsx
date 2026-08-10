@@ -26,7 +26,7 @@ const SAWHFYearlyPlan = () => {
     return <div className="text-center py-8 text-red-600">Error loading agreement data: {error || 'Missing Data'}</div>;
   }
 
-  const agreementDate = new Date(salesBill.createdAt || salesBill.paymentStats?.paymentDate || Date.now()).toLocaleDateString('en-GB', {
+  const agreementDate = new Date(salesBill.billDate || salesBill.createdAt || salesBill.paymentStats?.paymentDate || Date.now()).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'

@@ -304,7 +304,7 @@ const EditSalesBill = () => {
           "client.entityId._id": doctorId,
           "client.type": "doctor",
           limit: 1,
-          sort: "-createdAt",
+          sort: "-billDate",
           status: { $ne: "cancelled" },
         },
       });

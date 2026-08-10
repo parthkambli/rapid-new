@@ -1889,6 +1889,17 @@ import { toast } from 'react-toastify';
 const TransferDoctor = () => {
   const [activeTab, setActiveTab] = useState("my-calls");
 
+  // Search & Filter states
+  const [searchByName, setSearchByName] = useState("");
+  const [searchByCity, setSearchByCity] = useState("");
+  const [searchBySpecialty, setSearchBySpecialty] = useState("");
+  const [sortByStatus, setSortByStatus] = useState("All");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
   const [taskCalls, setTaskCalls] = useState([]);
   const [myAddedDoctors, setMyAddedDoctors] = useState([]);
   const [transferredDoctors, setTransferredDoctors] = useState([]);
@@ -2058,6 +2069,27 @@ const TransferDoctor = () => {
     return 'bg-gray-100 text-gray-700';
   };
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchByName, searchByCity, searchBySpecialty, sortByStatus]);
+
+  // Filter data based on search inputs
+  const filteredData = combinedData.filter(row => {
+    const matchesName = !searchByName || (row.doctor?.fullName || '').toLowerCase().includes(searchByName.toLowerCase());
+    const matchesCity = !searchByCity || (row.doctor?.city || '').toLowerCase().includes(searchByCity.toLowerCase());
+    const matchesSpecialty = !searchBySpecialty || (row.doctor?.specialization || '').toLowerCase().includes(searchBySpecialty.toLowerCase());
+    const matchesStatus = sortByStatus === "All" || (row.doctorTaskStatus || row.doctorStatus || '').toLowerCase() === sortByStatus.toLowerCase();
+    return matchesName && matchesCity && matchesSpecialty && matchesStatus;
+  });
+
+  // Pagination - get current page data
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+
   const fetchTelecallersList = async () => {
     try {
       const res = await apiClient.get('/employees/rolefor-telecaller/telecaller');
@@ -2186,6 +2218,44 @@ const TransferDoctor = () => {
           </div>
         </div>
 
+        {/* Search Filters */}
+        {activeTab !== "transfer-history" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <input
+              type="text"
+              placeholder="Search By Name"
+              value={searchByName}
+              onChange={(e) => setSearchByName(e.target.value)}
+              className="p-3 border border-gray-300 rounded-md bg-white"
+            />
+            <input
+              type="text"
+              placeholder="Search By City"
+              value={searchByCity}
+              onChange={(e) => setSearchByCity(e.target.value)}
+              className="p-3 border border-gray-300 rounded-md bg-white"
+            />
+            <input
+              type="text"
+              placeholder="Search By Specialty"
+              value={searchBySpecialty}
+              onChange={(e) => setSearchBySpecialty(e.target.value)}
+              className="p-3 border border-gray-300 rounded-md bg-white"
+            />
+            <select
+              value={sortByStatus}
+              onChange={(e) => setSortByStatus(e.target.value)}
+              className="p-3 border border-gray-300 rounded-md bg-white"
+            >
+              <option value="All">All Status</option>
+              <option value="Cold">Cold</option>
+              <option value="Hot">Hot</option>
+              <option value="Close">Close</option>
+              <option value="followup">Followup</option>
+            </select>
+          </div>
+        )}
+
         {activeTab === "my-calls" && (
           <>
             {combinedData.length > 0 && (
@@ -2196,7 +2266,7 @@ const TransferDoctor = () => {
             )}
 
             <div className="bg-white rounded-xl shadow overflow-hidden">
-              {combinedData.length === 0 ? (
+              {filteredData.length === 0 ? (
                 <div className="p-12 text-center text-gray-400">
                   <Users size={48} className="mx-auto mb-3 opacity-50" />
                   <p>No data found</p>
@@ -2217,7 +2287,7 @@ const TransferDoctor = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {combinedData.map((row, i) => (
+                    {paginatedData.map((row, i) => (
                       <tr key={row.callEntryId || row.doctorId || row._id || i} className="hover:bg-gray-50">
                         <td className="px-3 py-3 font-medium text-gray-700">
                           {new Date(row.scheduledDate || row.createdAt || new Date()).toLocaleDateString('en-GB')}
@@ -2419,6 +2489,33 @@ const TransferDoctor = () => {
             </div>
           </>
         )}
+      
+
+        {/* Pagination Controls */}
+        {filteredData.length > pageSize && (
+          <div className="flex justify-between items-center mt-4 px-3 py-2 bg-white rounded-lg shadow">
+            <div className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages} ({filteredData.length} records)
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Transfer Modal */}

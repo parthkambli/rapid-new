@@ -1099,7 +1099,7 @@ const SalesBillForm = () => {
               "client.entityId._id": doctorIdFromParam,  // Correct way to query nested _id
               "client.type": "doctor",
               limit: 1,
-              sort: "-createdAt",
+              sort: "-billDate",
               status: { $ne: "cancelled" },
             },
           });
@@ -1190,7 +1190,7 @@ const SalesBillForm = () => {
           "client.entityId._id": doctorId,
           "client.type": "doctor",
           limit: 1,
-          sort: "-createdAt",
+          sort: "-billDate",
           status: { $ne: "cancelled" },
         },
       });

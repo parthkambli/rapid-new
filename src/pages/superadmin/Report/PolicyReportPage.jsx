@@ -99,7 +99,7 @@ export default function PolicyReportPage() {
         type: p.insuranceType?.typeName || "N/A",
         amount: Number(p.coverageAmount || 0),
         premium: Number(p.premiumAmount || 0),
-        paidBy: p.paidBy === "by_company" ? "Company" : p.paidBy || "N/A",
+        paidBy: p.paidBy === "by_company" ? "Company" : p.paidBy === "by_doctor" ? "Doctor" : p.paidBy === "by_hospital" ? "Hospital" : p.paidBy === "by_individual" ? "Individual" : p.paidBy || "N/A",
         status: p.status
           ? p.status.charAt(0).toUpperCase() + p.status.slice(1)
           : "N/A",
@@ -159,7 +159,7 @@ export default function PolicyReportPage() {
           type: p.insuranceType?.typeName || "N/A",
           amount: Number(p.coverageAmount || 0),
           premium: Number(p.premiumAmount || 0),
-          paidBy: p.paidBy === "by_company" ? "Company" : p.paidBy || "N/A",
+          paidBy: p.paidBy === "by_company" ? "Company" : p.paidBy === "by_doctor" ? "Doctor" : p.paidBy === "by_hospital" ? "Hospital" : p.paidBy === "by_individual" ? "Individual" : p.paidBy || "N/A",
           status: p.status ? p.status.charAt(0).toUpperCase() + p.status.slice(1) : "N/A",
           membershipType: p.policyHolder?.type || "unknown",
           renewedFrom: p.renewedFrom,
