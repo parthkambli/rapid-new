@@ -2239,8 +2239,8 @@ const SalesBill = () => {
     const diffMs = expiry - today;
     const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-    // Visible if: already expired OR expires today OR expires in ≤ 30 days (1 month)
-    return daysUntilExpiry <= 30;
+    // Visible if: already expired OR expires today OR expires in ≤ 61 days
+    return daysUntilExpiry <= 61;
   };
 
   const actions = [
